@@ -10,10 +10,10 @@ export function AssetUploadCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
       <p className="text-sm font-medium text-white/80">{title}</p>
-      {subtitle && <p className="mb-3 text-xs text-white/40">{subtitle}</p>}
-      {children}
+      {subtitle && <p className="text-xs text-white/40">{subtitle}</p>}
+      <div className="mt-3">{children}</div>
     </div>
   );
 }

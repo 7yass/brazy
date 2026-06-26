@@ -38,13 +38,13 @@ export function GeneralCustomization() {
         <Switch value={false} onChange={() => {}} />
       </Row>
       <Row label="Profile Opacity">
-        <div className="flex w-full max-w-40 items-center gap-3">
+        <div className="flex w-full max-w-[160px] items-center gap-3">
           <Slider value={1} onChange={() => {}} min={0} max={1} step={0.05} />
           <span className="min-w-[2.5rem] text-right text-xs text-white/40">100%</span>
         </div>
       </Row>
       <Row label="Profile Blur">
-        <div className="flex w-full max-w-40 items-center gap-3">
+        <div className="flex w-full max-w-[160px] items-center gap-3">
           <Slider value={0} onChange={() => {}} min={0} max={60} step={1} />
           <span className="min-w-[2.5rem] text-right text-xs text-white/40">0px</span>
         </div>
@@ -55,7 +55,7 @@ export function GeneralCustomization() {
       <Row label="Glow Settings">
         <div className="flex items-center gap-3">
           <Switch value={false} onChange={() => {}} />
-          <div className="flex w-full max-w-28 items-center gap-3">
+          <div className="flex w-full max-w-[160px] items-center gap-3">
             <Slider value={50} onChange={() => {}} min={0} max={100} step={5} />
             <span className="min-w-[2.5rem] text-right text-xs text-white/40">50%</span>
           </div>
