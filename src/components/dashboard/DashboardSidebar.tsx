@@ -11,12 +11,10 @@ import {
   Settings,
   Award,
   LayoutTemplate,
-  LogOut,
   Layers,
   Puzzle,
   Briefcase,
 } from "lucide-react";
-import { SpiderLogo } from "@/components/spider-logo";
 import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
@@ -34,7 +32,7 @@ const navItems = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ username?: string; id: string } | null>(null);
+  const [user, setUser] = useState<{ username: string; avatarUrl: string } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -48,29 +46,72 @@ export default function DashboardSidebar() {
           data.user.user_metadata?.full_name ??
           data.user.email?.split("@")[0] ??
           "user";
-        setUser({ username: discordUsername, id: data.user.id.slice(0, 18) });
+        const avatarUrl =
+          (discordIdent?.identity_data?.avatar_url as string | undefined) ??
+          (discordIdent?.identity_data?.avatar as string | undefined) ??
+          data.user.user_metadata?.avatar_url as string | undefined ??
+          `https://cdn.discordapp.com/embed/avatars/${Number(data.user.id.slice(0, 1)) % 5}.png`;
+        setUser({ username: discordUsername, avatarUrl });
       }
     });
   }, []);
 
   return (
     <aside
-      className="flex h-full flex-col justify-between overflow-y-auto"
+      className="flex flex-col justify-between overflow-y-auto no-scrollbar"
       style={{
+        position: "fixed",
+        left: 0,
         minWidth: 300,
         maxWidth: 300,
+        height: "100%",
         backgroundColor: "#0e0e0e",
         borderTopRightRadius: 50,
         borderBottomRightRadius: 50,
         padding: 25,
+        fontFamily: "Satoshi, sans-serif",
       }}
     >
       <div>
-        <div className="flex items-center gap-2 pb-5" style={{ borderBottom: "1px solid #181818" }}>
-          <SpiderLogo />
+        <div
+          className="flex items-center gap-3"
+          style={{ paddingBottom: 20, borderBottom: "1px solid #181818" }}
+        >
+          <img
+            src={user?.avatarUrl}
+            alt=""
+            style={{
+              width: 57,
+              height: 57,
+              borderRadius: "50%",
+              border: "2px solid #222222",
+              objectFit: "cover",
+              flexShrink: 0,
+            }}
+          />
+          <div className="flex flex-col" style={{ gap: 0 }}>
+            <span style={{ fontSize: 18.5, fontWeight: 550, color: "#fafafa" }}>
+              {user?.username ?? "Loading..."}
+            </span>
+            <a
+              href={`https://brazy.it/${user?.username ?? ""}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: 14.5,
+                color: "#a5a4a4",
+                textDecoration: "none",
+              }}
+            >
+              brazy.it/{user?.username ?? ""}
+            </a>
+          </div>
         </div>
 
-        <nav className="mt-5 flex flex-col gap-[6.5px]" style={{ marginLeft: -10 }}>
+        <nav
+          className="flex flex-col"
+          style={{ gap: 6.5, marginTop: 20, marginLeft: -10 }}
+        >
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -81,24 +122,24 @@ export default function DashboardSidebar() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 10,
+                  gap: 7,
                   padding: "10px 10px 10px 15px",
                   borderRadius: 20,
                   fontSize: 17.4,
                   fontWeight: 500,
                   color: "#fafafa",
                   textDecoration: "none",
-                  transition: "background-color 0.15s",
+                  transition: "0.4s",
                   backgroundColor: isActive ? "rgba(218,102,218,0.155)" : "transparent",
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.backgroundColor = "rgba(250,250,250,0.15)";
+                  if (!isActive) e.currentTarget.style.backgroundColor = "#fafafa27";
                 }}
                 onMouseLeave={(e) => {
                   if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <Icon className="shrink-0" style={{ width: 20, height: 20 }} />
+                <Icon className="shrink-0" style={{ width: 23, height: 23 }} />
                 <span>{item.label}</span>
               </Link>
             );
@@ -106,34 +147,36 @@ export default function DashboardSidebar() {
         </nav>
       </div>
 
-      <div style={{ borderTop: "1px solid #181818", paddingTop: 12, marginTop: 12 }}>
-        {user && (
-          <div className="mb-2" style={{ padding: "10px 10px 10px 15px" }}>
-            <div className="truncate text-xs" style={{ color: "#a5a4a4" }}>Signed in as</div>
-            <div className="truncate text-sm font-medium" style={{ color: "#fafafa" }}>{user.username}</div>
-          </div>
-        )}
-        <Link
-          href="/"
+      {user && (
+        <div
           style={{
+            backgroundColor: "#141414",
+            borderRadius: 35,
+            padding: 10,
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            padding: "10px 10px 10px 15px",
-            borderRadius: 20,
-            fontSize: 17.4,
-            fontWeight: 500,
-            color: "#fafafa",
-            textDecoration: "none",
-            transition: "background-color 0.15s",
+            justifyContent: "space-between",
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(250,250,250,0.15)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
         >
-          <LogOut className="shrink-0" style={{ width: 20, height: 20 }} />
-          <span>Back to site</span>
-        </Link>
-      </div>
+          <div className="flex items-center" style={{ gap: 8 }}>
+            <img
+              src={user.avatarUrl}
+              alt=""
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                border: "2px solid #222222",
+                objectFit: "cover",
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontSize: 15, fontWeight: 500, color: "#fafafa" }}>
+              {user.username}
+            </span>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

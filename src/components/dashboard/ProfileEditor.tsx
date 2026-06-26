@@ -6,6 +6,7 @@ import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
 import { TextInput, TextArea, SelectInput, ColorInput, Slider, Toggle } from "./controls";
+import { SectionCard } from "./SectionCard";
 import { cn } from "@/lib/utils";
 
 const backgroundOpts = [
@@ -45,15 +46,6 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
     <div className="flex items-center justify-between gap-4">
       <span className="text-sm font-medium text-white/60">{label}</span>
       <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
-
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-[15px] border border-white/[0.06] bg-[#111111] px-6 py-5">
-      <h3 className="mb-5 text-base font-semibold text-white/90">{title}</h3>
-      <div className="flex flex-col gap-4">{children}</div>
     </div>
   );
 }

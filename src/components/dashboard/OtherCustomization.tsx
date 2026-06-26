@@ -1,35 +1,34 @@
 "use client";
 
-import { SelectInput, Slider } from "./controls";
-
-const alignOpts = [
-  { value: "center" as const, label: "Center" },
-  { value: "left" as const, label: "Left" },
-];
+import { useState } from "react";
 
 export function OtherCustomization() {
+  const [monochrome, setMonochrome] = useState(false);
+  const [animatedTitle, setAnimatedTitle] = useState(false);
+  const [swapBoxColors, setSwapBoxColors] = useState(false);
+  const [volume, setVolume] = useState(false);
+  const [useDiscordAvatar, setUseDiscordAvatar] = useState(false);
+  const [decoration, setDecoration] = useState(false);
+
   return (
-    <div className="flex flex-col gap-3">
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <Row label="Monochrome Icons">
-        <Switch value={false} onChange={() => {}} />
+        <Toggle value={monochrome} onChange={setMonochrome} />
       </Row>
       <Row label="Animated Title">
-        <Switch value={false} onChange={() => {}} />
+        <Toggle value={animatedTitle} onChange={setAnimatedTitle} />
       </Row>
       <Row label="Swap Box Colors">
-        <SelectInput value="center" onChange={() => {}} options={alignOpts} />
+        <Toggle value={swapBoxColors} onChange={setSwapBoxColors} />
       </Row>
       <Row label="Volume Control">
-        <div className="flex w-32 items-center gap-3">
-          <Slider value={0.8} onChange={() => {}} min={0} max={1} step={0.05} />
-          <span className="min-w-[2rem] text-right text-xs text-white/40">80%</span>
-        </div>
+        <Toggle value={volume} onChange={setVolume} />
       </Row>
       <Row label="Use Discord Avatar">
-        <Switch value={false} onChange={() => {}} />
+        <Toggle value={useDiscordAvatar} onChange={setUseDiscordAvatar} />
       </Row>
       <Row label="Discord Avatar Decoration">
-        <Switch value={false} onChange={() => {}} />
+        <Toggle value={decoration} onChange={setDecoration} />
       </Row>
     </div>
   );
@@ -37,23 +36,47 @@ export function OtherCustomization() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm font-medium text-white/50">{label}</span>
-      <div className="shrink-0">{children}</div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+      }}
+    >
+      <span style={{ fontSize: 15, color: "#a5a4a4", fontWeight: 450 }}>{label}</span>
+      <div style={{ flexShrink: 0 }}>{children}</div>
     </div>
   );
 }
 
-function Switch({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       onClick={() => onChange(!value)}
-      className="relative h-5 w-9 shrink-0 rounded-full transition"
-      style={{ backgroundColor: value ? "#8b5cf6" : "rgba(255,255,255,0.12)" }}
+      style={{
+        position: "relative",
+        width: 36,
+        height: 20,
+        borderRadius: 999,
+        border: "none",
+        cursor: "pointer",
+        transition: "background-color 0.2s",
+        backgroundColor: value ? "rgba(218,102,218,0.6)" : "#ffffff26",
+        flexShrink: 0,
+      }}
     >
       <span
-        className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition"
-        style={{ left: value ? "18px" : "2px" }}
+        style={{
+          position: "absolute",
+          top: 2,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          backgroundColor: "#fff",
+          transition: "left 0.2s",
+          left: value ? 18 : 2,
+        }}
       />
     </button>
   );

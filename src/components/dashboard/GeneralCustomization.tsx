@@ -1,64 +1,108 @@
 "use client";
 
-import { TextArea, TextInput, SelectInput, Slider } from "./controls";
+import { useState } from "react";
 
 const backgroundOpts = [
-  { value: "none" as const, label: "None" },
-  { value: "color" as const, label: "Color" },
-  { value: "gradient" as const, label: "Gradient" },
-  { value: "particles" as const, label: "Particles" },
-  { value: "matrix" as const, label: "Matrix" },
-  { value: "starfield" as const, label: "Starfield" },
-  { value: "aurora" as const, label: "Aurora" },
-  { value: "rain" as const, label: "Rain" },
-  { value: "snow" as const, label: "Snow" },
-  { value: "bubbles" as const, label: "Bubbles" },
-  { value: "grid" as const, label: "Grid" },
-  { value: "image" as const, label: "Image" },
-  { value: "video" as const, label: "Video" },
+  "None", "Color", "Gradient", "Particles", "Matrix",
+  "Starfield", "Aurora", "Rain", "Snow", "Bubbles", "Grid", "Image", "Video",
 ];
 
 export function GeneralCustomization() {
+  const [description, setDescription] = useState("");
+  const [presence, setPresence] = useState("Disabled");
+  const [bgEffect, setBgEffect] = useState("None");
+  const [usernameFx, setUsernameFx] = useState(false);
+  const [opacity, setOpacity] = useState(1);
+  const [blur, setBlur] = useState(0);
+  const [location, setLocation] = useState("");
+  const [glow, setGlow] = useState(false);
+  const [glowValue, setGlowValue] = useState(50);
+
   return (
-    <div className="flex flex-col gap-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
       <Row label="Description">
-        <TextArea value="" onChange={() => {}} placeholder="Bio" rows={2} />
-      </Row>
-      <Row label="Discord Presence">
-        <SelectInput
-          value="none"
-          onChange={() => {}}
-          options={[{ value: "none" as const, label: "Disabled" }, { value: "enabled" as const, label: "Enabled" }]}
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Bio"
+          rows={3}
+          style={{
+            background: "#121212",
+            border: "2px solid #1b1b1b",
+            borderRadius: 14,
+            padding: 14,
+            color: "#f1f1f1",
+            fontSize: 17,
+            fontWeight: 500,
+            resize: "none",
+            width: 280,
+            fontFamily: "Satoshi, sans-serif",
+            outline: "none",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = "#333" }}
+          onBlur={(e) => { e.target.style.borderColor = "#1b1b1b" }}
         />
       </Row>
+
+      <Row label="Discord Presence">
+        <Select value={presence} onChange={(v) => setPresence(v)} options={["Disabled", "Enabled"]} />
+      </Row>
+
       <Row label="Background Effects">
-        <SelectInput value="none" onChange={() => {}} options={backgroundOpts} />
+        <Select value={bgEffect} onChange={(v) => setBgEffect(v)} options={backgroundOpts} />
       </Row>
+
       <Row label="Username Effects">
-        <Switch value={false} onChange={() => {}} />
+        <Toggle value={usernameFx} onChange={(v) => setUsernameFx(v)} />
       </Row>
+
       <Row label="Profile Opacity">
-        <div className="flex w-full max-w-[160px] items-center gap-3">
-          <Slider value={1} onChange={() => {}} min={0} max={1} step={0.05} />
-          <span className="min-w-[2.5rem] text-right text-xs text-white/40">100%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Slider value={opacity} onChange={(v) => setOpacity(v)} min={0} max={1} step={0.05} />
+          <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
+            {Math.round(opacity * 100)}%
+          </span>
         </div>
       </Row>
+
       <Row label="Profile Blur">
-        <div className="flex w-full max-w-[160px] items-center gap-3">
-          <Slider value={0} onChange={() => {}} min={0} max={60} step={1} />
-          <span className="min-w-[2.5rem] text-right text-xs text-white/40">0px</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Slider value={blur} onChange={(v) => setBlur(v)} min={0} max={60} step={1} />
+          <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
+            {blur}px
+          </span>
         </div>
       </Row>
+
       <Row label="Location">
-        <TextInput value="" onChange={() => {}} placeholder="Location" />
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Location"
+          style={{
+            background: "#121212",
+            border: "2px solid #1b1b1b",
+            borderRadius: 14,
+            padding: "8px 14px",
+            color: "#f1f1f1",
+            fontSize: 17,
+            fontWeight: 500,
+            width: 280,
+            fontFamily: "Satoshi, sans-serif",
+            outline: "none",
+          }}
+          onFocus={(e) => { e.target.style.borderColor = "#333" }}
+          onBlur={(e) => { e.target.style.borderColor = "#1b1b1b" }}
+        />
       </Row>
+
       <Row label="Glow Settings">
-        <div className="flex items-center gap-3">
-          <Switch value={false} onChange={() => {}} />
-          <div className="flex w-full max-w-[160px] items-center gap-3">
-            <Slider value={50} onChange={() => {}} min={0} max={100} step={5} />
-            <span className="min-w-[2.5rem] text-right text-xs text-white/40">50%</span>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <Toggle value={glow} onChange={(v) => setGlow(v)} />
+          <Slider value={glowValue} onChange={(v) => setGlowValue(v)} min={0} max={100} step={5} />
+          <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
+            {glowValue}%
+          </span>
         </div>
       </Row>
     </div>
@@ -67,24 +111,116 @@ export function GeneralCustomization() {
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-sm font-medium text-white/60">{label}</span>
-      <div className="flex shrink-0 items-center gap-3">{children}</div>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+      }}
+    >
+      <span style={{ fontSize: 15, color: "#a5a4a4", fontWeight: 450 }}>{label}</span>
+      <div style={{ flexShrink: 0 }}>{children}</div>
     </div>
   );
 }
 
-function Switch({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+function Select({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        background: "#1a1a1a",
+        border: "2px solid #222222",
+        borderRadius: 15,
+        padding: "7px 10px",
+        color: "#fafafa",
+        fontSize: 16.5,
+        fontFamily: "Satoshi, sans-serif",
+        width: 140,
+        outline: "none",
+        cursor: "pointer",
+        transition: "border-color 0.25s",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#272727" }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#222222" }}
+    >
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
       onClick={() => onChange(!value)}
-      className="relative h-5 w-9 shrink-0 rounded-full transition"
-      style={{ backgroundColor: value ? "#8b5cf6" : "rgba(255,255,255,0.15)" }}
+      style={{
+        position: "relative",
+        width: 36,
+        height: 20,
+        borderRadius: 10,
+        border: "none",
+        cursor: "pointer",
+        transition: "background-color 0.2s",
+        backgroundColor: value ? "rgba(218,102,218,0.6)" : "#ffffff26",
+        flexShrink: 0,
+      }}
     >
       <span
-        className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition"
-        style={{ left: value ? "18px" : "2px" }}
+        style={{
+          position: "absolute",
+          top: 2,
+          width: 16,
+          height: 16,
+          borderRadius: "50%",
+          backgroundColor: "#fff",
+          transition: "left 0.2s",
+          left: value ? 18 : 2,
+        }}
       />
     </button>
+  );
+}
+
+function Slider({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step: number;
+}) {
+  return (
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      style={{
+        maxWidth: 160,
+        accentColor: "rgba(218,102,218,0.8)",
+        cursor: "pointer",
+      }}
+    />
   );
 }
