@@ -1,29 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import type { ProfileConfig, Theme, Effects, Background, Identity, Audio, Social } from "@/lib/profile/schema";
 
-const backgroundOpts = [
-  "None", "Color", "Gradient", "Particles", "Matrix",
-  "Starfield", "Aurora", "Rain", "Snow", "Bubbles", "Grid", "Image", "Video",
-];
-
-export function GeneralCustomization() {
-  const [description, setDescription] = useState("");
-  const [presence, setPresence] = useState("Disabled");
-  const [bgEffect, setBgEffect] = useState("None");
-  const [usernameFx, setUsernameFx] = useState(false);
-  const [opacity, setOpacity] = useState(1);
-  const [blur, setBlur] = useState(0);
-  const [location, setLocation] = useState("");
-  const [glow, setGlow] = useState(false);
-  const [glowValue, setGlowValue] = useState(50);
+export function GeneralCustomization({
+  identity,
+  theme,
+  background,
+  effects,
+  audio,
+  onUpdate,
+}: {
+  identity: Partial<Identity>;
+  theme: Partial<Theme>;
+  background: Partial<Background>;
+  effects: Partial<Effects>;
+  audio: Partial<Audio>;
+  onUpdate: (section: keyof ProfileConfig, key: string, value: unknown) => void;
+}) {
+  const bgEffectValue = background.type ?? "none";
+  const bgEffectOptions: string[] = [
+    "None", "Color", "Gradient", "Particles", "Matrix",
+    "Starfield", "Aurora", "Rain", "Snow", "Bubbles", "Grid", "Image", "Video",
+  ];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
       <Row label="Description">
         <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={identity.bio ?? ""}
+          onChange={(e) => onUpdate("identity", "bio", e.target.value)}
           placeholder="Bio"
           rows={3}
           style={{
@@ -45,39 +50,62 @@ export function GeneralCustomization() {
       </Row>
 
       <Row label="Discord Presence">
-        <Select value={presence} onChange={(v) => setPresence(v)} options={["Disabled", "Enabled"]} />
+        <Select
+          value="Disabled"
+          onChange={() => {}}
+          options={["Disabled", "Enabled"]}
+        />
       </Row>
 
       <Row label="Background Effects">
-        <Select value={bgEffect} onChange={(v) => setBgEffect(v)} options={backgroundOpts} />
+        <Select
+          value={bgEffectValue.charAt(0).toUpperCase() + bgEffectValue.slice(1)}
+          onChange={(v) => onUpdate("background", "type", v.toLowerCase())}
+          options={bgEffectOptions}
+        />
       </Row>
 
       <Row label="Username Effects">
-        <Toggle value={usernameFx} onChange={(v) => setUsernameFx(v)} />
+        <Toggle
+          value={effects.textGlow ?? false}
+          onChange={(v) => onUpdate("effects", "textGlow", v)}
+        />
       </Row>
 
       <Row label="Profile Opacity">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Slider value={opacity} onChange={(v) => setOpacity(v)} min={0} max={1} step={0.05} />
+          <Slider
+            value={theme.cardOpacity ?? 0.55}
+            onChange={(v) => onUpdate("theme", "cardOpacity", v)}
+            min={0}
+            max={1}
+            step={0.05}
+          />
           <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
-            {Math.round(opacity * 100)}%
+            {Math.round((theme.cardOpacity ?? 0.55) * 100)}%
           </span>
         </div>
       </Row>
 
       <Row label="Profile Blur">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Slider value={blur} onChange={(v) => setBlur(v)} min={0} max={60} step={1} />
+          <Slider
+            value={theme.cardBlur ?? 20}
+            onChange={(v) => onUpdate("theme", "cardBlur", v)}
+            min={0}
+            max={60}
+            step={1}
+          />
           <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
-            {blur}px
+            {theme.cardBlur ?? 20}px
           </span>
         </div>
       </Row>
 
       <Row label="Location">
         <input
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
+          value={identity.location ?? ""}
+          onChange={(e) => onUpdate("identity", "location", e.target.value)}
           placeholder="Location"
           style={{
             background: "#121212",
@@ -98,10 +126,19 @@ export function GeneralCustomization() {
 
       <Row label="Glow Settings">
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Toggle value={glow} onChange={(v) => setGlow(v)} />
-          <Slider value={glowValue} onChange={(v) => setGlowValue(v)} min={0} max={100} step={5} />
+          <Toggle
+            value={theme.glow ?? false}
+            onChange={(v) => onUpdate("theme", "glow", v)}
+          />
+          <Slider
+            value={theme.glowIntensity ?? 60}
+            onChange={(v) => onUpdate("theme", "glowIntensity", v)}
+            min={0}
+            max={100}
+            step={5}
+          />
           <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
-            {glowValue}%
+            {theme.glowIntensity ?? 60}%
           </span>
         </div>
       </Row>
@@ -155,9 +192,7 @@ function Select({
       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#222222" }}
     >
       {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
-        </option>
+        <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
   );

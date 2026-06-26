@@ -1,34 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import type { ProfileConfig, Effects, Audio } from "@/lib/profile/schema";
 
-export function OtherCustomization() {
-  const [monochrome, setMonochrome] = useState(false);
-  const [animatedTitle, setAnimatedTitle] = useState(false);
-  const [swapBoxColors, setSwapBoxColors] = useState(false);
-  const [volume, setVolume] = useState(false);
-  const [useDiscordAvatar, setUseDiscordAvatar] = useState(false);
-  const [decoration, setDecoration] = useState(false);
-
+export function OtherCustomization({
+  effects,
+  audio,
+  onUpdate,
+}: {
+  effects: Partial<Effects>;
+  audio: Partial<Audio>;
+  onUpdate: (section: keyof ProfileConfig, key: string, value: unknown) => void;
+}) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <Row label="Monochrome Icons">
-        <Toggle value={monochrome} onChange={setMonochrome} />
+        <Toggle
+          value={effects.glowPulse ?? false}
+          onChange={(v) => onUpdate("effects", "glowPulse", v)}
+        />
       </Row>
       <Row label="Animated Title">
-        <Toggle value={animatedTitle} onChange={setAnimatedTitle} />
+        <Toggle
+          value={effects.typewriterTitle ?? false}
+          onChange={(v) => onUpdate("effects", "typewriterTitle", v)}
+        />
       </Row>
       <Row label="Swap Box Colors">
-        <Toggle value={swapBoxColors} onChange={setSwapBoxColors} />
+        <Toggle
+          value={effects.tilt3d ?? false}
+          onChange={(v) => onUpdate("effects", "tilt3d", v)}
+        />
       </Row>
       <Row label="Volume Control">
-        <Toggle value={volume} onChange={setVolume} />
+        <Toggle
+          value={audio.enabled ?? false}
+          onChange={(v) => onUpdate("audio", "enabled", v)}
+        />
       </Row>
       <Row label="Use Discord Avatar">
-        <Toggle value={useDiscordAvatar} onChange={setUseDiscordAvatar} />
+        <Toggle
+          value={effects.cursor?.enabled ?? false}
+          onChange={(v) => onUpdate("effects", "textGlow", v)}
+        />
       </Row>
       <Row label="Discord Avatar Decoration">
-        <Toggle value={decoration} onChange={setDecoration} />
+        <Toggle
+          value={effects.click?.enabled ?? false}
+          onChange={(v) => onUpdate("effects", "textGlow", v)}
+        />
       </Row>
     </div>
   );

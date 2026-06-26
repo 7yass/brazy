@@ -1,32 +1,52 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { Image, FolderOpen, Upload, MousePointer2 } from "lucide-react";
+
+interface AssetsUploaderProps {
+  backgroundUrl: string;
+  onBackgroundChange: (url: string) => void;
+  avatarUrl: string;
+  onAvatarChange: (url: string) => void;
+  cursorUrl: string;
+  onCursorChange: (url: string) => void;
+}
 
 type Uploaded = { name: string; url: string; type: string } | null;
 
-export function AssetsUploader() {
-  const [background, setBackground] = useState<Uploaded>(null);
-  const [avatar, setAvatar] = useState<Uploaded>(null);
-  const [cursor, setCursor] = useState<Uploaded>(null);
-  const avatarInputRef = useRef<HTMLInputElement>(null);
+function toUploaded(url: string): Uploaded {
+  if (!url) return null;
+  const parts = url.split(".");
+  const ext = parts.length > 1 ? parts[parts.length - 1] : "file";
+  return { name: url.split("/").pop() ?? "file", url, type: ext };
+}
 
-  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+export function AssetsUploader({
+  backgroundUrl,
+  onBackgroundChange,
+  avatarUrl,
+  onAvatarChange,
+  cursorUrl,
+  onCursorChange,
+}: AssetsUploaderProps) {
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
+  const cursorInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onChange: (url: string) => void,
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    setAvatar({ name: file.name, url, type: ext });
+    onChange(url);
     e.target.value = "";
   };
 
-  const simulateUpload = (
-    setter: (v: Uploaded) => void,
-    name: string,
-    type: string,
-  ) => {
-    setter({ name, url: URL.createObjectURL(new Blob()), type });
-  };
+  const bgUploaded = toUploaded(backgroundUrl);
+  const avatarUploaded = toUploaded(avatarUrl);
+  const cursorUploaded = toUploaded(cursorUrl);
 
   return (
     <>
@@ -38,14 +58,21 @@ export function AssetsUploader() {
       <div className="assets-grid" style={{ display: "flex", gap: 10, width: "100%" }}>
         <AssetBox
           label="Background"
-          uploaded={background}
-          onRemove={() => setBackground(null)}
-          onClick={() => simulateUpload(setBackground, "bg.mp4", "mp4")}
+          uploaded={bgUploaded}
+          onRemove={() => onBackgroundChange("")}
+          onClick={() => bgInputRef.current?.click()}
         >
           <Image style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
           <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>
             Click to upload
           </span>
+          <input
+            ref={bgInputRef}
+            type="file"
+            accept=".gif,.webp,.png,.jpg,.jpeg,.mp4,.webm,.mov"
+            style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+            onChange={(e) => handleFileSelect(e, onBackgroundChange)}
+          />
         </AssetBox>
 
         <AssetBox label="Audio" alwaysShow onClick={() => {}}>
@@ -57,8 +84,8 @@ export function AssetsUploader() {
 
         <AssetBox
           label="Profile Avatar"
-          uploaded={avatar}
-          onRemove={() => setAvatar(null)}
+          uploaded={avatarUploaded}
+          onRemove={() => onAvatarChange("")}
           onClick={() => avatarInputRef.current?.click()}
         >
           <Upload style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
@@ -70,20 +97,27 @@ export function AssetsUploader() {
             type="file"
             accept=".gif,.webp,.png,.jpg,.jpeg"
             style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
-            onChange={handleAvatarSelect}
+            onChange={(e) => handleFileSelect(e, onAvatarChange)}
           />
         </AssetBox>
 
         <AssetBox
           label="Custom Cursor"
-          uploaded={cursor}
-          onRemove={() => setCursor(null)}
-          onClick={() => simulateUpload(setCursor, "cursor.cur", "cur")}
+          uploaded={cursorUploaded}
+          onRemove={() => onCursorChange("")}
+          onClick={() => cursorInputRef.current?.click()}
         >
           <MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
           <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>
             Click to upload
           </span>
+          <input
+            ref={cursorInputRef}
+            type="file"
+            accept=".cur,.png,.svg,.gif,.webp"
+            style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
+            onChange={(e) => handleFileSelect(e, onCursorChange)}
+          />
         </AssetBox>
       </div>
     </>
@@ -149,18 +183,6 @@ function AssetBox({
                 loop
                 autoPlay
               />
-            ) : label === "Custom Cursor" ? (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
-              </div>
             ) : null}
 
             {label === "Background" && !isVideo ? (
@@ -177,6 +199,20 @@ function AssetBox({
                 alt=""
                 style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
               />
+            )}
+
+            {label === "Custom Cursor" && (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
+              </div>
             )}
 
             <div
