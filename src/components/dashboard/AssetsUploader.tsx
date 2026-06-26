@@ -62,10 +62,55 @@ export function AssetsUploader({
   const [trimEnd, setTrimEnd] = useState(30);
   const [audioDuration, setAudioDuration] = useState(0);
   const [spotifyInput, setSpotifyInput] = useState("");
-  const [spotifyTrack, setSpotifyTrack] = useState<{ title: string; artist: string; albumArt: string; previewUrl: string; trackId: string } | null>(null);
-  const [spotifyLoading, setSpotifyLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<{ id: string; title: string; artist: string; albumArt: string; previewUrl: string; durationMs: number }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<{ id: string; title: string; artist: string; albumArt: string; previewUrl: string; durationMs: number } | null>(null);
+  const [syncLyrics, setSyncLyrics] = useState(false);
+  const [syncedAvailable, setSyncedAvailable] = useState<boolean | null>(null);
   const [lyricsData, setLyricsData] = useState<{ time: number | null; text: string }[]>(lyrics ?? []);
   const [lyricsLoading, setLyricsLoading] = useState(false);
+
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    const q = spotifyInput.trim();
+    if (q.length < 2) { setSearchResults([]); return; }
+    searchDebounceRef.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        setSearchResults(data.results ?? []);
+      } catch { setSearchResults([]); }
+      setSearchLoading(false);
+    }, 400);
+    return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
+  }, [spotifyInput]);
+
+  const checkSyncedLyrics = async (trackId: string) => {
+    try {
+      const res = await fetch(`/api/lyrics?trackId=${encodeURIComponent(trackId)}`);
+      const data = await res.json();
+      setSyncedAvailable(data.synced ?? false);
+    } catch { setSyncedAvailable(false); }
+  };
+
+  const selectTrack = (track: typeof searchResults[number]) => {
+    setSelectedTrack(track);
+    if (track.previewUrl) setModalUrl(track.previewUrl);
+    setSearchResults([]);
+    setSpotifyInput("");
+    setSyncedAvailable(null);
+    setSyncLyrics(false);
+    checkSyncedLyrics(track.id);
+  };
+
+  const clearSelectedTrack = () => {
+    setSelectedTrack(null);
+    setSyncedAvailable(null);
+    setSyncLyrics(false);
+  };
 
   const openAudioModal = () => {
     setModalUrl(audioUrl);
@@ -125,38 +170,6 @@ export function AssetsUploader({
 
   const applyTrim = () => {
     setShowTrim(false);
-  };
-
-  const fetchSpotify = async () => {
-    const id = spotifyInput.trim().split("/track/").pop()?.split("?")[0] ?? spotifyInput.trim();
-    if (!id) return;
-    setSpotifyLoading(true);
-    try {
-      const res = await fetch(`/api/spotify/track?id=${id}`);
-      if (!res.ok) throw new Error("Track not found");
-      const data = await res.json();
-      setSpotifyTrack(data);
-      if (data.previewUrl) setModalUrl(data.previewUrl);
-    } catch {
-      setSpotifyTrack(null);
-    } finally {
-      setSpotifyLoading(false);
-    }
-  };
-
-  const fetchLyrics = async () => {
-    if (!spotifyTrack) return;
-    setLyricsLoading(true);
-    try {
-      const res = await fetch(`/api/lyrics?artist=${encodeURIComponent(spotifyTrack.artist)}&title=${encodeURIComponent(spotifyTrack.title)}`);
-      if (!res.ok) throw new Error("Lyrics not found");
-      const data = await res.json();
-      setLyricsData(data.lines ?? []);
-    } catch {
-      setLyricsData([]);
-    } finally {
-      setLyricsLoading(false);
-    }
   };
 
   const bgUploaded = toUploaded(backgroundUrl, bgIsVideo || undefined);
@@ -326,102 +339,104 @@ export function AssetsUploader({
 
             {audioTab === "spotify" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", gap: 8 }}>
+                {selectedTrack ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14, padding: 12 }}>
+                      {selectedTrack.albumArt && (
+                        <img src={selectedTrack.albumArt} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }} />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: 14, color: "#fafafa", fontWeight: 500 }}>{selectedTrack.title}</p>
+                        <p style={{ fontSize: 12, color: "#797979" }}>{selectedTrack.artist}</p>
+                      </div>
+                      <button onClick={clearSelectedTrack} style={{ background: "none", border: "none", color: "#797979", cursor: "pointer" }}>
+                        <X style={{ width: 16, height: 16 }} />
+                      </button>
+                    </div>
+
+                    {selectedTrack.previewUrl && (
+                      <p style={{ fontSize: 12, color: "#22c55e" }}>Preview audio set ✓</p>
+                    )}
+
+                    {syncedAvailable === true ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 13, color: "#a5a4a4" }}>Sync lyrics</span>
+                        <button
+                          onClick={() => setSyncLyrics(!syncLyrics)}
+                          style={{
+                            position: "relative", width: 36, height: 20, borderRadius: 10, border: "none",
+                            cursor: "pointer", transition: "background-color 0.2s",
+                            backgroundColor: syncLyrics ? "rgba(218,102,218,0.6)" : "#ffffff26",
+                          }}
+                        >
+                          <span style={{
+                            position: "absolute", top: 2, width: 16, height: 16, borderRadius: "50%",
+                            backgroundColor: "#fff", transition: "left 0.2s",
+                            left: syncLyrics ? 18 : 2,
+                          }} />
+                        </button>
+                      </div>
+                    ) : syncedAvailable === false ? (
+                      <p style={{ fontSize: 12, color: "#555" }}>No synced lyrics available</p>
+                    ) : null}
+                  </>
+                ) : (
                   <input
                     value={spotifyInput}
                     onChange={(e) => setSpotifyInput(e.target.value)}
-                    placeholder="Spotify track URL or ID"
+                    placeholder="Search for a song..."
                     style={{
-                      flex: 1, background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14,
-                      padding: "10px 14px", color: "#f1f1f1", fontSize: 14,
-                      fontFamily: "Satoshi, sans-serif", outline: "none",
+                      background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14,
+                      padding: "10px 14px", color: "#f1f1f1", fontSize: 15,
+                      fontFamily: "Satoshi, sans-serif", outline: "none", width: "100%", boxSizing: "border-box",
                     }}
                   />
-                  <button
-                    onClick={fetchSpotify}
-                    disabled={spotifyLoading}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 4,
-                      background: "rgba(126,44,139,0.44)", border: "2px solid rgba(126,44,139,0.61)",
-                      borderRadius: 14, padding: "8px 14px", color: "#fafafa", fontSize: 14,
-                      cursor: spotifyLoading ? "not-allowed" : "pointer", fontFamily: "Satoshi, sans-serif",
-                    }}
-                  >
-                    <Search style={{ width: 16, height: 16 }} />
-                    {spotifyLoading ? "..." : "Fetch"}
-                  </button>
-                </div>
+                )}
 
-                {spotifyTrack && (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      {spotifyTrack.albumArt && (
-                        <img src={spotifyTrack.albumArt} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }} />
-                      )}
-                      <div>
-                        <p style={{ fontSize: 14, color: "#f1f1f1", fontWeight: 500 }}>{spotifyTrack.title}</p>
-                        <p style={{ fontSize: 12, color: "#a5a4a4" }}>{spotifyTrack.artist}</p>
-                      </div>
-                    </div>
+                {searchLoading && <p style={{ fontSize: 12, color: "#797979" }}>Searching...</p>}
 
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button
-                        onClick={() => { if (spotifyTrack.previewUrl) setModalUrl(spotifyTrack.previewUrl); }}
-                        disabled={!spotifyTrack.previewUrl}
+                {searchResults.length > 0 && (
+                  <div style={{ maxHeight: 200, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+                    {searchResults.map((r) => (
+                      <div
+                        key={r.id}
+                        onClick={() => selectTrack(r)}
                         style={{
-                          flex: 1, background: "rgba(126,44,139,0.44)", border: "2px solid rgba(126,44,139,0.61)",
-                          borderRadius: 10, padding: "6px 12px", color: "#fafafa", fontSize: 13,
-                          cursor: spotifyTrack.previewUrl ? "pointer" : "not-allowed",
-                          fontFamily: "Satoshi, sans-serif",
+                          display: "flex", alignItems: "center", gap: 10, padding: "6px 10px",
+                          borderRadius: 12, cursor: "pointer", height: 52,
+                          background: selectedTrack?.id === r.id ? "rgba(218,102,218,0.08)" : "transparent",
+                          borderLeft: selectedTrack?.id === r.id ? "2px solid rgba(218,102,218,0.5)" : "2px solid transparent",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = selectedTrack?.id === r.id ? "rgba(218,102,218,0.08)" : "transparent";
                         }}
                       >
-                        Use preview (30s)
-                      </button>
-                      <button
-                        onClick={fetchLyrics}
-                        disabled={lyricsLoading}
-                        style={{
-                          flex: 1, background: "#1a1a1a", border: "2px solid #222",
-                          borderRadius: 10, padding: "6px 12px", color: "#a5a4a4", fontSize: 13,
-                          cursor: "pointer", fontFamily: "Satoshi, sans-serif",
-                        }}
-                      >
-                        {lyricsLoading ? "Loading..." : "Fetch lyrics"}
-                      </button>
-                    </div>
-
-                    {lyricsData.length > 0 && (
-                      <div style={{
-                        maxHeight: 160, overflowY: "auto",
-                        background: "#121212", border: "2px solid #1b1b1b", borderRadius: 12, padding: 10,
-                        display: "flex", flexDirection: "column", gap: 4,
-                      }}>
-                        {lyricsData.map((line, i) => (
-                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            {line.time !== null && (
-                              <span style={{
-                                background: "#222", borderRadius: 4, padding: "1px 6px",
-                                fontSize: 11, color: "#a5a4a4", fontFamily: "monospace", whiteSpace: "nowrap",
-                              }}>
-                                {Math.floor(line.time / 60)}:{String(Math.floor(line.time % 60)).padStart(2, "0")}
-                              </span>
-                            )}
-                            <span style={{ fontSize: 13, color: "#a5a4a4" }}>{line.text}</span>
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => { if (onLyricsChange) onLyricsChange(lyricsData); }}
-                          style={{
-                            marginTop: 6, background: "rgba(126,44,139,0.3)", border: "1px solid rgba(126,44,139,0.5)",
-                            borderRadius: 8, padding: "6px 12px", color: "#fafafa", fontSize: 13,
-                            cursor: "pointer", fontFamily: "Satoshi, sans-serif",
-                          }}
-                        >
-                          Save lyrics
-                        </button>
+                        {r.albumArt ? (
+                          <img src={r.albumArt} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                        ) : (
+                          <div style={{ width: 40, height: 40, borderRadius: 6, background: "#1a1a1a", flexShrink: 0 }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 14, color: "#fafafa", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {r.title}
+                          </p>
+                          <p style={{ fontSize: 12, color: "#797979", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {r.artist}
+                          </p>
+                        </div>
+                        {r.previewUrl ? (
+                          <span style={{ fontSize: 12, color: "#555", whiteSpace: "nowrap" }}>
+                            {Math.floor(r.durationMs / 60000)}:{String(Math.floor((r.durationMs % 60000) / 1000)).padStart(2, "0")}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 10, background: "#1a1a1a", border: "1px solid #222", borderRadius: 4, padding: "1px 6px", color: "#555", whiteSpace: "nowrap" }}>
+                            No preview
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </>
+                    ))}
+                  </div>
                 )}
               </div>
             )}

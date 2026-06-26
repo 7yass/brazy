@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Link2,
@@ -11,10 +11,15 @@ import {
   Settings,
   Award,
   LayoutTemplate,
-  LogOut,
   Layers,
   Puzzle,
   Briefcase,
+  HelpCircle,
+  ExternalLink,
+  Share2,
+  UserCircle2,
+  MoreHorizontal,
+  LogOut,
 } from "lucide-react";
 import { SpiderLogo } from "@/components/spider-logo";
 import { createClient } from "@/lib/supabase/client";
@@ -34,24 +39,65 @@ const navItems = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [username, setUsername] = useState<string | null>(null);
+  const [showPopover, setShowPopover] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
     if (!supabase) return;
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        const identities = data.user.identities ?? [];
-        const discordIdent = identities.find((i) => i.provider === "discord");
-        const name =
-          discordIdent?.identity_data?.username as string | undefined ??
-          data.user.user_metadata?.full_name ??
-          data.user.email?.split("@")[0] ??
-          "user";
-        setUsername(name);
-      }
-    });
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const identities = user.identities ?? [];
+      const discordIdent = identities.find((i) => i.provider === "discord");
+      const name =
+        (discordIdent?.identity_data?.username as string | undefined) ??
+        user.user_metadata?.full_name ??
+        user.email?.split("@")[0] ??
+        "user";
+      setUsername(name);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile?.username) setUsername(profile.username);
+    })();
   }, []);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setShowPopover(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const handleShare = async () => {
+    const url = `https://brazy.lol/${username ?? ""}`;
+    if (navigator.share) {
+      await navigator.share({ url }).catch(() => {});
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      } catch {}
+    }
+  };
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    if (supabase) await supabase.auth.signOut();
+    router.push("/");
+  };
 
   return (
     <aside className="flex h-full w-48 flex-col border-r border-white/[0.06] bg-[#0d0d0d]">
@@ -80,20 +126,134 @@ export default function DashboardSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-white/[0.06] p-2.5">
-        {username && (
-          <div className="mb-1 px-3 py-1.5">
-            <div className="text-xs text-white/30">Signed in as</div>
-            <div className="truncate text-sm font-medium text-white/60">{username}</div>
+      <div className="flex flex-col border-t border-white/[0.06]">
+        <div className="flex flex-col gap-1.5 px-3 py-3">
+          <a
+            href="https://discord.gg/brazy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-white/30 transition-colors hover:text-white/60"
+          >
+            <HelpCircle style={{ width: 13, height: 13 }} />
+            Help Center
+          </a>
+          <a
+            href={`/${username ?? ""}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-white/30 transition-colors hover:text-white/60"
+          >
+            <ExternalLink style={{ width: 13, height: 13 }} />
+            {username ? `/${username}` : "My Page"}
+          </a>
+        </div>
+
+        <div className="border-t border-white/[0.06] px-3 py-2.5">
+          <button
+            onClick={handleShare}
+            className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-white/30 transition-colors hover:text-white/60"
+          >
+            <Share2 style={{ width: 13, height: 13 }} />
+            {copied ? "Copied!" : "Share your profile"}
+          </button>
+        </div>
+
+        <div className="border-t border-white/[0.06] px-3 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  background: "linear-gradient(135deg, #7c3aed, #ec4899)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <UserCircle2 style={{ width: 15, height: 15, color: "#fff" }} />
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="truncate text-xs font-medium text-white/70" style={{ maxWidth: 80 }}>
+                  {username ?? "..."}
+                </span>
+                <span className="truncate text-[10px] text-white/25" style={{ maxWidth: 80 }}>
+                  brazy.lol/{username ?? "..."}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowPopover(!showPopover)}
+                className="text-white/30 transition-colors hover:text-white/60"
+              >
+                <MoreHorizontal style={{ width: 15, height: 15 }} />
+              </button>
+
+              {showPopover && (
+                <div
+                  ref={popoverRef}
+                  style={{
+                    position: "absolute",
+                    bottom: "100%",
+                    right: 0,
+                    minWidth: 130,
+                    zIndex: 50,
+                    background: "#141414",
+                    border: "1px solid #1f1f1f",
+                    borderRadius: 12,
+                    padding: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                  }}
+                >
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setShowPopover(false)}
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      padding: "7px 10px",
+                      borderRadius: 8,
+                      color: "#a5a4a4",
+                      textDecoration: "none",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    Settings
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    style={{
+                      display: "block",
+                      width: "100%",
+                      textAlign: "left",
+                      fontSize: 12,
+                      padding: "7px 10px",
+                      borderRadius: 8,
+                      color: "#f87171",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogOut style={{ width: 12, height: 12 }} />
+                      Sign out
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        <Link
-          href="/"
-          className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-white/30 transition hover:bg-white/[0.04] hover:text-white/50"
-        >
-          <LogOut className="h-4 w-4" />
-          Back to site
-        </Link>
+        </div>
       </div>
     </aside>
   );
