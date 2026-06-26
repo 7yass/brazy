@@ -1,18 +1,143 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import type { Audio } from "@/lib/profile/schema";
 
-export default function AudioPlayer({ audio }: { audio: Audio }) {
+declare global {
+  interface Window {
+    YT?: {
+      Player: new (id: string, opts: Record<string, unknown>) => YTPlayer;
+      PlayerState: { PLAYING: number; [key: string]: number };
+      ready?: boolean;
+    };
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+interface YTPlayer {
+  playVideo: () => void;
+  pauseVideo: () => void;
+  getPlayerState: () => number;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  destroy: () => void;
+}
+
+interface AudioPlayerProps {
+  audio: Audio;
+  audioTrackId?: string;
+  audioTitle?: string;
+  audioArtist?: string;
+  audioThumb?: string;
+}
+
+export default function AudioPlayer({ audio, audioTrackId, audioTitle, audioArtist, audioThumb }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const playerRef = useRef<YTPlayer | null>(null);
+  const apiReadyRef = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState("0:00");
   const [duration, setDuration] = useState("0:00");
   const [show, setShow] = useState(false);
 
+  const hasYoutube = Boolean(audioTrackId);
+
+  const formatTime = (s: number) => {
+    if (!s || isNaN(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const toggle = useCallback(() => {
+    if (hasYoutube && playerRef.current) {
+      const state = playerRef.current.getPlayerState();
+      if (state === window.YT?.PlayerState.PLAYING) {
+        playerRef.current.pauseVideo();
+        setPlaying(false);
+      } else {
+        playerRef.current.playVideo();
+        setPlaying(true);
+      }
+    } else if (audioRef.current) {
+      const el = audioRef.current;
+      if (playing) {
+        el.pause();
+        setPlaying(false);
+      } else {
+        el.play().then(() => setPlaying(true)).catch(() => {});
+      }
+    }
+  }, [hasYoutube, playing]);
+
   useEffect(() => {
-    if (!audio.enabled || !audio.src) return;
+    if (!hasYoutube) return;
+
+    let pollInterval: ReturnType<typeof setInterval>;
+
+    const initPlayer = () => {
+      if (!window.YT?.ready) return;
+      apiReadyRef.current = true;
+      playerRef.current = new window.YT.Player("yt-player", {
+        videoId: audioTrackId,
+        playerVars: {
+          autoplay: audio.autoplay ? 1 : 0,
+          enablejsapi: 1,
+          rel: 0,
+          modestbranding: 1,
+        },
+        events: {
+          onStateChange: (e: { data: number }) => {
+            setPlaying(e.data === window.YT?.PlayerState.PLAYING);
+          },
+          onReady: () => {
+            if (audio.autoplay) setPlaying(true);
+          },
+        },
+      });
+
+      pollInterval = setInterval(() => {
+        try {
+          const p = playerRef.current;
+          if (!p) return;
+          const state = p.getPlayerState();
+          if (state === window.YT?.PlayerState.PLAYING) {
+            const elapsed = p.getCurrentTime();
+            const dur = p.getDuration();
+            setCurrentTime(formatTime(elapsed));
+            setDuration(formatTime(dur));
+            setProgress(dur ? (elapsed / dur) * 100 : 0);
+          }
+        } catch {}
+      }, 500);
+    };
+
+    if (window.YT?.ready) {
+      initPlayer();
+    } else {
+      window.onYouTubeIframeAPIReady = () => {
+        if (window.YT) window.YT.ready = true;
+        initPlayer();
+      };
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement("script");
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+      }
+    }
+
+    return () => {
+      clearInterval(pollInterval);
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [audioTrackId, hasYoutube, audio.autoplay]);
+
+  useEffect(() => {
+    if (hasYoutube || !audio.enabled || !audio.src) return;
     const el = audioRef.current;
     if (!el) return;
     el.volume = audio.volume;
@@ -31,42 +156,29 @@ export default function AudioPlayer({ audio }: { audio: Audio }) {
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("ended", onEnded);
     };
-  }, [audio]);
+  }, [audio, hasYoutube]);
 
-  useEffect(() => {
-    if (!audio.enabled || !audio.src) return;
-    if (audio.autoplay) {
-      const el = audioRef.current;
-      if (el) {
-        el.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
-      }
-    }
-  }, [audio.enabled, audio.src, audio.autoplay]);
+  if (!audioTrackId && (!audio.enabled || !audio.src)) return null;
 
-  if (!audio.enabled || !audio.src) return null;
-
-  const toggle = () => {
-    const el = audioRef.current;
-    if (!el) return;
-    if (playing) {
-      el.pause();
-      setPlaying(false);
-    } else {
-      el.play().then(() => setPlaying(true)).catch(() => {});
-    }
-  };
-
-  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const el = audioRef.current;
-    if (!el || !el.duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    el.currentTime = pct * el.duration;
-  };
+  const showPlayer = show || hasYoutube;
 
   return (
     <>
-      <audio ref={audioRef} src={audio.src} preload="metadata" />
+      {hasYoutube && (
+        <div
+          id="yt-player"
+          style={{
+            width: 0,
+            height: 0,
+            position: "absolute",
+            pointerEvents: "none",
+            opacity: 0,
+            overflow: "hidden",
+          }}
+        />
+      )}
+      {!hasYoutube && <audio ref={audioRef} src={audio.src} preload="metadata" />}
+
       <div
         style={{
           position: "fixed",
@@ -79,124 +191,72 @@ export default function AudioPlayer({ audio }: { audio: Audio }) {
           gap: 8,
         }}
       >
-        {show && audio.showVisualizer && (
-          <Visualizer audioRef={audioRef} playing={playing} />
-        )}
-        <div
-          onClick={() => setShow((s) => !s)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "10px 16px",
-            background: "rgba(15, 15, 25, 0.7)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 999,
-            color: "#f8fafc",
-            fontSize: 13,
-            fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
-            cursor: "pointer",
-            userSelect: "none",
-            maxWidth: 260,
-          }}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggle();
-            }}
+        {showPlayer && (
+          <div
             style={{
-              background: "none",
-              border: "none",
-              color: "inherit",
-              cursor: "pointer",
-              fontSize: 16,
-              padding: 0,
               display: "flex",
               alignItems: "center",
+              gap: 10,
+              padding: "8px 12px",
+              background: "rgba(15, 15, 25, 0.85)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 999,
+              color: "#f8fafc",
+              fontSize: 13,
+              fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+              maxWidth: 300,
             }}
-            aria-label={playing ? "Pause" : "Play"}
           >
-            {playing ? "❚❚" : "▶"}
-          </button>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, flex: 1 }}>
-            <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }}>
-              {audio.title || "track"}
-            </span>
-            {audio.artist && (
-              <span style={{ fontSize: 11, opacity: 0.6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {audio.artist}
-              </span>
+            {audioThumb && (
+              <img
+                src={audioThumb}
+                alt=""
+                style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+              />
             )}
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                seek(e);
+            <button
+              onClick={(e) => { e.stopPropagation(); toggle(); }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 16,
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                flexShrink: 0,
               }}
-              style={{ height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 999, cursor: "pointer" }}
+              aria-label={playing ? "Pause" : "Play"}
             >
-              <div style={{ height: "100%", width: `${progress}%`, background: "#22d3ee", borderRadius: 999 }} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, opacity: 0.5 }}>
-              <span>{currentTime}</span>
-              <span>{duration}</span>
+              {playing ? "❚❚" : "▶"}
+            </button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 }}>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }}>
+                {audioTitle || audio.title || "track"}
+              </span>
+              {audioArtist && (
+                <span style={{ fontSize: 11, opacity: 0.6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {audioArtist}
+                </span>
+              )}
+              {!hasYoutube && show && (
+                <>
+                  <div style={{ height: 3, background: "rgba(255,255,255,0.15)", borderRadius: 999, cursor: "pointer" }}>
+                    <div style={{ height: "100%", width: `${progress}%`, background: "#22d3ee", borderRadius: 999 }} />
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, opacity: 0.5 }}>
+                    <span>{currentTime}</span>
+                    <span>{duration}</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </>
-  );
-}
-
-function formatTime(s: number) {
-  if (!s || isNaN(s)) return "0:00";
-  const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, "0")}`;
-}
-
-function Visualizer({
-  audioRef,
-  playing,
-}: {
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  playing: boolean;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const bars = 24;
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const w = canvas.width / bars;
-      for (let i = 0; i < bars; i++) {
-        const h = playing ? Math.random() * canvas.height * 0.8 + 4 : 4;
-        ctx.fillStyle = `hsla(${190 + i * 4}, 90%, 65%, 0.8)`;
-        ctx.fillRect(i * w + 1, canvas.height - h, w - 2, h);
-      }
-      animRef.current = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => cancelAnimationFrame(animRef.current);
-  }, [playing]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width={160}
-      height={48}
-      style={{
-        background: "rgba(15,15,25,0.6)",
-        borderRadius: 12,
-        border: "1px solid rgba(255,255,255,0.08)",
-      }}
-    />
   );
 }

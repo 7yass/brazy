@@ -13,6 +13,11 @@ export type ProfileRecord = {
   config: ProfileConfig;
   views: number;
   createdAt: string;
+  audio_track_id?: string;
+  audio_source?: string;
+  audio_title?: string;
+  audio_artist?: string;
+  audio_thumb?: string;
 };
 
 export async function getProfile(
@@ -25,7 +30,7 @@ export async function getProfile(
   if (supabase) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, config, views, created_at")
+      .select("username, config, views, created_at, audio_track_id, audio_source, audio_title, audio_artist, audio_thumb")
       .eq("username", key)
       .maybeSingle();
 
@@ -40,6 +45,11 @@ export async function getProfile(
       config: normalizeConfig(data.config),
       views: data.views ?? 0,
       createdAt: data.created_at ?? new Date().toISOString(),
+      audio_track_id: data.audio_track_id,
+      audio_source: data.audio_source,
+      audio_title: data.audio_title,
+      audio_artist: data.audio_artist,
+      audio_thumb: data.audio_thumb,
     };
   }
 

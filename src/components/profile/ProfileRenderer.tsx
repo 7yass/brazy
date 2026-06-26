@@ -11,7 +11,21 @@ import SplashIntro from "./SplashIntro";
 import ViewCounter from "./ViewCounter";
 import { brandIcons } from "./icons";
 
-export default function ProfileRenderer({ config, preview }: { config: ProfileConfig; preview?: boolean }) {
+export default function ProfileRenderer({
+  config,
+  preview,
+  audioTrackId,
+  audioTitle,
+  audioArtist,
+  audioThumb,
+}: {
+  config: ProfileConfig;
+  preview?: boolean;
+  audioTrackId?: string;
+  audioTitle?: string;
+  audioArtist?: string;
+  audioThumb?: string;
+}) {
   const [entered, setEntered] = useState(preview || !config.splash.enabled);
   const { theme, identity, background, effects, splash, audio, social } = config;
 
@@ -60,7 +74,7 @@ export default function ProfileRenderer({ config, preview }: { config: ProfileCo
       <BackgroundLayer background={background} />
       <CursorEffect effects={effects} />
       <ClickEffect effects={effects} />
-      <AudioPlayer audio={audio} />
+      <AudioPlayer audio={audio} audioTrackId={audioTrackId} audioTitle={audioTitle} audioArtist={audioArtist} audioThumb={audioThumb} />
       <SplashIntro splash={splash} onEnter={() => setEntered(true)} />
 
       <div

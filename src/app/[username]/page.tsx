@@ -27,5 +27,13 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     return notFound();
   }
 
-  return <ProfileRenderer config={normalizeConfig(profile.config)} />;
+  return (
+    <ProfileRenderer
+      config={normalizeConfig(profile.config)}
+      audioTrackId={profile.audio_track_id}
+      audioTitle={profile.audio_title}
+      audioArtist={profile.audio_artist}
+      audioThumb={profile.audio_thumb}
+    />
+  );
 }
