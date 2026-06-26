@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback, useEffect } from "react";
 import type { ProfileConfig, Theme, Effects, Background, Identity, Audio, Social } from "@/lib/profile/schema";
 
 export function GeneralCustomization({
@@ -25,43 +26,6 @@ export function GeneralCustomization({
 
   return (
     <>
-      <style>{`
-        .brazy-slider {
-          -webkit-appearance: none;
-          appearance: none;
-          height: 6px;
-          border-radius: 3px;
-          background: #1a1a1a;
-          outline: none;
-        }
-        .brazy-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: #fafafa;
-          cursor: pointer;
-          border: 2px solid rgba(218,102,218,0.6);
-          transition: transform 0.1s;
-        }
-        .brazy-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.15);
-        }
-        .brazy-slider::-moz-range-thumb {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          background: #fafafa;
-          cursor: pointer;
-          border: 2px solid rgba(218,102,218,0.6);
-        }
-        .brazy-slider::-moz-range-track {
-          height: 6px;
-          border-radius: 3px;
-          background: #1a1a1a;
-        }
-      `}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
       <Row label="Description">
         <textarea
@@ -111,7 +75,7 @@ export function GeneralCustomization({
       </Row>
 
       <Row label="Profile Opacity">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ maxWidth: 160, display: "flex", alignItems: "center", gap: 8 }}>
           <Slider
             value={theme.cardOpacity ?? 0.55}
             onChange={(v) => onUpdate("theme", "cardOpacity", v)}
@@ -119,14 +83,14 @@ export function GeneralCustomization({
             max={1}
             step={0.05}
           />
-          <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
+          <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
             {Math.round((theme.cardOpacity ?? 0.55) * 100)}%
           </span>
         </div>
       </Row>
 
       <Row label="Profile Blur">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ maxWidth: 160, display: "flex", alignItems: "center", gap: 8 }}>
           <Slider
             value={theme.cardBlur ?? 20}
             onChange={(v) => onUpdate("theme", "cardBlur", v)}
@@ -134,7 +98,7 @@ export function GeneralCustomization({
             max={60}
             step={1}
           />
-          <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
+          <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
             {theme.cardBlur ?? 20}px
           </span>
         </div>
@@ -168,16 +132,18 @@ export function GeneralCustomization({
             value={theme.glow ?? false}
             onChange={(v) => onUpdate("theme", "glow", v)}
           />
-          <Slider
-            value={theme.glowIntensity ?? 60}
-            onChange={(v) => onUpdate("theme", "glowIntensity", v)}
-            min={0}
-            max={100}
-            step={5}
-          />
-          <span style={{ fontSize: 14, color: "#909090", minWidth: 42, textAlign: "right" }}>
-            {theme.glowIntensity ?? 60}%
-          </span>
+          <div style={{ maxWidth: 160, display: "flex", alignItems: "center", gap: 8 }}>
+            <Slider
+              value={theme.glowIntensity ?? 60}
+              onChange={(v) => onUpdate("theme", "glowIntensity", v)}
+              min={0}
+              max={100}
+              step={5}
+            />
+            <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
+              {theme.glowIntensity ?? 60}%
+            </span>
+          </div>
         </div>
       </Row>
       </div>
@@ -282,20 +248,81 @@ function Slider({
   max: number;
   step: number;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const computeValue = useCallback((clientX: number) => {
+    if (!trackRef.current) return valueRef.current;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const raw = min + pct * (max - min);
+    const stepped = Math.round(raw / step) * step;
+    return Math.max(min, Math.min(max, stepped));
+  }, [min, max, step]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    draggingRef.current = true;
+    onChange(computeValue(e.clientX));
+  }, [onChange, computeValue]);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      onChange(computeValue(e.clientX));
+    };
+    const handleUp = () => { draggingRef.current = false; };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, [onChange, computeValue]);
+
+  const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
+
   return (
-    <input
-      type="range"
-      className="brazy-slider"
-      min={min}
-      max={max}
-      step={step}
-      value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+    <div
+      ref={trackRef}
       style={{
-        maxWidth: 160,
+        position: "relative",
         width: "100%",
+        height: 4,
+        background: "#2a2a2a",
+        borderRadius: 999,
         cursor: "pointer",
+        flexShrink: 0,
       }}
-    />
+      onMouseDown={handleMouseDown}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          height: "100%",
+          width: `${Math.max(0, Math.min(100, pct))}%`,
+          background: "rgba(218,102,218,0.7)",
+          borderRadius: 999,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: `${Math.max(0, Math.min(100, pct))}%`,
+          transform: "translate(-50%, -50%)",
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "#ffffff",
+          border: "2px solid rgba(218,102,218,0.8)",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { Image, FolderOpen, Upload, MousePointer2, Music, X } from "lucide-react";
 
 interface AssetsUploaderProps {
@@ -213,18 +213,15 @@ export function AssetsUploader({
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ fontSize: 14, color: "#a5a4a4", fontWeight: 450 }}>Volume</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <input
-                  type="range"
-                  className="brazy-slider"
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <ModalSlider
+                  value={modalVolume}
+                  onChange={setModalVolume}
                   min={0}
                   max={1}
                   step={0.05}
-                  value={modalVolume}
-                  onChange={(e) => setModalVolume(Number(e.target.value))}
-                  style={{ flex: 1, cursor: "pointer" }}
                 />
-                <span style={{ fontSize: 14, color: "#909090", minWidth: 36, textAlign: "right" }}>
+                <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
                   {Math.round(modalVolume * 100)}%
                 </span>
               </div>
@@ -368,6 +365,97 @@ function AssetUploadZone({
       ) : (
         children
       )}
+    </div>
+  );
+}
+
+function ModalSlider({
+  value,
+  onChange,
+  min,
+  max,
+  step,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step: number;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const computeValue = useCallback((clientX: number) => {
+    if (!trackRef.current) return valueRef.current;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const raw = min + pct * (max - min);
+    const stepped = Math.round(raw / step) * step;
+    return Math.max(min, Math.min(max, stepped));
+  }, [min, max, step]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    draggingRef.current = true;
+    onChange(computeValue(e.clientX));
+  }, [onChange, computeValue]);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      onChange(computeValue(e.clientX));
+    };
+    const handleUp = () => { draggingRef.current = false; };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, [onChange, computeValue]);
+
+  const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
+
+  return (
+    <div
+      ref={trackRef}
+      style={{
+        position: "relative",
+        flex: 1,
+        height: 4,
+        background: "#2a2a2a",
+        borderRadius: 999,
+        cursor: "pointer",
+      }}
+      onMouseDown={handleMouseDown}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          height: "100%",
+          width: `${Math.max(0, Math.min(100, pct))}%`,
+          background: "rgba(218,102,218,0.7)",
+          borderRadius: 999,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: `${Math.max(0, Math.min(100, pct))}%`,
+          transform: "translate(-50%, -50%)",
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "#ffffff",
+          border: "2px solid rgba(218,102,218,0.8)",
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 }
