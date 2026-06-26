@@ -1,0 +1,12 @@
+/* Technor */
+@font-face {
+  font-family: 'Technor';
+  src: url('//cdn.fontshare.com/wf/NF4IWRA6PNPPIYDTGS5XRNNMVEGVLZIX/DRSFIAYLKTCDDRGPFVNKKZB2FQOWN2HB/JCAROJ7ESNRN2KMIVGFFBB2ZPRGTA24L.woff2') format('woff2'),
+       url('//cdn.fontshare.com/wf/NF4IWRA6PNPPIYDTGS5XRNNMVEGVLZIX/DRSFIAYLKTCDDRGPFVNKKZB2FQOWN2HB/JCAROJ7ESNRN2KMIVGFFBB2ZPRGTA24L.woff') format('woff'),
+       url('//cdn.fontshare.com/wf/NF4IWRA6PNPPIYDTGS5XRNNMVEGVLZIX/DRSFIAYLKTCDDRGPFVNKKZB2FQOWN2HB/JCAROJ7ESNRN2KMIVGFFBB2ZPRGTA24L.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+  font-style: normal;
+}
+
+

@@ -1,0 +1,8 @@
+@font-face {
+    font-family: 'Minecraftia';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Minecraftia'), url('https://fonts.cdnfonts.com/s/31977/Minecraftia.woff') format('woff');
+}
+
+

@@ -1,0 +1,32 @@
+@font-face {
+    font-family: 'Were-Beast';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Were-Beast'), url('https://fonts.cdnfonts.com/s/101015/WereBeast-nRPAV.woff') format('woff');
+}
+@font-face {
+    font-family: 'Were-Beast Shadow';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Were-Beast Shadow'), url('https://fonts.cdnfonts.com/s/101015/WereBeastShadow-yw9Yd.woff') format('woff');
+}
+@font-face {
+    font-family: 'Were-Beast Condensed';
+    font-style: normal;
+    font-weight: 400;
+    src: local('Were-Beast Condensed'), url('https://fonts.cdnfonts.com/s/101015/WereBeastCondensed-lgmxD.woff') format('woff');
+}
+@font-face {
+    font-family: 'Were-Beast Italic';
+    font-style: italic;
+    font-weight: 400;
+    src: local('Were-Beast Italic'), url('https://fonts.cdnfonts.com/s/101015/WereBeastItalic-1G3j0.woff') format('woff');
+}
+@font-face {
+    font-family: 'Were-Beast Leftalic';
+    font-style: italic;
+    font-weight: 400;
+    src: local('Were-Beast Leftalic'), url('https://fonts.cdnfonts.com/s/101015/WereBeastLeftalic-9YlMj.woff') format('woff');
+}
+
+

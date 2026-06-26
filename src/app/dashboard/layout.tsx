@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 
 export default async function DashboardLayout({
   children,
@@ -18,5 +19,10 @@ export default async function DashboardLayout({
     }
   }
 
-  return <>{children}</>;
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#07050c]">
+      <DashboardSidebar />
+      <main className="flex-1 overflow-auto">{children}</main>
+    </div>
+  );
 }
