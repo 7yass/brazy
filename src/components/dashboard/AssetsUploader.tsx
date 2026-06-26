@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useCallback } from "react";
 import { Image, FolderOpen, Upload, MousePointer2 } from "lucide-react";
 
 interface AssetsUploaderProps {
@@ -12,14 +12,15 @@ interface AssetsUploaderProps {
   onCursorChange: (url: string) => void;
 }
 
-type Uploaded = { name: string; url: string; type: string } | null;
+type UploadedFile = { name: string; url: string; type: string; isVideo: boolean } | null;
 
-function toUploaded(url: string): Uploaded {
+function toUploaded(url: string): UploadedFile {
   if (!url) return null;
   const cleanUrl = url.startsWith("blob:") ? url : url;
   const parts = cleanUrl.split(".");
-  const ext = parts.length > 1 ? parts[parts.length - 1] : "file";
-  return { name: cleanUrl.split("/").pop() ?? "file", url: cleanUrl, type: ext };
+  const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+  const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(ext);
+  return { name: cleanUrl.split("/").pop() ?? "file", url: cleanUrl, type: ext, isVideo };
 }
 
 export function AssetsUploader({
@@ -34,20 +35,50 @@ export function AssetsUploader({
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const cursorInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    onChange: (url: string) => void,
-  ) => {
+  const [bgFileType, setBgFileType] = useState<"image" | "video" | null>(null);
+  const [cursorFileType, setCursorFileType] = useState<"image" | null>(null);
+
+  const handleBgSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    onChange(url);
+    setBgFileType(file.type.startsWith("video/") ? "video" : "image");
+    onBackgroundChange(url);
     e.target.value = "";
-  };
+  }, [onBackgroundChange]);
 
-  const bgUploaded = toUploaded(backgroundUrl);
+  const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    onAvatarChange(url);
+    e.target.value = "";
+  }, [onAvatarChange]);
+
+  const handleCursorSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setCursorFileType(file.type.startsWith("image/") ? "image" : null);
+    onCursorChange(url);
+    e.target.value = "";
+  }, [onCursorChange]);
+
+  const bgUploaded = (() => {
+    if (!backgroundUrl) return null;
+    const u = toUploaded(backgroundUrl);
+    if (u && bgFileType) u.isVideo = bgFileType === "video";
+    return u;
+  })();
+
   const avatarUploaded = toUploaded(avatarUrl);
-  const cursorUploaded = toUploaded(cursorUrl);
+
+  const cursorUploaded = (() => {
+    if (!cursorUrl) return null;
+    const u = toUploaded(cursorUrl);
+    if (u && cursorFileType) u.isVideo = false;
+    return u;
+  })();
 
   return (
     <>
@@ -62,28 +93,28 @@ export function AssetsUploader({
         type="file"
         accept="image/*,video/*"
         style={{ display: "none" }}
-        onChange={(e) => handleFileSelect(e, onBackgroundChange)}
+        onChange={handleBgSelect}
       />
       <input
         ref={avatarInputRef}
         type="file"
         accept=".gif,.webp,.png,.jpg,.jpeg"
         style={{ display: "none" }}
-        onChange={(e) => handleFileSelect(e, onAvatarChange)}
+        onChange={handleAvatarSelect}
       />
       <input
         ref={cursorInputRef}
         type="file"
         accept=".cur,.png,.svg,.gif,.webp"
         style={{ display: "none" }}
-        onChange={(e) => handleFileSelect(e, onCursorChange)}
+        onChange={handleCursorSelect}
       />
 
       <div className="assets-grid" style={{ display: "flex", gap: 10, width: "100%" }}>
         <AssetBox
           label="Background"
           uploaded={bgUploaded}
-          onRemove={() => onBackgroundChange("")}
+          onRemove={() => { setBgFileType(null); onBackgroundChange(""); }}
           onClick={() => bgInputRef.current?.click()}
           emptyIcon={<Image style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
           emptyLabel="Click to upload"
@@ -92,7 +123,7 @@ export function AssetsUploader({
         <AssetBox
           label="Audio"
           alwaysShow
-          onClick={() => {}}
+          onClick={() => window.open("/dashboard/assets", "_self")}
           emptyIcon={<FolderOpen style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
           emptyLabel="Click to open audio manager"
         />
@@ -109,7 +140,7 @@ export function AssetsUploader({
         <AssetBox
           label="Custom Cursor"
           uploaded={cursorUploaded}
-          onRemove={() => onCursorChange("")}
+          onRemove={() => { setCursorFileType(null); onCursorChange(""); }}
           onClick={() => cursorInputRef.current?.click()}
           emptyIcon={<MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
           emptyLabel="Click to upload"
@@ -129,18 +160,13 @@ function AssetBox({
   emptyLabel,
 }: {
   label: string;
-  uploaded?: Uploaded;
+  uploaded?: UploadedFile;
   onRemove?: () => void;
   alwaysShow?: boolean;
   onClick?: () => void;
   emptyIcon: React.ReactNode;
   emptyLabel: string;
 }) {
-  const isVideo =
-    label === "Background" &&
-    uploaded &&
-    ["mp4", "webm", "mov", "avi", "mkv"].includes(uploaded.type);
-
   const showUploaded = uploaded && !alwaysShow;
 
   return (
@@ -175,7 +201,7 @@ function AssetBox({
       >
         {showUploaded ? (
           <>
-            {label === "Background" && isVideo ? (
+            {label === "Background" && uploaded!.isVideo ? (
               <video
                 src={uploaded!.url}
                 style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
@@ -185,7 +211,7 @@ function AssetBox({
               />
             ) : null}
 
-            {label === "Background" && !isVideo ? (
+            {label === "Background" && !uploaded!.isVideo ? (
               <img
                 src={uploaded!.url}
                 alt=""
@@ -201,15 +227,7 @@ function AssetBox({
               />
             )}
 
-            {label === "Custom Cursor" && uploaded!.type === "img" && (
-              <img
-                src={uploaded!.url}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-              />
-            )}
-
-            {label === "Custom Cursor" && uploaded!.type !== "img" && (
+            {label === "Custom Cursor" && (
               <div
                 style={{
                   width: "100%",
@@ -239,7 +257,7 @@ function AssetBox({
                 zIndex: 2,
               }}
             >
-              <span style={{ fontSize: 13, color: "#fafafa" }}>.{uploaded!.type}</span>
+              <span style={{ fontSize: 13, color: "#fafafa" }}>{uploaded!.type ? `.${uploaded!.type}` : "file"}</span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
