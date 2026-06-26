@@ -77,6 +77,10 @@ export default function CustomizePage() {
           onAvatarChange={(url) => updateNested("identity", "avatarUrl", url)}
           cursorUrl={cursorUploadUrl}
           onCursorChange={setCursorUploadUrl}
+          audioUrl={cfg.audio.src}
+          onAudioChange={(url) => updateNested("audio", "src", url)}
+          audioVolume={cfg.audio.volume}
+          onAudioVolumeChange={(v) => updateNested("audio", "volume", v)}
         />
       </SectionCard>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback } from "react";
-import { Image, FolderOpen, Upload, MousePointer2 } from "lucide-react";
+import { Image, FolderOpen, Upload, MousePointer2, Music, X } from "lucide-react";
 
 interface AssetsUploaderProps {
   backgroundUrl: string;
@@ -10,17 +10,25 @@ interface AssetsUploaderProps {
   onAvatarChange: (url: string) => void;
   cursorUrl: string;
   onCursorChange: (url: string) => void;
+  audioUrl: string;
+  onAudioChange: (url: string) => void;
+  audioVolume: number;
+  onAudioVolumeChange: (v: number) => void;
 }
 
-type UploadedFile = { name: string; url: string; type: string; isVideo: boolean } | null;
+type UploadedFile = {
+  name: string;
+  url: string;
+  ext: string;
+  isVideo: boolean;
+} | null;
 
-function toUploaded(url: string): UploadedFile {
+function toUploaded(url: string, presetVideo?: boolean): UploadedFile {
   if (!url) return null;
-  const cleanUrl = url.startsWith("blob:") ? url : url;
-  const parts = cleanUrl.split(".");
+  const parts = url.split(".");
   const ext = parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
-  const isVideo = ["mp4", "webm", "mov", "avi", "mkv"].includes(ext);
-  return { name: cleanUrl.split("/").pop() ?? "file", url: cleanUrl, type: ext, isVideo };
+  const isVideo = presetVideo ?? ["mp4", "webm", "mov", "avi", "mkv"].includes(ext);
+  return { name: url.split("/").pop() ?? "file", url, ext, isVideo };
 }
 
 export function AssetsUploader({
@@ -30,19 +38,38 @@ export function AssetsUploader({
   onAvatarChange,
   cursorUrl,
   onCursorChange,
+  audioUrl,
+  onAudioChange,
+  audioVolume,
+  onAudioVolumeChange,
 }: AssetsUploaderProps) {
   const bgInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const cursorInputRef = useRef<HTMLInputElement>(null);
 
-  const [bgFileType, setBgFileType] = useState<"image" | "video" | null>(null);
-  const [cursorFileType, setCursorFileType] = useState<"image" | null>(null);
+  const [bgIsVideo, setBgIsVideo] = useState(false);
+  const [cursorExt, setCursorExt] = useState("");
+  const [showAudioModal, setShowAudioModal] = useState(false);
+  const [modalUrl, setModalUrl] = useState(audioUrl);
+  const [modalVolume, setModalVolume] = useState(audioVolume);
+
+  const openAudioModal = () => {
+    setModalUrl(audioUrl);
+    setModalVolume(audioVolume);
+    setShowAudioModal(true);
+  };
+
+  const saveAudioModal = () => {
+    onAudioChange(modalUrl);
+    onAudioVolumeChange(modalVolume);
+    setShowAudioModal(false);
+  };
 
   const handleBgSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    setBgFileType(file.type.startsWith("video/") ? "video" : "image");
+    setBgIsVideo(file.type.startsWith("video/"));
     onBackgroundChange(url);
     e.target.value = "";
   }, [onBackgroundChange]);
@@ -50,8 +77,7 @@ export function AssetsUploader({
   const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    onAvatarChange(url);
+    onAvatarChange(URL.createObjectURL(file));
     e.target.value = "";
   }, [onAvatarChange]);
 
@@ -59,26 +85,15 @@ export function AssetsUploader({
     const file = e.target.files?.[0];
     if (!file) return;
     const url = URL.createObjectURL(file);
-    setCursorFileType(file.type.startsWith("image/") ? "image" : null);
+    const parts = file.name.split(".");
+    setCursorExt(parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "");
     onCursorChange(url);
     e.target.value = "";
   }, [onCursorChange]);
 
-  const bgUploaded = (() => {
-    if (!backgroundUrl) return null;
-    const u = toUploaded(backgroundUrl);
-    if (u && bgFileType) u.isVideo = bgFileType === "video";
-    return u;
-  })();
-
+  const bgUploaded = toUploaded(backgroundUrl, bgIsVideo || undefined);
   const avatarUploaded = toUploaded(avatarUrl);
-
-  const cursorUploaded = (() => {
-    if (!cursorUrl) return null;
-    const u = toUploaded(cursorUrl);
-    if (u && cursorFileType) u.isVideo = false;
-    return u;
-  })();
+  const cursorUploaded = toUploaded(cursorUrl, false);
 
   return (
     <>
@@ -88,204 +103,271 @@ export function AssetsUploader({
         }
       `}</style>
 
-      <input
-        ref={bgInputRef}
-        type="file"
-        accept="image/*,video/*"
-        style={{ display: "none" }}
-        onChange={handleBgSelect}
-      />
-      <input
-        ref={avatarInputRef}
-        type="file"
-        accept=".gif,.webp,.png,.jpg,.jpeg"
-        style={{ display: "none" }}
-        onChange={handleAvatarSelect}
-      />
-      <input
-        ref={cursorInputRef}
-        type="file"
-        accept=".cur,.png,.svg,.gif,.webp"
-        style={{ display: "none" }}
-        onChange={handleCursorSelect}
-      />
+      <input ref={bgInputRef} type="file" accept=".mp4,.webm,.gif,.png,.jpg,.jpeg,.webp" style={{ display: "none" }} onChange={handleBgSelect} />
+      <input ref={avatarInputRef} type="file" accept=".gif,.webp,.png,.jpg,.jpeg" style={{ display: "none" }} onChange={handleAvatarSelect} />
+      <input ref={cursorInputRef} type="file" accept=".cur,.png" style={{ display: "none" }} onChange={handleCursorSelect} />
 
       <div className="assets-grid" style={{ display: "flex", gap: 10, width: "100%" }}>
-        <AssetBox
-          label="Background"
-          uploaded={bgUploaded}
-          onRemove={() => { setBgFileType(null); onBackgroundChange(""); }}
-          onClick={() => bgInputRef.current?.click()}
-          emptyIcon={<Image style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
-          emptyLabel="Click to upload"
-        />
+        <AssetCard label="Background">
+          <AssetUploadZone
+            uploaded={bgUploaded}
+            onRemove={() => { setBgIsVideo(false); onBackgroundChange(""); }}
+            onClick={() => bgInputRef.current?.click()}
+          >
+            <Image style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
+            <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>Click to upload</span>
+          </AssetUploadZone>
+        </AssetCard>
 
-        <AssetBox
-          label="Audio"
-          alwaysShow
-          onClick={() => window.open("/dashboard/assets", "_self")}
-          emptyIcon={<FolderOpen style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
-          emptyLabel="Click to open audio manager"
-        />
+        <AssetCard label="Audio">
+          <AssetUploadZone alwaysShow onClick={openAudioModal}>
+            <FolderOpen style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
+            <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>Click to open audio manager</span>
+          </AssetUploadZone>
+        </AssetCard>
 
-        <AssetBox
-          label="Profile Avatar"
-          uploaded={avatarUploaded}
-          onRemove={() => onAvatarChange("")}
-          onClick={() => avatarInputRef.current?.click()}
-          emptyIcon={<Upload style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
-          emptyLabel="Click to upload a file"
-        />
+        <AssetCard label="Profile Avatar">
+          <AssetUploadZone
+            uploaded={avatarUploaded}
+            onRemove={() => onAvatarChange("")}
+            onClick={() => avatarInputRef.current?.click()}
+          >
+            <Upload style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
+            <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>Click to upload a file</span>
+          </AssetUploadZone>
+        </AssetCard>
 
-        <AssetBox
-          label="Custom Cursor"
-          uploaded={cursorUploaded}
-          onRemove={() => { setCursorFileType(null); onCursorChange(""); }}
-          onClick={() => cursorInputRef.current?.click()}
-          emptyIcon={<MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />}
-          emptyLabel="Click to upload"
-        />
+        <AssetCard label="Custom Cursor">
+          <AssetUploadZone
+            uploaded={cursorUploaded}
+            onRemove={() => { setCursorExt(""); onCursorChange(""); }}
+            onClick={() => cursorInputRef.current?.click()}
+          >
+            <MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
+            <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>Click to upload</span>
+          </AssetUploadZone>
+        </AssetCard>
       </div>
+
+      {showAudioModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowAudioModal(false); }}
+        >
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.55)" }} />
+          <div
+            style={{
+              position: "relative",
+              background: "#141414",
+              border: "2px solid #181818",
+              borderRadius: 25,
+              padding: 25,
+              width: 420,
+              maxWidth: "90vw",
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              zIndex: 1,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Music style={{ width: 20, height: 20, color: "#fafafa" }} />
+                <span style={{ fontSize: 18, fontWeight: 500, color: "#fafafa" }}>Audio Manager</span>
+              </div>
+              <button
+                onClick={() => setShowAudioModal(false)}
+                style={{ background: "none", border: "none", color: "#797979", cursor: "pointer", padding: 4 }}
+              >
+                <X style={{ width: 18, height: 18 }} />
+              </button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 14, color: "#a5a4a4", fontWeight: 450 }}>Audio URL</span>
+              <input
+                value={modalUrl}
+                onChange={(e) => setModalUrl(e.target.value)}
+                placeholder="https://example.com/audio.mp3"
+                style={{
+                  background: "#121212",
+                  border: "2px solid #1b1b1b",
+                  borderRadius: 14,
+                  padding: "10px 14px",
+                  color: "#f1f1f1",
+                  fontSize: 15,
+                  fontFamily: "Satoshi, sans-serif",
+                  outline: "none",
+                  width: "100%",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 14, color: "#a5a4a4", fontWeight: 450 }}>Volume</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <input
+                  type="range"
+                  className="brazy-slider"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={modalVolume}
+                  onChange={(e) => setModalVolume(Number(e.target.value))}
+                  style={{ flex: 1, cursor: "pointer" }}
+                />
+                <span style={{ fontSize: 14, color: "#909090", minWidth: 36, textAlign: "right" }}>
+                  {Math.round(modalVolume * 100)}%
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+              <button
+                onClick={() => setShowAudioModal(false)}
+                style={{
+                  background: "#1a1a1a",
+                  border: "2px solid #222",
+                  borderRadius: 15,
+                  padding: "8px 18px",
+                  color: "#a5a4a4",
+                  fontSize: 14,
+                  fontFamily: "Satoshi, sans-serif",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveAudioModal}
+                style={{
+                  backgroundColor: "rgba(126,44,139,0.44)",
+                  border: "2px solid rgba(126,44,139,0.61)",
+                  borderRadius: 15,
+                  padding: "8px 18px",
+                  color: "#fafafa",
+                  fontSize: 14,
+                  fontFamily: "Satoshi, sans-serif",
+                  cursor: "pointer",
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
 
-function AssetBox({
-  label,
+function AssetCard({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+      <span style={{ fontSize: 16, fontWeight: 500, color: "#dddddd", marginBottom: 5.5 }}>
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function AssetUploadZone({
   uploaded,
   onRemove,
   alwaysShow,
   onClick,
-  emptyIcon,
-  emptyLabel,
+  children,
 }: {
-  label: string;
   uploaded?: UploadedFile;
   onRemove?: () => void;
   alwaysShow?: boolean;
   onClick?: () => void;
-  emptyIcon: React.ReactNode;
-  emptyLabel: string;
+  children: React.ReactNode;
 }) {
-  const showUploaded = uploaded && !alwaysShow;
+  const hasFile = uploaded && !alwaysShow;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-      <span
-        style={{
-          fontSize: 16,
-          fontWeight: 500,
-          color: "#dddddd",
-          marginBottom: 5.5,
-        }}
-      >
-        {label}
-      </span>
-      <div
-        style={{
-          backgroundColor: "#0f0f0f",
-          border: "2px solid #181818",
-          borderRadius: 10,
-          height: 130,
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-          cursor: "pointer",
-          userSelect: "none",
-          overflow: "hidden",
-        }}
-        onClick={onClick}
-      >
-        {showUploaded ? (
-          <>
-            {label === "Background" && uploaded!.isVideo ? (
-              <video
-                src={uploaded!.url}
-                style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-                muted
-                loop
-                autoPlay
-              />
-            ) : null}
+    <div
+      style={{
+        backgroundColor: "#0f0f0f",
+        border: "2px solid #181818",
+        borderRadius: 10,
+        height: 130,
+        width: "100%",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+        cursor: "pointer",
+        userSelect: "none",
+        overflow: "hidden",
+      }}
+      onClick={onClick}
+    >
+      {hasFile ? (
+        <>
+          {uploaded!.isVideo ? (
+            <video
+              src={uploaded!.url}
+              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
+              muted
+              loop
+              autoPlay
+            />
+          ) : (
+            <img
+              src={uploaded!.url}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
+            />
+          )}
 
-            {label === "Background" && !uploaded!.isVideo ? (
-              <img
-                src={uploaded!.url}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-              />
-            ) : null}
-
-            {label === "Profile Avatar" && (
-              <img
-                src={uploaded!.url}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-              />
-            )}
-
-            {label === "Custom Cursor" && (
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MousePointer2 style={{ width: 42, height: 42, color: "#fafafa", flexShrink: 0 }} />
-              </div>
-            )}
-
-            <div
+          <div
+            style={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              background: "rgba(24,24,24,0.46)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              borderRadius: 10,
+              padding: "5px 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              zIndex: 2,
+            }}
+          >
+            <span style={{ fontSize: 13, color: "#fafafa" }}>.{uploaded!.ext || "file"}</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
               style={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                background: "rgba(24,24,24,0.46)",
-                backdropFilter: "blur(30px)",
-                WebkitBackdropFilter: "blur(30px)",
-                borderRadius: 10,
-                padding: "5px 10px",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                zIndex: 2,
+                cursor: "pointer",
+                background: "none",
+                border: "none",
+                color: "#fafafa",
+                fontSize: 14,
+                padding: 0,
+                lineHeight: 1,
               }}
             >
-              <span style={{ fontSize: 13, color: "#fafafa" }}>{uploaded!.type ? `.${uploaded!.type}` : "file"}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRemove?.();
-                }}
-                style={{
-                  cursor: "pointer",
-                  background: "none",
-                  border: "none",
-                  color: "#fafafa",
-                  fontSize: 14,
-                  padding: 0,
-                  lineHeight: 1,
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {emptyIcon}
-            <span style={{ fontSize: 14.5, color: "#797979", fontWeight: 450, marginTop: 2 }}>
-              {emptyLabel}
-            </span>
-          </>
-        )}
-      </div>
+              ✕
+            </button>
+          </div>
+        </>
+      ) : (
+        children
+      )}
     </div>
   );
 }
