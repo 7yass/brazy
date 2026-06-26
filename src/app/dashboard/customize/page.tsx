@@ -7,36 +7,49 @@ import { OtherCustomization } from "@/components/dashboard/OtherCustomization";
 
 export default function CustomizePage() {
   return (
-    <div className="mx-auto max-w-2xl px-6 py-10">
-      <div className="mb-8">
-        <h1 className="text-xl font-semibold text-white/90">Customize</h1>
-        <p className="mt-0.5 text-sm text-white/40">Personalize your profile</p>
-      </div>
+    <div className="flex flex-col" style={{ gap: 14 }}>
+      <SectionCard title="Assets Uploader">
+        <AssetsUploader />
+      </SectionCard>
 
-      <div className="flex flex-col gap-5">
-        <SectionCard title="Assets Uploader">
-          <AssetsUploader />
-        </SectionCard>
+      <SectionCard title="General Customization">
+        <GeneralCustomization />
+      </SectionCard>
 
-        <SectionCard title="General Customization">
-          <GeneralCustomization />
-        </SectionCard>
-        <SectionCard title="Color Customization">
-          <ColorCustomization />
-        </SectionCard>
-        <SectionCard title="Other Customization">
-          <OtherCustomization />
-        </SectionCard>
-      </div>
+      <SectionCard title="Color Customization">
+        <ColorCustomization />
+      </SectionCard>
+
+      <SectionCard title="Other Customization">
+        <OtherCustomization />
+      </SectionCard>
     </div>
   );
 }
 
 function SectionCard({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
-    <div className="rounded-[15px] border border-white/[0.06] bg-[#111] px-6 py-5">
-      <h3 className="mb-5 text-base font-semibold text-white/90">{title}</h3>
-      {children && <div className="flex flex-col gap-4">{children}</div>}
+    <div
+      style={{
+        backgroundColor: "#141414",
+        border: "2px solid #181818",
+        borderRadius: 25,
+        padding: 20,
+      }}
+    >
+      <h3
+        style={{
+          margin: "0 0 5.5px 3px",
+          fontSize: 16.5,
+          fontWeight: 500,
+          color: "#c5c5c5",
+        }}
+      >
+        {title}
+      </h3>
+      <div className="flex flex-col" style={{ gap: 14 }}>
+        {children}
+      </div>
     </div>
   );
 }

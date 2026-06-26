@@ -54,46 +54,84 @@ export default function DashboardSidebar() {
   }, []);
 
   return (
-    <aside className="flex h-full w-56 flex-col border-r border-white/[0.06] bg-[#0a0911]">
-      <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-4">
-        <SpiderLogo />
+    <aside
+      className="flex h-full flex-col justify-between overflow-y-auto"
+      style={{
+        minWidth: 300,
+        maxWidth: 300,
+        backgroundColor: "#0e0e0e",
+        borderTopRightRadius: 50,
+        borderBottomRightRadius: 50,
+        padding: 25,
+      }}
+    >
+      <div>
+        <div className="flex items-center gap-2 pb-5" style={{ borderBottom: "1px solid #181818" }}>
+          <SpiderLogo />
+        </div>
+
+        <nav className="mt-5 flex flex-col gap-[6.5px]" style={{ marginLeft: -10 }}>
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 10px 10px 15px",
+                  borderRadius: 20,
+                  fontSize: 17.4,
+                  fontWeight: 500,
+                  color: "#fafafa",
+                  textDecoration: "none",
+                  transition: "background-color 0.15s",
+                  backgroundColor: isActive ? "rgba(218,102,218,0.155)" : "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "rgba(250,250,250,0.15)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <Icon className="shrink-0" style={{ width: 20, height: 20 }} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2.5 py-4">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                isActive
-                  ? "bg-violet-500/15 text-violet-300"
-                  : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
-              }`}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="border-t border-white/[0.06] p-2.5">
+      <div style={{ borderTop: "1px solid #181818", paddingTop: 12, marginTop: 12 }}>
         {user && (
-          <div className="mb-1 rounded-xl px-3 py-2 text-xs text-white/30">
-            <div className="truncate font-medium text-white/50">Signed in as</div>
-            <div className="truncate text-white/70">{user.username}</div>
-            <div className="truncate font-mono text-[10px] text-white/20">UID: {user.id}</div>
+          <div className="mb-2" style={{ padding: "10px 10px 10px 15px" }}>
+            <div className="truncate text-xs" style={{ color: "#a5a4a4" }}>Signed in as</div>
+            <div className="truncate text-sm font-medium" style={{ color: "#fafafa" }}>{user.username}</div>
           </div>
         )}
         <Link
           href="/"
-          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-white/30 transition hover:bg-white/[0.04] hover:text-white/50"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "10px 10px 10px 15px",
+            borderRadius: 20,
+            fontSize: 17.4,
+            fontWeight: 500,
+            color: "#fafafa",
+            textDecoration: "none",
+            transition: "background-color 0.15s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "rgba(250,250,250,0.15)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
         >
-          <LogOut className="h-4 w-4" />
-          Back to site
+          <LogOut className="shrink-0" style={{ width: 20, height: 20 }} />
+          <span>Back to site</span>
         </Link>
       </div>
     </aside>

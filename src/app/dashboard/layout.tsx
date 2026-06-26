@@ -20,9 +20,18 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#07050c]">
+    <div className="flex h-screen overflow-hidden bg-[#08070d]">
       <DashboardSidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
+      <main
+        className="w-full"
+        style={{
+          overflowY: "scroll",
+          padding: "45px 45px 45px calc(300px + 50px - 5px)",
+          boxSizing: "border-box",
+        }}
+      >
+        {children}
+      </main>
     </div>
   );
 }
