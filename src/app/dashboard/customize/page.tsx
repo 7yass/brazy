@@ -1,9 +1,6 @@
 "use client";
 
-import { BackgroundUpload } from "@/components/dashboard/BackgroundUpload";
-import { AvatarUpload } from "@/components/dashboard/AvatarUpload";
-import { AudioManagerUpload } from "@/components/dashboard/AudioManagerUpload";
-import { CursorUpload } from "@/components/dashboard/CursorUpload";
+import { AssetsUploader } from "@/components/dashboard/AssetsUploader";
 import { GeneralCustomization } from "@/components/dashboard/GeneralCustomization";
 import { ColorCustomization } from "@/components/dashboard/ColorCustomization";
 import { OtherCustomization } from "@/components/dashboard/OtherCustomization";
@@ -18,10 +15,7 @@ export default function CustomizePage() {
 
       <div className="flex flex-col gap-5">
         <SectionCard title="Assets Uploader">
-          <BackgroundUpload />
-          <AvatarUpload />
-          <AudioManagerUpload />
-          <CursorUpload />
+          <AssetsUploader />
         </SectionCard>
 
         <SectionCard title="General Customization">
