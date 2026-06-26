@@ -4,6 +4,7 @@ import { BackgroundUpload } from "@/components/dashboard/BackgroundUpload";
 import { AvatarUpload } from "@/components/dashboard/AvatarUpload";
 import { AudioManagerUpload } from "@/components/dashboard/AudioManagerUpload";
 import { CursorUpload } from "@/components/dashboard/CursorUpload";
+import { GeneralCustomization } from "@/components/dashboard/GeneralCustomization";
 
 export default function CustomizePage() {
   return (
@@ -21,7 +22,9 @@ export default function CustomizePage() {
           <CursorUpload />
         </SectionCard>
 
-        <SectionCard title="General Customization" />
+        <SectionCard title="General Customization">
+          <GeneralCustomization />
+        </SectionCard>
         <SectionCard title="Color Customization" />
         <SectionCard title="Other Customization" />
       </div>
