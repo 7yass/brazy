@@ -24,7 +24,45 @@ export function GeneralCustomization({
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+    <>
+      <style>{`
+        .brazy-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 6px;
+          border-radius: 3px;
+          background: #1a1a1a;
+          outline: none;
+        }
+        .brazy-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #fafafa;
+          cursor: pointer;
+          border: 2px solid rgba(218,102,218,0.6);
+          transition: transform 0.1s;
+        }
+        .brazy-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.15);
+        }
+        .brazy-slider::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #fafafa;
+          cursor: pointer;
+          border: 2px solid rgba(218,102,218,0.6);
+        }
+        .brazy-slider::-moz-range-track {
+          height: 6px;
+          border-radius: 3px;
+          background: #1a1a1a;
+        }
+      `}</style>
+      <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
       <Row label="Description">
         <textarea
           value={identity.bio ?? ""}
@@ -142,7 +180,8 @@ export function GeneralCustomization({
           </span>
         </div>
       </Row>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -246,6 +285,7 @@ function Slider({
   return (
     <input
       type="range"
+      className="brazy-slider"
       min={min}
       max={max}
       step={step}
@@ -253,7 +293,7 @@ function Slider({
       onChange={(e) => onChange(Number(e.target.value))}
       style={{
         maxWidth: 160,
-        accentColor: "rgba(218,102,218,0.8)",
+        width: "100%",
         cursor: "pointer",
       }}
     />
