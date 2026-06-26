@@ -53,8 +53,10 @@ export default function CustomizePage() {
   const savedFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSavingRef = useRef(false);
   const pendingSaveRef = useRef(false);
+  const selectedTrackRef = useRef(selectedTrack);
 
   useEffect(() => { cfgRef.current = cfg; }, [cfg]);
+  useEffect(() => { selectedTrackRef.current = selectedTrack; }, [selectedTrack]);
 
   const doSave = useCallback(async (config: ProfileConfig) => {
     if (isSavingRef.current) {
@@ -65,7 +67,14 @@ export default function CustomizePage() {
     pendingSaveRef.current = false;
     setSaveStatus("saving");
     try {
-      await saveProfileAction(config);
+      const track = selectedTrackRef.current;
+      await saveProfileAction(config, track ? {
+        audio_track_id: track.trackId,
+        audio_source: "youtube",
+        audio_title: track.title,
+        audio_artist: track.artist,
+        audio_thumb: track.thumb,
+      } : undefined);
       if (pendingSaveRef.current) {
         isSavingRef.current = false;
         doSave(cfgRef.current);
@@ -153,7 +162,14 @@ export default function CustomizePage() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
       if (!isSavingRef.current && cfgRef.current) {
-        saveProfileAction(cfgRef.current).then(() => showToast("Changes saved")).catch(() => {});
+        const track = selectedTrackRef.current;
+        saveProfileAction(cfgRef.current, track ? {
+          audio_track_id: track.trackId,
+          audio_source: "youtube",
+          audio_title: track.title,
+          audio_artist: track.artist,
+          audio_thumb: track.thumb,
+        } : undefined).then(() => showToast("Changes saved")).catch(() => {});
       }
     };
   }, []);

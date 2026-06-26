@@ -4,7 +4,16 @@ import { saveProfile } from "@/lib/profile/store";
 import { createClient } from "@/lib/supabase/server";
 import type { ProfileConfig } from "@/lib/profile/schema";
 
-export async function saveProfileAction(config: ProfileConfig): Promise<{ error: string | null }> {
+export async function saveProfileAction(
+  config: ProfileConfig,
+  audioMeta?: {
+    audio_track_id?: string;
+    audio_source?: string;
+    audio_title?: string;
+    audio_artist?: string;
+    audio_thumb?: string;
+  },
+): Promise<{ error: string | null }> {
   const supabase = await createClient();
   if (!supabase) return { error: "database not configured" };
 
@@ -24,5 +33,5 @@ export async function saveProfileAction(config: ProfileConfig): Promise<{ error:
     identity: { ...config.identity, username },
   };
 
-  return saveProfile(user.id, username, merged);
+  return saveProfile(user.id, username, merged, audioMeta);
 }

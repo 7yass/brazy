@@ -103,6 +103,13 @@ export async function saveProfile(
   userId: string,
   username: string,
   config: ProfileConfig,
+  audioMeta?: {
+    audio_track_id?: string;
+    audio_source?: string;
+    audio_title?: string;
+    audio_artist?: string;
+    audio_thumb?: string;
+  },
 ): Promise<{ error: string | null }> {
   const key = username.toLowerCase().trim();
   if (!/^[a-z0-9_]{3,20}$/.test(key)) {
@@ -120,7 +127,17 @@ export async function saveProfile(
   const { error } = await supabase
     .from("profiles")
     .upsert(
-      { user_id: userId, username: key, config, updated_at: new Date().toISOString() },
+      {
+        user_id: userId,
+        username: key,
+        config,
+        updated_at: new Date().toISOString(),
+        ...(audioMeta?.audio_track_id ? { audio_track_id: audioMeta.audio_track_id } : {}),
+        ...(audioMeta?.audio_source ? { audio_source: audioMeta.audio_source } : {}),
+        ...(audioMeta?.audio_title ? { audio_title: audioMeta.audio_title } : {}),
+        ...(audioMeta?.audio_artist ? { audio_artist: audioMeta.audio_artist } : {}),
+        ...(audioMeta?.audio_thumb ? { audio_thumb: audioMeta.audio_thumb } : {}),
+      },
       { onConflict: "user_id" },
     );
 
