@@ -6,6 +6,7 @@ import { AssetsUploader } from "@/components/dashboard/AssetsUploader";
 import { GeneralCustomization } from "@/components/dashboard/GeneralCustomization";
 import { ColorCustomization } from "@/components/dashboard/ColorCustomization";
 import { OtherCustomization } from "@/components/dashboard/OtherCustomization";
+import { MusicSearch } from "@/components/dashboard/MusicSearch";
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { saveProfileAction } from "./actions";
 import type { ProfileConfig } from "@/lib/profile/schema";
@@ -45,6 +46,7 @@ export default function CustomizePage() {
   const [cursorUploadUrl, setCursorUploadUrl] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lyrics, setLyrics] = useState<{ time: number | null; text: string }[]>([]);
+  const [selectedTrack, setSelectedTrack] = useState<{ trackId: string; title: string; artist: string; thumb: string } | null>(null);
 
   const cfgRef = useRef(cfg);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,6 +232,20 @@ export default function CustomizePage() {
           effects={cfg.effects}
           audio={cfg.audio}
           onUpdate={updateNested}
+        />
+      </SectionCard>
+
+      <SectionCard title="Music Search">
+        <MusicSearch
+          selectedTrack={selectedTrack}
+          onSelect={(track) => {
+            setSelectedTrack(track);
+            uploadCallback("audio", "src", `https://www.youtube.com/watch?v=${track.trackId}`);
+          }}
+          onClear={() => {
+            setSelectedTrack(null);
+            uploadCallback("audio", "src", "");
+          }}
         />
       </SectionCard>
     </div>
