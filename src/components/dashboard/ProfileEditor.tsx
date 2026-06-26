@@ -137,8 +137,10 @@ export default function ProfileEditor({
           <div className="flex flex-col gap-5">
             {/* 1. Assets Uploader */}
             <SectionCard title="Assets Uploader">
-              <Row label="Background Image & Video">
-                <div className="flex gap-2">
+              {/* Background Image & Video */}
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <p className="mb-3 text-sm font-medium text-white/80">Background Image & Video</p>
+                <div className="mb-3 flex items-center gap-2">
                   <TextInput
                     value={cfg.background.imageUrl}
                     onChange={(v) => updateNested("background", "imageUrl", v)}
@@ -150,23 +152,48 @@ export default function ProfileEditor({
                     placeholder="Video URL"
                   />
                 </div>
-              </Row>
-              <Row label="Profile Avatar">
-                <TextInput
-                  value={cfg.identity.avatarUrl}
-                  onChange={(v) => updateNested("identity", "avatarUrl", v)}
-                  placeholder="Avatar URL"
-                />
-              </Row>
-              <Row label="Audios using Audio Manager">
-                <TextInput
-                  value={cfg.audio.src}
-                  onChange={(v) => updateNested("audio", "src", v)}
-                  placeholder="Audio URL (mp3)"
-                />
-              </Row>
-              <Row label="Custom Cursor">
-                <div className="flex items-center gap-3">
+                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  <Upload className="h-4 w-4 text-white/30" />
+                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> image or video</p>
+                </div>
+              </div>
+
+              {/* Profile Avatar */}
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <p className="mb-3 text-sm font-medium text-white/80">Profile Avatar</p>
+                <div className="mb-3">
+                  <TextInput
+                    value={cfg.identity.avatarUrl}
+                    onChange={(v) => updateNested("identity", "avatarUrl", v)}
+                    placeholder="Avatar URL"
+                  />
+                </div>
+                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  <Upload className="h-4 w-4 text-white/30" />
+                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> avatar image</p>
+                </div>
+              </div>
+
+              {/* Audio Manager / Audios */}
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <p className="mb-3 text-sm font-medium text-white/80">Audio Manager / Audios</p>
+                <div className="mb-3">
+                  <TextInput
+                    value={cfg.audio.src}
+                    onChange={(v) => updateNested("audio", "src", v)}
+                    placeholder="Audio URL (mp3)"
+                  />
+                </div>
+                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  <Upload className="h-4 w-4 text-white/30" />
+                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> audio file</p>
+                </div>
+              </div>
+
+              {/* Custom Cursor */}
+              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                <p className="mb-3 text-sm font-medium text-white/80">Custom Cursor</p>
+                <div className="mb-3 flex items-center gap-3">
                   <SelectInput
                     value={cfg.effects.cursor.type}
                     onChange={(v) => updateCursor("type", v)}
@@ -174,24 +201,14 @@ export default function ProfileEditor({
                   />
                   <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
                 </div>
-              </Row>
-
-              {/* Upload drop zone */}
-              <div
-                className="mt-2 flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-white/[0.08] px-6 py-6 transition hover:border-white/[0.2]"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04]">
-                  <Upload className="h-5 w-5 text-white/30" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm text-white/50">
-                    <span className="font-medium text-violet-400">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="mt-1 text-xs text-white/30">PNG, JPG, GIF, MP3, MP4, WEBM up to 10MB</p>
+                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  <Upload className="h-4 w-4 text-white/30" />
+                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> cursor file</p>
                 </div>
               </div>
+
               {assets.length > 0 && (
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-1 grid grid-cols-2 gap-2">
                   {assets.map((asset) => (
                     <div key={asset.id} className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/[0.12]">
                       <p className="truncate text-xs font-medium text-white/70">{asset.name}</p>
