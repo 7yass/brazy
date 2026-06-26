@@ -33,8 +33,6 @@ export default function CustomizePage() {
   if (!config) return null;
 
   return (
-    <div style={{ height: "100vh", overflow: "hidden" }}>
-      <ProfileEditor initialConfig={config} onSave={onSave} saving={saving} />
-    </div>
+    <ProfileEditor initialConfig={config} onSave={onSave} saving={saving} />
   );
 }
