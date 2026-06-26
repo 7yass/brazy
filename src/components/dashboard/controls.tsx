@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 export function Label({ children }: { children: React.ReactNode }) {
@@ -86,16 +87,81 @@ export function Slider({
   max: number;
   step?: number;
 }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  const computeValue = useCallback((clientX: number) => {
+    if (!trackRef.current) return valueRef.current;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const raw = min + pct * (max - min);
+    const stepped = Math.round(raw / step) * step;
+    return Math.max(min, Math.min(max, stepped));
+  }, [min, max, step]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    draggingRef.current = true;
+    onChange(computeValue(e.clientX));
+  }, [onChange, computeValue]);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      onChange(computeValue(e.clientX));
+    };
+    const handleUp = () => { draggingRef.current = false; };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", handleUp);
+    };
+  }, [onChange, computeValue]);
+
+  const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
+
   return (
-    <input
-      type="range"
-      value={value}
-      min={min}
-      max={max}
-      step={step}
-      onChange={(e) => onChange(Number(e.target.value))}
-      className="w-full accent-violet-400"
-    />
+    <div
+      ref={trackRef}
+      className="w-full"
+      style={{
+        position: "relative",
+        height: 4,
+        background: "#2a2a2a",
+        borderRadius: 999,
+        cursor: "pointer",
+      }}
+      onMouseDown={handleMouseDown}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          height: "100%",
+          width: `${Math.max(0, Math.min(100, pct))}%`,
+          background: "rgba(218,102,218,0.7)",
+          borderRadius: 999,
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: `${Math.max(0, Math.min(100, pct))}%`,
+          transform: "translate(-50%, -50%)",
+          width: 14,
+          height: 14,
+          borderRadius: "50%",
+          background: "#ffffff",
+          border: "2px solid rgba(218,102,218,0.8)",
+          pointerEvents: "none",
+        }}
+      />
+    </div>
   );
 }
 

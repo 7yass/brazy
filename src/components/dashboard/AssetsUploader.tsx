@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { Image, FolderOpen, Upload, MousePointer2, Music, X } from "lucide-react";
+import { Image, FolderOpen, Upload, MousePointer2, Music, X, Search, Scissors } from "lucide-react";
+import { Slider } from "./controls";
 
 interface AssetsUploaderProps {
   backgroundUrl: string;
@@ -14,14 +15,11 @@ interface AssetsUploaderProps {
   onAudioChange: (url: string) => void;
   audioVolume: number;
   onAudioVolumeChange: (v: number) => void;
+  lyrics?: { time: number | null; text: string }[];
+  onLyricsChange?: (lyrics: { time: number | null; text: string }[]) => void;
 }
 
-type UploadedFile = {
-  name: string;
-  url: string;
-  ext: string;
-  isVideo: boolean;
-} | null;
+type UploadedFile = { name: string; url: string; ext: string; isVideo: boolean } | null;
 
 function toUploaded(url: string, presetVideo?: boolean): UploadedFile {
   if (!url) return null;
@@ -30,6 +28,8 @@ function toUploaded(url: string, presetVideo?: boolean): UploadedFile {
   const isVideo = presetVideo ?? ["mp4", "webm", "mov", "avi", "mkv"].includes(ext);
   return { name: url.split("/").pop() ?? "file", url, ext, isVideo };
 }
+
+type AudioTab = "url" | "upload" | "spotify";
 
 export function AssetsUploader({
   backgroundUrl,
@@ -42,26 +42,42 @@ export function AssetsUploader({
   onAudioChange,
   audioVolume,
   onAudioVolumeChange,
+  lyrics,
+  onLyricsChange,
 }: AssetsUploaderProps) {
   const bgInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const cursorInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
   const [bgIsVideo, setBgIsVideo] = useState(false);
   const [cursorExt, setCursorExt] = useState("");
   const [showAudioModal, setShowAudioModal] = useState(false);
   const [modalUrl, setModalUrl] = useState(audioUrl);
   const [modalVolume, setModalVolume] = useState(audioVolume);
+  const [audioTab, setAudioTab] = useState<AudioTab>("url");
+  const [uploadedAudio, setUploadedAudio] = useState<{ name: string; size: string; url: string } | null>(null);
+  const [showTrim, setShowTrim] = useState(false);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(30);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [spotifyInput, setSpotifyInput] = useState("");
+  const [spotifyTrack, setSpotifyTrack] = useState<{ title: string; artist: string; albumArt: string; previewUrl: string; trackId: string } | null>(null);
+  const [spotifyLoading, setSpotifyLoading] = useState(false);
+  const [lyricsData, setLyricsData] = useState<{ time: number | null; text: string }[]>(lyrics ?? []);
+  const [lyricsLoading, setLyricsLoading] = useState(false);
 
   const openAudioModal = () => {
     setModalUrl(audioUrl);
     setModalVolume(audioVolume);
+    setAudioTab("url");
     setShowAudioModal(true);
   };
 
   const saveAudioModal = () => {
     onAudioChange(modalUrl);
     onAudioVolumeChange(modalVolume);
+    if (onLyricsChange) onLyricsChange(lyricsData);
     setShowAudioModal(false);
   };
 
@@ -91,9 +107,67 @@ export function AssetsUploader({
     e.target.value = "";
   }, [onCursorChange]);
 
+  const handleAudioUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const size = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`;
+    setUploadedAudio({ name: file.name, size, url });
+    setModalUrl(url);
+    e.target.value = "";
+  }, []);
+
+  const openTrimPopup = () => {
+    setTrimStart(0);
+    setTrimEnd(Math.min(30, audioDuration || 30));
+    setShowTrim(true);
+  };
+
+  const applyTrim = () => {
+    setShowTrim(false);
+  };
+
+  const fetchSpotify = async () => {
+    const id = spotifyInput.trim().split("/track/").pop()?.split("?")[0] ?? spotifyInput.trim();
+    if (!id) return;
+    setSpotifyLoading(true);
+    try {
+      const res = await fetch(`/api/spotify/track?id=${id}`);
+      if (!res.ok) throw new Error("Track not found");
+      const data = await res.json();
+      setSpotifyTrack(data);
+      if (data.previewUrl) setModalUrl(data.previewUrl);
+    } catch {
+      setSpotifyTrack(null);
+    } finally {
+      setSpotifyLoading(false);
+    }
+  };
+
+  const fetchLyrics = async () => {
+    if (!spotifyTrack) return;
+    setLyricsLoading(true);
+    try {
+      const res = await fetch(`/api/lyrics?artist=${encodeURIComponent(spotifyTrack.artist)}&title=${encodeURIComponent(spotifyTrack.title)}`);
+      if (!res.ok) throw new Error("Lyrics not found");
+      const data = await res.json();
+      setLyricsData(data.lines ?? []);
+    } catch {
+      setLyricsData([]);
+    } finally {
+      setLyricsLoading(false);
+    }
+  };
+
   const bgUploaded = toUploaded(backgroundUrl, bgIsVideo || undefined);
   const avatarUploaded = toUploaded(avatarUrl);
   const cursorUploaded = toUploaded(cursorUrl, false);
+
+  const tabs: { key: AudioTab; label: string }[] = [
+    { key: "url", label: "URL" },
+    { key: "upload", label: "Upload" },
+    { key: "spotify", label: "Spotify" },
+  ];
 
   return (
     <>
@@ -106,6 +180,7 @@ export function AssetsUploader({
       <input ref={bgInputRef} type="file" accept=".mp4,.webm,.gif,.png,.jpg,.jpeg,.webp" style={{ display: "none" }} onChange={handleBgSelect} />
       <input ref={avatarInputRef} type="file" accept=".gif,.webp,.png,.jpg,.jpeg" style={{ display: "none" }} onChange={handleAvatarSelect} />
       <input ref={cursorInputRef} type="file" accept=".cur,.png" style={{ display: "none" }} onChange={handleCursorSelect} />
+      <input ref={audioInputRef} type="file" accept=".mp3,.wav,.ogg" style={{ display: "none" }} onChange={handleAudioUpload} />
 
       <div className="assets-grid" style={{ display: "flex", gap: 10, width: "100%" }}>
         <AssetCard label="Background">
@@ -152,29 +227,17 @@ export function AssetsUploader({
       {showAudioModal && (
         <div
           style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            position: "fixed", inset: 0, zIndex: 9999,
+            display: "flex", alignItems: "center", justifyContent: "center",
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAudioModal(false); }}
         >
           <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.55)" }} />
           <div
             style={{
-              position: "relative",
-              background: "#141414",
-              border: "2px solid #181818",
-              borderRadius: 25,
-              padding: 25,
-              width: 420,
-              maxWidth: "90vw",
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-              zIndex: 1,
+              position: "relative", background: "#141414", border: "2px solid #181818",
+              borderRadius: 25, padding: 25, width: 480, maxWidth: "90vw",
+              display: "flex", flexDirection: "column", gap: 16, zIndex: 1,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -182,45 +245,191 @@ export function AssetsUploader({
                 <Music style={{ width: 20, height: 20, color: "#fafafa" }} />
                 <span style={{ fontSize: 18, fontWeight: 500, color: "#fafafa" }}>Audio Manager</span>
               </div>
-              <button
-                onClick={() => setShowAudioModal(false)}
-                style={{ background: "none", border: "none", color: "#797979", cursor: "pointer", padding: 4 }}
-              >
+              <button onClick={() => setShowAudioModal(false)} style={{ background: "none", border: "none", color: "#797979", cursor: "pointer", padding: 4 }}>
                 <X style={{ width: 18, height: 18 }} />
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 14, color: "#a5a4a4", fontWeight: 450 }}>Audio URL</span>
-              <input
-                value={modalUrl}
-                onChange={(e) => setModalUrl(e.target.value)}
-                placeholder="https://example.com/audio.mp3"
-                style={{
-                  background: "#121212",
-                  border: "2px solid #1b1b1b",
-                  borderRadius: 14,
-                  padding: "10px 14px",
-                  color: "#f1f1f1",
-                  fontSize: 15,
-                  fontFamily: "Satoshi, sans-serif",
-                  outline: "none",
-                  width: "100%",
-                  boxSizing: "border-box",
-                }}
-              />
+            <div style={{ display: "flex", gap: 6 }}>
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setAudioTab(t.key)}
+                  style={{
+                    background: audioTab === t.key ? "rgba(218,102,218,0.2)" : "#1a1a1a",
+                    border: audioTab === t.key ? "1px solid rgba(218,102,218,0.4)" : "1px solid #222",
+                    borderRadius: 8, padding: "4px 12px", fontSize: 13,
+                    color: audioTab === t.key ? "#fafafa" : "#a5a4a4",
+                    cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+                  }}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
+
+            {audioTab === "url" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <span style={{ fontSize: 14, color: "#a5a4a4", fontWeight: 450 }}>Audio URL</span>
+                <input
+                  value={modalUrl}
+                  onChange={(e) => setModalUrl(e.target.value)}
+                  placeholder="https://example.com/audio.mp3"
+                  style={{
+                    background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14,
+                    padding: "10px 14px", color: "#f1f1f1", fontSize: 15,
+                    fontFamily: "Satoshi, sans-serif", outline: "none", width: "100%", boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            )}
+
+            {audioTab === "upload" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div
+                  onClick={() => audioInputRef.current?.click()}
+                  style={{
+                    background: "#0f0f0f", border: "2px solid #181818", borderRadius: 14,
+                    padding: 30, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", cursor: "pointer", gap: 6,
+                  }}
+                >
+                  <Upload style={{ width: 32, height: 32, color: "#797979" }} />
+                  <span style={{ fontSize: 14, color: "#797979" }}>Click to upload .mp3, .wav, or .ogg</span>
+                </div>
+
+                {uploadedAudio && (
+                  <div style={{
+                    background: "#121212", border: "2px solid #1b1b1b", borderRadius: 12,
+                    padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  }}>
+                    <div>
+                      <p style={{ fontSize: 14, color: "#f1f1f1", fontWeight: 500 }}>{uploadedAudio.name}</p>
+                      <p style={{ fontSize: 12, color: "#797979" }}>{uploadedAudio.size}</p>
+                    </div>
+                    <button
+                      onClick={openTrimPopup}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 4,
+                        background: "rgba(126,44,139,0.3)", border: "1px solid rgba(126,44,139,0.5)",
+                        borderRadius: 8, padding: "6px 12px", color: "#fafafa", fontSize: 13,
+                        cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+                      }}
+                    >
+                      <Scissors style={{ width: 14, height: 14 }} />
+                      Trim audio
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {audioTab === "spotify" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    value={spotifyInput}
+                    onChange={(e) => setSpotifyInput(e.target.value)}
+                    placeholder="Spotify track URL or ID"
+                    style={{
+                      flex: 1, background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14,
+                      padding: "10px 14px", color: "#f1f1f1", fontSize: 14,
+                      fontFamily: "Satoshi, sans-serif", outline: "none",
+                    }}
+                  />
+                  <button
+                    onClick={fetchSpotify}
+                    disabled={spotifyLoading}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 4,
+                      background: "rgba(126,44,139,0.44)", border: "2px solid rgba(126,44,139,0.61)",
+                      borderRadius: 14, padding: "8px 14px", color: "#fafafa", fontSize: 14,
+                      cursor: spotifyLoading ? "not-allowed" : "pointer", fontFamily: "Satoshi, sans-serif",
+                    }}
+                  >
+                    <Search style={{ width: 16, height: 16 }} />
+                    {spotifyLoading ? "..." : "Fetch"}
+                  </button>
+                </div>
+
+                {spotifyTrack && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {spotifyTrack.albumArt && (
+                        <img src={spotifyTrack.albumArt} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }} />
+                      )}
+                      <div>
+                        <p style={{ fontSize: 14, color: "#f1f1f1", fontWeight: 500 }}>{spotifyTrack.title}</p>
+                        <p style={{ fontSize: 12, color: "#a5a4a4" }}>{spotifyTrack.artist}</p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button
+                        onClick={() => { if (spotifyTrack.previewUrl) setModalUrl(spotifyTrack.previewUrl); }}
+                        disabled={!spotifyTrack.previewUrl}
+                        style={{
+                          flex: 1, background: "rgba(126,44,139,0.44)", border: "2px solid rgba(126,44,139,0.61)",
+                          borderRadius: 10, padding: "6px 12px", color: "#fafafa", fontSize: 13,
+                          cursor: spotifyTrack.previewUrl ? "pointer" : "not-allowed",
+                          fontFamily: "Satoshi, sans-serif",
+                        }}
+                      >
+                        Use preview (30s)
+                      </button>
+                      <button
+                        onClick={fetchLyrics}
+                        disabled={lyricsLoading}
+                        style={{
+                          flex: 1, background: "#1a1a1a", border: "2px solid #222",
+                          borderRadius: 10, padding: "6px 12px", color: "#a5a4a4", fontSize: 13,
+                          cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+                        }}
+                      >
+                        {lyricsLoading ? "Loading..." : "Fetch lyrics"}
+                      </button>
+                    </div>
+
+                    {lyricsData.length > 0 && (
+                      <div style={{
+                        maxHeight: 160, overflowY: "auto",
+                        background: "#121212", border: "2px solid #1b1b1b", borderRadius: 12, padding: 10,
+                        display: "flex", flexDirection: "column", gap: 4,
+                      }}>
+                        {lyricsData.map((line, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            {line.time !== null && (
+                              <span style={{
+                                background: "#222", borderRadius: 4, padding: "1px 6px",
+                                fontSize: 11, color: "#a5a4a4", fontFamily: "monospace", whiteSpace: "nowrap",
+                              }}>
+                                {Math.floor(line.time / 60)}:{String(Math.floor(line.time % 60)).padStart(2, "0")}
+                              </span>
+                            )}
+                            <span style={{ fontSize: 13, color: "#a5a4a4" }}>{line.text}</span>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => { if (onLyricsChange) onLyricsChange(lyricsData); }}
+                          style={{
+                            marginTop: 6, background: "rgba(126,44,139,0.3)", border: "1px solid rgba(126,44,139,0.5)",
+                            borderRadius: 8, padding: "6px 12px", color: "#fafafa", fontSize: 13,
+                            cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+                          }}
+                        >
+                          Save lyrics
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ fontSize: 14, color: "#a5a4a4", fontWeight: 450 }}>Volume</span>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <ModalSlider
-                  value={modalVolume}
-                  onChange={setModalVolume}
-                  min={0}
-                  max={1}
-                  step={0.05}
-                />
+                <Slider value={modalVolume} onChange={setModalVolume} min={0} max={1} step={0.05} />
                 <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
                   {Math.round(modalVolume * 100)}%
                 </span>
@@ -228,41 +437,155 @@ export function AssetsUploader({
             </div>
 
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
-              <button
-                onClick={() => setShowAudioModal(false)}
-                style={{
-                  background: "#1a1a1a",
-                  border: "2px solid #222",
-                  borderRadius: 15,
-                  padding: "8px 18px",
-                  color: "#a5a4a4",
-                  fontSize: 14,
-                  fontFamily: "Satoshi, sans-serif",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
+              <button onClick={() => setShowAudioModal(false)} style={{
+                background: "#1a1a1a", border: "2px solid #222", borderRadius: 15,
+                padding: "8px 18px", color: "#a5a4a4", fontSize: 14, cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+              }}>Cancel</button>
+              <button onClick={saveAudioModal} style={{
+                backgroundColor: "rgba(126,44,139,0.44)", border: "2px solid rgba(126,44,139,0.61)",
+                borderRadius: 15, padding: "8px 18px", color: "#fafafa", fontSize: 14,
+                cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+              }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTrim && uploadedAudio && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowTrim(false); }}
+        >
+          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.65)" }} />
+          <div
+            style={{
+              position: "relative", background: "#141414", border: "2px solid #181818",
+              borderRadius: 25, padding: 25, width: 500, maxWidth: "90vw",
+              display: "flex", flexDirection: "column", gap: 16, zIndex: 1,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 16, fontWeight: 500, color: "#fafafa" }}>Trim Audio</span>
+              <button onClick={() => setShowTrim(false)} style={{ background: "none", border: "none", color: "#797979", cursor: "pointer" }}>
+                <X style={{ width: 18, height: 18 }} />
               </button>
-              <button
-                onClick={saveAudioModal}
+            </div>
+
+            <div
+              style={{ position: "relative", height: 40, background: "#1a1a1a", borderRadius: 12, border: "1px solid #222", overflow: "hidden" }}
+            >
+              <div
                 style={{
-                  backgroundColor: "rgba(126,44,139,0.44)",
-                  border: "2px solid rgba(126,44,139,0.61)",
-                  borderRadius: 15,
-                  padding: "8px 18px",
-                  color: "#fafafa",
-                  fontSize: 14,
-                  fontFamily: "Satoshi, sans-serif",
-                  cursor: "pointer",
+                  position: "absolute", top: 0, height: "100%",
+                  left: `${(trimStart / (audioDuration || 30)) * 100}%`,
+                  width: `${((trimEnd - trimStart) / (audioDuration || 30)) * 100}%`,
+                  background: "rgba(218,102,218,0.2)", borderLeft: "1px solid rgba(218,102,218,0.5)",
+                  borderRight: "1px solid rgba(218,102,218,0.5)", pointerEvents: "none",
                 }}
-              >
-                Save
-              </button>
+              />
+            </div>
+
+            <TrimHandle
+              position={trimStart}
+              max={audioDuration || 30}
+              onChange={setTrimStart}
+              boundMax={trimEnd}
+              label="Start"
+            />
+            <TrimHandle
+              position={trimEnd}
+              max={audioDuration || 30}
+              onChange={setTrimEnd}
+              boundMin={trimStart}
+              label="End"
+            />
+
+            <audio src={uploadedAudio.url} controls style={{ width: "100%", borderRadius: 8 }}
+              onLoadedMetadata={(e) => setAudioDuration(Math.floor(e.currentTarget.duration))}
+            />
+
+            <div style={{ textAlign: "center", fontSize: 14, color: "#a5a4a4" }}>
+              {Math.floor(trimStart / 60)}:{String(Math.floor(trimStart % 60)).padStart(2, "0")} → {Math.floor(trimEnd / 60)}:{String(Math.floor(trimEnd % 60)).padStart(2, "0")}
+              <span style={{ color: "#797979", marginLeft: 8 }}>
+                ({trimEnd - trimStart}s)
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setShowTrim(false)} style={{
+                background: "#1a1a1a", border: "2px solid #222", borderRadius: 15,
+                padding: "8px 18px", color: "#a5a4a4", fontSize: 14, cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+              }}>Cancel</button>
+              <button onClick={applyTrim} style={{
+                backgroundColor: "rgba(126,44,139,0.44)", border: "2px solid rgba(126,44,139,0.61)",
+                borderRadius: 15, padding: "8px 18px", color: "#fafafa", fontSize: 14,
+                cursor: "pointer", fontFamily: "Satoshi, sans-serif",
+              }}>Apply</button>
             </div>
           </div>
         </div>
       )}
     </>
+  );
+}
+
+function TrimHandle({
+  position, max, onChange, boundMin, boundMax, label,
+}: {
+  position: number; max: number; onChange: (v: number) => void;
+  boundMin?: number; boundMax?: number; label: string;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  const getPos = useCallback((clientX: number) => {
+    if (!trackRef.current) return position;
+    const rect = trackRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    return Math.round(pct * max);
+  }, [max, position]);
+
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!draggingRef.current) return;
+      let raw = getPos(e.clientX);
+      if (boundMin !== undefined) raw = Math.max(raw, boundMin + 1);
+      if (boundMax !== undefined) raw = Math.min(raw, boundMax - 1);
+      onChange(Math.max(0, Math.min(max, raw)));
+    };
+    const handleUp = () => { draggingRef.current = false; };
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", handleUp);
+    return () => { window.removeEventListener("mousemove", handleMove); window.removeEventListener("mouseup", handleUp); };
+  }, [getPos, boundMin, boundMax, max, onChange]);
+
+  return (
+    <div ref={trackRef} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontSize: 12, color: "#a5a4a4", minWidth: 30 }}>{label}</span>
+      <div
+        style={{ position: "relative", flex: 1, height: 6, background: "#2a2a2a", borderRadius: 999, cursor: "pointer" }}
+        onMouseDown={(e) => {
+          draggingRef.current = true;
+          let raw = getPos(e.clientX);
+          if (boundMin !== undefined) raw = Math.max(raw, boundMin + 1);
+          if (boundMax !== undefined) raw = Math.min(raw, boundMax - 1);
+          onChange(Math.max(0, Math.min(max, raw)));
+        }}
+      >
+        <div
+          style={{
+            position: "absolute", top: "50%",
+            left: `${(position / max) * 100}%`,
+            transform: "translate(-50%, -50%)",
+            width: 14, height: 14, borderRadius: "50%", background: "#fff",
+            border: "2px solid rgba(218,102,218,0.8)", pointerEvents: "none",
+          }}
+        />
+      </div>
+      <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
+        {Math.floor(position / 60)}:{String(Math.floor(position % 60)).padStart(2, "0")}
+      </span>
+    </div>
   );
 }
 
@@ -278,184 +601,44 @@ function AssetCard({ label, children }: { label: string; children: React.ReactNo
 }
 
 function AssetUploadZone({
-  uploaded,
-  onRemove,
-  alwaysShow,
-  onClick,
-  children,
+  uploaded, onRemove, alwaysShow, onClick, children,
 }: {
-  uploaded?: UploadedFile;
-  onRemove?: () => void;
-  alwaysShow?: boolean;
-  onClick?: () => void;
-  children: React.ReactNode;
+  uploaded?: UploadedFile; onRemove?: () => void; alwaysShow?: boolean; onClick?: () => void; children: React.ReactNode;
 }) {
   const hasFile = uploaded && !alwaysShow;
 
   return (
     <div
       style={{
-        backgroundColor: "#0f0f0f",
-        border: "2px solid #181818",
-        borderRadius: 10,
-        height: 130,
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative",
-        cursor: "pointer",
-        userSelect: "none",
-        overflow: "hidden",
+        backgroundColor: "#0f0f0f", border: "2px solid #181818", borderRadius: 10,
+        height: 130, width: "100%", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", position: "relative",
+        cursor: "pointer", userSelect: "none", overflow: "hidden",
       }}
       onClick={onClick}
     >
       {hasFile ? (
         <>
           {uploaded!.isVideo ? (
-            <video
-              src={uploaded!.url}
-              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-              muted
-              loop
-              autoPlay
-            />
+            <video src={uploaded!.url} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} muted loop autoPlay />
           ) : (
-            <img
-              src={uploaded!.url}
-              alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }}
-            />
+            <img src={uploaded!.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", inset: 0 }} />
           )}
-
-          <div
-            style={{
-              position: "absolute",
-              top: 8,
-              right: 8,
-              background: "rgba(24,24,24,0.46)",
-              backdropFilter: "blur(30px)",
-              WebkitBackdropFilter: "blur(30px)",
-              borderRadius: 10,
-              padding: "5px 10px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              zIndex: 2,
-            }}
-          >
+          <div style={{
+            position: "absolute", top: 8, right: 8,
+            background: "rgba(24,24,24,0.46)", backdropFilter: "blur(30px)",
+            WebkitBackdropFilter: "blur(30px)", borderRadius: 10,
+            padding: "5px 10px", display: "flex", alignItems: "center", gap: 8, zIndex: 2,
+          }}>
             <span style={{ fontSize: 13, color: "#fafafa" }}>.{uploaded!.ext || "file"}</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); onRemove?.(); }}
-              style={{
-                cursor: "pointer",
-                background: "none",
-                border: "none",
-                color: "#fafafa",
-                fontSize: 14,
-                padding: 0,
-                lineHeight: 1,
-              }}
-            >
-              ✕
-            </button>
+            <button onClick={(e) => { e.stopPropagation(); onRemove?.(); }} style={{
+              cursor: "pointer", background: "none", border: "none", color: "#fafafa", fontSize: 14, padding: 0, lineHeight: 1,
+            }}>✕</button>
           </div>
         </>
       ) : (
         children
       )}
-    </div>
-  );
-}
-
-function ModalSlider({
-  value,
-  onChange,
-  min,
-  max,
-  step,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  min: number;
-  max: number;
-  step: number;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef(false);
-  const valueRef = useRef(value);
-  valueRef.current = value;
-
-  const computeValue = useCallback((clientX: number) => {
-    if (!trackRef.current) return valueRef.current;
-    const rect = trackRef.current.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const raw = min + pct * (max - min);
-    const stepped = Math.round(raw / step) * step;
-    return Math.max(min, Math.min(max, stepped));
-  }, [min, max, step]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    draggingRef.current = true;
-    onChange(computeValue(e.clientX));
-  }, [onChange, computeValue]);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      if (!draggingRef.current) return;
-      onChange(computeValue(e.clientX));
-    };
-    const handleUp = () => { draggingRef.current = false; };
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-    };
-  }, [onChange, computeValue]);
-
-  const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
-
-  return (
-    <div
-      ref={trackRef}
-      style={{
-        position: "relative",
-        flex: 1,
-        height: 4,
-        background: "#2a2a2a",
-        borderRadius: 999,
-        cursor: "pointer",
-      }}
-      onMouseDown={handleMouseDown}
-    >
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          height: "100%",
-          width: `${Math.max(0, Math.min(100, pct))}%`,
-          background: "rgba(218,102,218,0.7)",
-          borderRadius: 999,
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: `${Math.max(0, Math.min(100, pct))}%`,
-          transform: "translate(-50%, -50%)",
-          width: 14,
-          height: 14,
-          borderRadius: "50%",
-          background: "#ffffff",
-          border: "2px solid rgba(218,102,218,0.8)",
-          pointerEvents: "none",
-        }}
-      />
     </div>
   );
 }

@@ -44,6 +44,7 @@ export default function CustomizePage() {
   const [cfg, setCfg] = useState<ProfileConfig>(() => normalizeConfig(brazyProfile));
   const [cursorUploadUrl, setCursorUploadUrl] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [lyrics, setLyrics] = useState<{ time: number | null; text: string }[]>([]);
 
   const cfgRef = useRef(cfg);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -200,6 +201,8 @@ export default function CustomizePage() {
           onAudioChange={(url) => uploadCallback("audio", "src", url)}
           audioVolume={cfg.audio.volume}
           onAudioVolumeChange={(v) => updateNested("audio", "volume", v)}
+          lyrics={lyrics}
+          onLyricsChange={setLyrics}
         />
       </SectionCard>
 

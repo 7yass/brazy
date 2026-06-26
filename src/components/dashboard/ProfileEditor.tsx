@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Upload, Trash2, Copy, Check } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
@@ -54,7 +54,7 @@ export default function ProfileEditor({
   initialConfig,
   username,
   onSave,
-  saving,
+  saving: externalSaving,
 }: {
   initialConfig?: ProfileConfig;
   username?: string;
@@ -68,26 +68,73 @@ export default function ProfileEditor({
     { id: "3", name: "track.mp3", type: "audio", size: "3.4 MB", url: "/assets/track.mp3" },
   ]);
   const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const cfgRef = useRef(cfg);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savingRef = useRef(false);
+  const pendingRef = useRef(false);
+
+  useEffect(() => { cfgRef.current = cfg; }, [cfg]);
+
+  const doSave = useCallback(async (config: ProfileConfig) => {
+    if (savingRef.current) { pendingRef.current = true; return; }
+    savingRef.current = true;
+    pendingRef.current = false;
+    setSaveStatus("saving");
+    try {
+      await onSave(config);
+      if (pendingRef.current) { savingRef.current = false; doSave(cfgRef.current); return; }
+      setSaveStatus("saved");
+      if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
+      savedFadeRef.current = setTimeout(() => { setSaveStatus("idle"); savedFadeRef.current = null; }, 2000);
+    } catch {
+      setSaveStatus("error");
+      console.error("Auto-save failed");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } finally {
+      savingRef.current = false;
+    }
+  }, [onSave]);
+
+  const scheduleSave = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveStatus("saving");
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      doSave(cfgRef.current);
+    }, 800);
+  }, [doSave]);
 
   const update = useCallback(<K extends keyof ProfileConfig>(section: K, val: ProfileConfig[K]) => {
     setCfg((c) => ({ ...c, [section]: val }));
-  }, []);
+    scheduleSave();
+  }, [scheduleSave]);
 
   const updateNested = useCallback(<S extends keyof ProfileConfig, K extends keyof ProfileConfig[S]>(
     section: S, key: K, val: ProfileConfig[S][K],
   ) => {
-    setCfg((c) => ({
-      ...c,
-      [section]: { ...(c[section] as Record<string, unknown>), [key]: val } as ProfileConfig[S],
-    }));
-  }, []);
+    setCfg((c) => {
+      const next = { ...c, [section]: { ...(c[section] as Record<string, unknown>), [key]: val } as ProfileConfig[S] };
+      cfgRef.current = next;
+      return next;
+    });
+    scheduleSave();
+  }, [scheduleSave]);
 
   const updateEffect = useCallback(<K extends keyof ProfileConfig["effects"]>(key: K, val: ProfileConfig["effects"][K]) => {
     setCfg((c) => ({ ...c, effects: { ...c.effects, [key]: val } }));
-  }, []);
+    scheduleSave();
+  }, [scheduleSave]);
 
   const updateCursor = useCallback(<K extends keyof ProfileConfig["effects"]["cursor"]>(key: K, val: ProfileConfig["effects"]["cursor"][K]) => {
     setCfg((c) => ({ ...c, effects: { ...c.effects, cursor: { ...c.effects.cursor, [key]: val } } }));
+    scheduleSave();
+  }, [scheduleSave]);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); if (savedFadeRef.current) clearTimeout(savedFadeRef.current); };
   }, []);
 
   const copyAssetUrl = useCallback(async (url: string, id: string) => {
@@ -104,7 +151,29 @@ export default function ProfileEditor({
 
   return (
     <div className="flex h-full flex-col" style={{ background: "#08070d", color: "#e2e8f0" }}>
-      {/* Scrollable content */}
+      {saveStatus !== "idle" && (
+        <div
+          style={{
+            position: "fixed",
+            top: 20,
+            right: 20,
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#141414",
+            border: "2px solid #181818",
+            borderRadius: 999,
+            padding: "5px 12px",
+            fontSize: 13,
+            color: "#a1a1a1",
+            fontFamily: "Satoshi, sans-serif",
+            transition: saveStatus === "saved" ? "opacity 0.4s" : "none",
+          }}
+        >
+          {saveStatus === "saving" ? "Saving..." : saveStatus === "saved" ? "Saved ✓" : "Failed to save"}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto px-6 py-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-6 flex items-center justify-between">
@@ -112,18 +181,6 @@ export default function ProfileEditor({
               <h2 className="text-lg font-semibold text-white/90">Customize</h2>
               <p className="text-sm text-white/40">Personalize your profile</p>
             </div>
-            <button
-              onClick={() => onSave(cfg)}
-              disabled={saving}
-              className={cn(
-                "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition",
-                saving
-                  ? "bg-violet-500/40 text-white/40 cursor-not-allowed"
-                  : "bg-violet-500 text-white hover:bg-violet-400 cursor-pointer",
-              )}
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
           </div>
 
           <div className="flex flex-col gap-5">
