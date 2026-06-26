@@ -108,7 +108,6 @@ export function AssetsUploader({
   const saveAudioModal = () => {
     onAudioChange(modalUrl);
     onAudioVolumeChange(modalVolume);
-    if (onLyricsChange) onLyricsChange(lyricsData);
     setShowAudioModal(false);
   };
 
