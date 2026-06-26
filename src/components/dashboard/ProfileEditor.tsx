@@ -2,24 +2,10 @@
 
 import { useState, useCallback } from "react";
 import {
-  User,
-  Palette,
-  Image,
-  FolderOpen,
-  Sparkles,
-  Music,
-  Link2,
-  Code,
-  Save,
   Upload,
   Trash2,
   Copy,
   Check,
-  Type,
-  LogIn,
-  Award,
-  Search,
-  LayoutTemplate,
 } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
@@ -59,22 +45,6 @@ const cursorOpts = [
   { value: "rings" as const, label: "Rings" },
 ];
 
-const navItems = [
-  { id: "identity", label: "Profile", icon: User },
-  { id: "theme", label: "Theme", icon: Palette },
-  { id: "background", label: "Background", icon: Image },
-  { id: "font", label: "Font", icon: Type },
-  { id: "splash", label: "Splash", icon: LogIn },
-  { id: "audio", label: "Audio", icon: Music },
-  { id: "social", label: "Social", icon: Link2 },
-  { id: "badges", label: "Badges", icon: Award },
-  { id: "effects", label: "Effects", icon: Sparkles },
-  { id: "widgets", label: "Widgets", icon: LayoutTemplate },
-  { id: "seo", label: "SEO", icon: Search },
-  { id: "assets", label: "Assets", icon: FolderOpen },
-  { id: "custom", label: "Custom", icon: Code },
-];
-
 const fontOpts = [
   { value: "geist" as const, label: "Geist" },
   { value: "inter" as const, label: "Inter" },
@@ -93,15 +63,9 @@ const splashTypeOpts = [
   { value: "gradient" as const, label: "Gradient" },
 ];
 
-const widgetLayoutOpts = [
-  { value: "list" as const, label: "List" },
-  { value: "grid" as const, label: "Grid" },
-  { value: "compact" as const, label: "Compact" },
-];
-
 function SectionCard({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-5">
+    <div className="rounded-xl border border-white/[0.06] bg-[#111111] p-5">
       {title && (
         <h3 className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/30">
           {title}
@@ -126,7 +90,6 @@ export default function ProfileEditor({
   saving: boolean;
 }) {
   const [cfg, setCfg] = useState<ProfileConfig>(normalizeConfig(initialConfig ?? brazyProfile));
-  const [tab, setTab] = useState("identity");
   const [assets, setAssets] = useState<{ id: string; name: string; type: string; size: string; url: string }[]>([
     { id: "1", name: "avatar-default.png", type: "image", size: "24 KB", url: "/assets/avatar.png" },
     { id: "2", name: "background.mp4", type: "video", size: "1.2 MB", url: "/assets/bg.mp4" },
@@ -196,540 +159,405 @@ export default function ProfileEditor({
   }, []);
 
   return (
-    <div className="flex h-screen" style={{ background: "#08070d", color: "#e2e8f0" }}>
-      {/* Sidebar */}
-      <nav className="flex w-64 shrink-0 flex-col border-r border-white/[0.06]" style={{ background: "#0e0e0e" }}>
-        <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/20 text-lg font-bold text-violet-300">
-            {cfg.identity.displayName?.charAt(0)?.toUpperCase() || "?"}
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-white/90">{cfg.identity.displayName || "Profile"}</span>
-            {username && (
-              <span className="text-xs text-white/40">@{username}</span>
-            )}
-          </div>
+    <div className="flex h-full flex-col" style={{ background: "#08070d", color: "#e2e8f0" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-6 py-4">
+        <div>
+          <h2 className="text-lg font-semibold text-white/90">Customize</h2>
+          <p className="text-sm text-white/40">All settings in one place</p>
         </div>
-        <div className="flex flex-col gap-0.5 p-3">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = tab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setTab(item.id)}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-violet-500/15 text-violet-300"
-                    : "text-white/40 hover:bg-white/[0.04] hover:text-white/70",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-auto border-t border-white/[0.06] p-3">
-          <button
-            onClick={() => onSave(cfg)}
-            disabled={saving}
-            className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
-              saving
-                ? "bg-violet-500/40 text-white/40 cursor-not-allowed"
-                : "bg-violet-500 text-white hover:bg-violet-400 cursor-pointer",
-            )}
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </nav>
-
-      {/* Controls */}
-      <div className="flex flex-1 overflow-y-auto">
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 p-8">
-          {tab === "identity" && (
-            <>
-              <SectionCard title="Display">
-                <TextInput value={cfg.identity.displayName} onChange={(v) => updateNested("identity", "displayName", v)} placeholder="Display name" />
-                <TextInput value={cfg.identity.tagline} onChange={(v) => updateNested("identity", "tagline", v)} placeholder="Tagline" />
-                <TextInput value={cfg.identity.pronouns} onChange={(v) => updateNested("identity", "pronouns", v)} placeholder="Pronouns" />
-                <TextInput value={cfg.identity.location} onChange={(v) => updateNested("identity", "location", v)} placeholder="Location" />
-                <TextArea value={cfg.identity.bio} onChange={(v) => updateNested("identity", "bio", v)} placeholder="Bio" rows={3} />
-              </SectionCard>
-              <SectionCard title="Avatar">
-                <TextInput value={cfg.identity.avatarUrl} onChange={(v) => updateNested("identity", "avatarUrl", v)} placeholder="Avatar URL" />
-              </SectionCard>
-              <SectionCard title="Badges">
-                <Toggle value={cfg.identity.verified} onChange={(v) => updateNested("identity", "verified", v)} label="Verified badge" />
-              </SectionCard>
-            </>
+        <button
+          onClick={() => onSave(cfg)}
+          disabled={saving}
+          className={cn(
+            "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition",
+            saving
+              ? "bg-violet-500/40 text-white/40 cursor-not-allowed"
+              : "bg-violet-500 text-white hover:bg-violet-400 cursor-pointer",
           )}
+        >
+          {saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
 
-          {tab === "theme" && (
-            <>
-              <SectionCard title="Colors">
-                <div className="grid grid-cols-2 gap-3">
-                  <ColorInput value={cfg.theme.primaryColor} onChange={(v) => updateNested("theme", "primaryColor", v)} />
-                  <ColorInput value={cfg.theme.secondaryColor} onChange={(v) => updateNested("theme", "secondaryColor", v)} />
-                  <ColorInput value={cfg.theme.accentColor} onChange={(v) => updateNested("theme", "accentColor", v)} />
-                  <ColorInput value={cfg.theme.backgroundColor} onChange={(v) => updateNested("theme", "backgroundColor", v)} />
-                  <ColorInput value={cfg.theme.textColor} onChange={(v) => updateNested("theme", "textColor", v)} />
-                  <ColorInput value={cfg.theme.mutedTextColor} onChange={(v) => updateNested("theme", "mutedTextColor", v)} />
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto px-6 py-8">
+        <div className="mx-auto flex max-w-2xl flex-col gap-8">
+          {/* Profile */}
+          <SectionCard title="Profile">
+            <TextInput value={cfg.identity.displayName} onChange={(v) => updateNested("identity", "displayName", v)} placeholder="Display name" />
+            <TextInput value={cfg.identity.tagline} onChange={(v) => updateNested("identity", "tagline", v)} placeholder="Tagline" />
+            <TextInput value={cfg.identity.pronouns} onChange={(v) => updateNested("identity", "pronouns", v)} placeholder="Pronouns" />
+            <TextInput value={cfg.identity.location} onChange={(v) => updateNested("identity", "location", v)} placeholder="Location" />
+            <TextArea value={cfg.identity.bio} onChange={(v) => updateNested("identity", "bio", v)} placeholder="Bio" rows={3} />
+            <TextInput value={cfg.identity.avatarUrl} onChange={(v) => updateNested("identity", "avatarUrl", v)} placeholder="Avatar URL" />
+            <Toggle value={cfg.identity.verified} onChange={(v) => updateNested("identity", "verified", v)} label="Verified badge" />
+          </SectionCard>
+
+          {/* Theme */}
+          <SectionCard title="Theme">
+            <div className="grid grid-cols-2 gap-3">
+              <ColorInput value={cfg.theme.primaryColor} onChange={(v) => updateNested("theme", "primaryColor", v)} />
+              <ColorInput value={cfg.theme.secondaryColor} onChange={(v) => updateNested("theme", "secondaryColor", v)} />
+              <ColorInput value={cfg.theme.accentColor} onChange={(v) => updateNested("theme", "accentColor", v)} />
+              <ColorInput value={cfg.theme.backgroundColor} onChange={(v) => updateNested("theme", "backgroundColor", v)} />
+              <ColorInput value={cfg.theme.textColor} onChange={(v) => updateNested("theme", "textColor", v)} />
+              <ColorInput value={cfg.theme.mutedTextColor} onChange={(v) => updateNested("theme", "mutedTextColor", v)} />
+            </div>
+            <SelectInput value={cfg.theme.contentAlign} onChange={(v) => updateNested("theme", "contentAlign", v)} options={[{ value: "center", label: "Center" }, { value: "left", label: "Left" }]} />
+          </SectionCard>
+
+          {/* Card Style */}
+          <SectionCard title="Card Style">
+            <SelectInput value={cfg.theme.cardStyle} onChange={(v) => updateNested("theme", "cardStyle", v)} options={cardStyleOpts} />
+            <div>
+              <span className="mb-1 block text-[11px] text-white/30">Opacity: {cfg.theme.cardOpacity.toFixed(2)}</span>
+              <Slider value={cfg.theme.cardOpacity} onChange={(v) => updateNested("theme", "cardOpacity", v)} min={0} max={1} step={0.05} />
+            </div>
+            <div>
+              <span className="mb-1 block text-[11px] text-white/30">Blur: {cfg.theme.cardBlur}px</span>
+              <Slider value={cfg.theme.cardBlur} onChange={(v) => updateNested("theme", "cardBlur", v)} min={0} max={60} step={1} />
+            </div>
+            <div>
+              <span className="mb-1 block text-[11px] text-white/30">Border radius: {cfg.theme.borderRadius}px</span>
+              <Slider value={cfg.theme.borderRadius} onChange={(v) => updateNested("theme", "borderRadius", v)} min={0} max={48} step={2} />
+            </div>
+            <div>
+              <span className="mb-1 block text-[11px] text-white/30">Border width: {cfg.theme.borderWidth}px</span>
+              <Slider value={cfg.theme.borderWidth} onChange={(v) => updateNested("theme", "borderWidth", v)} min={0} max={8} step={1} />
+            </div>
+            <div>
+              <span className="mb-1 block text-[11px] text-white/30">Max width: {cfg.theme.maxWidth}px</span>
+              <Slider value={cfg.theme.maxWidth} onChange={(v) => updateNested("theme", "maxWidth", v)} min={300} max={800} step={20} />
+            </div>
+          </SectionCard>
+
+          {/* Glow */}
+          <SectionCard title="Glow">
+            <Toggle value={cfg.theme.glow} onChange={(v) => updateNested("theme", "glow", v)} label="Enable glow" />
+            {cfg.theme.glow && (
+              <div>
+                <span className="mb-1 block text-[11px] text-white/30">Intensity: {cfg.theme.glowIntensity}</span>
+                <Slider value={cfg.theme.glowIntensity} onChange={(v) => updateNested("theme", "glowIntensity", v)} min={0} max={100} step={5} />
+              </div>
+            )}
+          </SectionCard>
+
+          {/* Background */}
+          <SectionCard title="Background">
+            <SelectInput value={cfg.background.type} onChange={(v) => updateNested("background", "type", v)} options={backgroundOpts} />
+            {cfg.background.type !== "none" && cfg.background.type !== "image" && cfg.background.type !== "video" && (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  <ColorInput value={cfg.background.color1} onChange={(v) => updateNested("background", "color1", v)} />
+                  <ColorInput value={cfg.background.color2} onChange={(v) => updateNested("background", "color2", v)} />
+                  <ColorInput value={cfg.background.color3} onChange={(v) => updateNested("background", "color3", v)} />
                 </div>
-              </SectionCard>
-              <SectionCard title="Card">
-                <SelectInput value={cfg.theme.cardStyle} onChange={(v) => updateNested("theme", "cardStyle", v)} options={cardStyleOpts} />
                 <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Opacity: {cfg.theme.cardOpacity.toFixed(2)}</span>
-                  <Slider value={cfg.theme.cardOpacity} onChange={(v) => updateNested("theme", "cardOpacity", v)} min={0} max={1} step={0.05} />
+                  <span className="mb-1 block text-[11px] text-white/30">Speed: {cfg.background.speed.toFixed(1)}</span>
+                  <Slider value={cfg.background.speed} onChange={(v) => updateNested("background", "speed", v)} min={0} max={5} step={0.2} />
                 </div>
                 <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Blur: {cfg.theme.cardBlur}px</span>
-                  <Slider value={cfg.theme.cardBlur} onChange={(v) => updateNested("theme", "cardBlur", v)} min={0} max={60} step={1} />
+                  <span className="mb-1 block text-[11px] text-white/30">Density: {cfg.background.density.toFixed(1)}</span>
+                  <Slider value={cfg.background.density} onChange={(v) => updateNested("background", "density", v)} min={0} max={5} step={0.2} />
                 </div>
                 <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Border radius: {cfg.theme.borderRadius}px</span>
-                  <Slider value={cfg.theme.borderRadius} onChange={(v) => updateNested("theme", "borderRadius", v)} min={0} max={48} step={2} />
+                  <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.background.size.toFixed(1)}</span>
+                  <Slider value={cfg.background.size} onChange={(v) => updateNested("background", "size", v)} min={0} max={12} step={1} />
                 </div>
-                <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Max width: {cfg.theme.maxWidth}px</span>
-                  <Slider value={cfg.theme.maxWidth} onChange={(v) => updateNested("theme", "maxWidth", v)} min={300} max={800} step={20} />
-                </div>
-              </SectionCard>
-              <SectionCard title="Glow">
-                <Toggle value={cfg.theme.glow} onChange={(v) => updateNested("theme", "glow", v)} label="Enable glow" />
-                {cfg.theme.glow && (
+                <Toggle value={cfg.background.glow} onChange={(v) => updateNested("background", "glow", v)} label="Glow" />
+              </>
+            )}
+            {cfg.background.type === "image" && (
+              <TextInput value={cfg.background.imageUrl} onChange={(v) => updateNested("background", "imageUrl", v)} placeholder="Image URL" />
+            )}
+            {cfg.background.type === "video" && (
+              <TextInput value={cfg.background.videoUrl} onChange={(v) => updateNested("background", "videoUrl", v)} placeholder="Video URL" />
+            )}
+          </SectionCard>
+
+          {/* Font */}
+          <SectionCard title="Font">
+            <SelectInput value={cfg.theme.fontFamily} onChange={(v) => updateNested("theme", "fontFamily", v)} options={fontOpts} />
+            {cfg.theme.fontFamily === "custom" && (
+              <TextInput value={cfg.theme.fontFamilyUrl} onChange={(v) => updateNested("theme", "fontFamilyUrl", v)} placeholder="Font URL (Google Fonts link)" />
+            )}
+          </SectionCard>
+
+          {/* Splash */}
+          <SectionCard title="Splash Screen">
+            <Toggle value={cfg.splash.enabled} onChange={(v) => updateNested("splash", "enabled", v)} label="Enable splash intro" />
+            {cfg.splash.enabled && (
+              <>
+                <SelectInput value={cfg.splash.type} onChange={(v) => updateNested("splash", "type", v)} options={splashTypeOpts} />
+                <TextInput value={cfg.splash.text} onChange={(v) => updateNested("splash", "text", v)} placeholder="Main text" />
+                <TextInput value={cfg.splash.subtext} onChange={(v) => updateNested("splash", "subtext", v)} placeholder="Sub text" />
+                <TextInput value={cfg.splash.cta} onChange={(v) => updateNested("splash", "cta", v)} placeholder="CTA button text" />
+                <Toggle value={cfg.splash.showEnterButton} onChange={(v) => updateNested("splash", "showEnterButton", v)} label="Show enter button" />
+                <ColorInput value={cfg.splash.bgColor} onChange={(v) => updateNested("splash", "bgColor", v)} />
+                <ColorInput value={cfg.splash.textColor} onChange={(v) => updateNested("splash", "textColor", v)} />
+                <ColorInput value={cfg.splash.accentColor} onChange={(v) => updateNested("splash", "accentColor", v)} />
+                {cfg.splash.type === "blur" && (
                   <div>
-                    <span className="mb-1 block text-[11px] text-white/30">Intensity: {cfg.theme.glowIntensity}</span>
-                    <Slider value={cfg.theme.glowIntensity} onChange={(v) => updateNested("theme", "glowIntensity", v)} min={0} max={100} step={5} />
+                    <span className="mb-1 block text-[11px] text-white/30">Blur amount: {cfg.splash.blurAmount}px</span>
+                    <Slider value={cfg.splash.blurAmount} onChange={(v) => updateNested("splash", "blurAmount", v)} min={0} max={40} step={2} />
                   </div>
                 )}
-              </SectionCard>
-              <SectionCard title="Content">
-                <SelectInput
-                  value={cfg.theme.contentAlign}
-                  onChange={(v) => updateNested("theme", "contentAlign", v)}
-                  options={[{ value: "center", label: "Center" }, { value: "left", label: "Left" }]}
-                />
-              </SectionCard>
-            </>
-          )}
-
-          {tab === "background" && (
-            <>
-              <SectionCard title="Type">
-                <SelectInput
-                  value={cfg.background.type}
-                  onChange={(v) => updateNested("background", "type", v)}
-                  options={backgroundOpts}
-                />
-              </SectionCard>
-              {cfg.background.type !== "none" && cfg.background.type !== "image" && cfg.background.type !== "video" && (
-                <>
-                  <SectionCard title="Colors">
-                    <div className="grid grid-cols-3 gap-2">
-                      <ColorInput value={cfg.background.color1} onChange={(v) => updateNested("background", "color1", v)} />
-                      <ColorInput value={cfg.background.color2} onChange={(v) => updateNested("background", "color2", v)} />
-                      <ColorInput value={cfg.background.color3} onChange={(v) => updateNested("background", "color3", v)} />
-                    </div>
-                  </SectionCard>
-                  <SectionCard title="Adjustments">
-                    <div>
-                      <span className="mb-1 block text-[11px] text-white/30">Speed: {cfg.background.speed.toFixed(1)}</span>
-                      <Slider value={cfg.background.speed} onChange={(v) => updateNested("background", "speed", v)} min={0} max={5} step={0.2} />
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-[11px] text-white/30">Density: {cfg.background.density.toFixed(1)}</span>
-                      <Slider value={cfg.background.density} onChange={(v) => updateNested("background", "density", v)} min={0} max={5} step={0.2} />
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.background.size.toFixed(1)}</span>
-                      <Slider value={cfg.background.size} onChange={(v) => updateNested("background", "size", v)} min={0} max={12} step={1} />
-                    </div>
-                  </SectionCard>
-                </>
-              )}
-              {cfg.background.type === "image" && (
-                <SectionCard title="Image">
-                  <TextInput value={cfg.background.imageUrl} onChange={(v) => updateNested("background", "imageUrl", v)} placeholder="Image URL" />
-                </SectionCard>
-              )}
-              {cfg.background.type === "video" && (
-                <SectionCard title="Video">
-                  <TextInput value={cfg.background.videoUrl} onChange={(v) => updateNested("background", "videoUrl", v)} placeholder="Video URL" />
-                </SectionCard>
-              )}
-            </>
-          )}
-
-          {tab === "font" && (
-            <>
-              <SectionCard title="Font Family">
-                <SelectInput value={cfg.theme.fontFamily} onChange={(v) => updateNested("theme", "fontFamily", v)} options={fontOpts} />
-                {cfg.theme.fontFamily === "custom" && (
-                  <TextInput value={cfg.theme.fontFamilyUrl} onChange={(v) => updateNested("theme", "fontFamilyUrl", v)} placeholder="Font URL (e.g. Google Fonts link)" />
+                {cfg.splash.type === "image" && (
+                  <TextInput value={cfg.splash.imageUrl} onChange={(v) => updateNested("splash", "imageUrl", v)} placeholder="Background image URL" />
                 )}
-              </SectionCard>
-            </>
-          )}
+              </>
+            )}
+          </SectionCard>
 
-          {tab === "splash" && (
-            <>
-              <SectionCard title="Splash Screen">
-                <Toggle value={cfg.splash.enabled} onChange={(v) => updateNested("splash", "enabled", v)} label="Enable splash intro" />
-              </SectionCard>
-              {cfg.splash.enabled && (
-                <>
-                  <SectionCard title="Content">
-                    <SelectInput value={cfg.splash.type} onChange={(v) => updateNested("splash", "type", v)} options={splashTypeOpts} />
-                    <TextInput value={cfg.splash.text} onChange={(v) => updateNested("splash", "text", v)} placeholder="Main text" />
-                    <TextInput value={cfg.splash.subtext} onChange={(v) => updateNested("splash", "subtext", v)} placeholder="Sub text" />
-                    <TextInput value={cfg.splash.cta} onChange={(v) => updateNested("splash", "cta", v)} placeholder="CTA button text" />
-                    <Toggle value={cfg.splash.showEnterButton} onChange={(v) => updateNested("splash", "showEnterButton", v)} label="Show enter button" />
-                  </SectionCard>
-                  <SectionCard title="Colors">
-                    <ColorInput value={cfg.splash.bgColor} onChange={(v) => updateNested("splash", "bgColor", v)} />
-                    <ColorInput value={cfg.splash.textColor} onChange={(v) => updateNested("splash", "textColor", v)} />
-                    <ColorInput value={cfg.splash.accentColor} onChange={(v) => updateNested("splash", "accentColor", v)} />
-                  </SectionCard>
-                  {cfg.splash.type === "blur" && (
-                    <SectionCard title="Blur">
-                      <div>
-                        <span className="mb-1 block text-[11px] text-white/30">Blur amount: {cfg.splash.blurAmount}px</span>
-                        <Slider value={cfg.splash.blurAmount} onChange={(v) => updateNested("splash", "blurAmount", v)} min={0} max={40} step={2} />
-                      </div>
-                    </SectionCard>
-                  )}
-                  {cfg.splash.type === "image" && (
-                    <SectionCard title="Image">
-                      <TextInput value={cfg.splash.imageUrl} onChange={(v) => updateNested("splash", "imageUrl", v)} placeholder="Background image URL" />
-                    </SectionCard>
-                  )}
-                </>
-              )}
-            </>
-          )}
+          {/* Audio */}
+          <SectionCard title="Audio">
+            <Toggle value={cfg.audio.enabled} onChange={(v) => updateNested("audio", "enabled", v)} label="Audio player" />
+            {cfg.audio.enabled && (
+              <>
+                <TextInput value={cfg.audio.src} onChange={(v) => updateNested("audio", "src", v)} placeholder="Audio URL (mp3)" />
+                <TextInput value={cfg.audio.title} onChange={(v) => updateNested("audio", "title", v)} placeholder="Track title" />
+                <TextInput value={cfg.audio.artist} onChange={(v) => updateNested("audio", "artist", v)} placeholder="Artist name" />
+                <div>
+                  <span className="mb-1 block text-[11px] text-white/30">Volume: {(cfg.audio.volume * 100).toFixed(0)}%</span>
+                  <Slider value={cfg.audio.volume} onChange={(v) => updateNested("audio", "volume", v)} min={0} max={1} step={0.05} />
+                </div>
+                <Toggle value={cfg.audio.loop} onChange={(v) => updateNested("audio", "loop", v)} label="Loop" />
+                <Toggle value={cfg.audio.autoplay} onChange={(v) => updateNested("audio", "autoplay", v)} label="Autoplay" />
+                <Toggle value={cfg.audio.showVisualizer} onChange={(v) => updateNested("audio", "showVisualizer", v)} label="Visualizer" />
+              </>
+            )}
+          </SectionCard>
 
-          {tab === "audio" && (
-            <>
-              <SectionCard title="Player">
-                <Toggle value={cfg.audio.enabled} onChange={(v) => updateNested("audio", "enabled", v)} label="Audio player" />
-              </SectionCard>
-              {cfg.audio.enabled && (
-                <>
-                  <SectionCard title="Track">
-                    <TextInput value={cfg.audio.src} onChange={(v) => updateNested("audio", "src", v)} placeholder="Audio URL (mp3)" />
-                    <TextInput value={cfg.audio.title} onChange={(v) => updateNested("audio", "title", v)} placeholder="Track title" />
-                    <TextInput value={cfg.audio.artist} onChange={(v) => updateNested("audio", "artist", v)} placeholder="Artist name" />
-                  </SectionCard>
-                  <SectionCard title="Settings">
-                    <div>
-                      <span className="mb-1 block text-[11px] text-white/30">Volume: {(cfg.audio.volume * 100).toFixed(0)}%</span>
-                      <Slider value={cfg.audio.volume} onChange={(v) => updateNested("audio", "volume", v)} min={0} max={1} step={0.05} />
-                    </div>
-                    <Toggle value={cfg.audio.loop} onChange={(v) => updateNested("audio", "loop", v)} label="Loop" />
-                    <Toggle value={cfg.audio.autoplay} onChange={(v) => updateNested("audio", "autoplay", v)} label="Autoplay" />
-                    <Toggle value={cfg.audio.showVisualizer} onChange={(v) => updateNested("audio", "showVisualizer", v)} label="Visualizer" />
-                  </SectionCard>
-                </>
-              )}
-            </>
-          )}
-
-          {tab === "social" && (
-            <>
-              <SectionCard title="Links">
-                {cfg.social.links.map((link, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <TextInput
-                      value={link.platform}
-                      onChange={(v) => {
-                        const links = [...cfg.social.links];
-                        links[i] = { ...links[i], platform: v as ProfileConfig["social"]["links"][number]["platform"] };
-                        update("social", { ...cfg.social, links });
-                      }}
-                      placeholder="Platform"
-                    />
-                    <TextInput
-                      value={link.url}
-                      onChange={(v) => {
-                        const links = [...cfg.social.links];
-                        links[i] = { ...links[i], url: v };
-                        update("social", { ...cfg.social, links });
-                      }}
-                      placeholder="URL"
-                    />
-                    <button
-                      onClick={() => update("social", { ...cfg.social, links: cfg.social.links.filter((_, j) => j !== i) })}
-                      className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-xs text-white/30 hover:border-red-500/50 hover:text-red-400"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+          {/* Social */}
+          <SectionCard title="Social Links">
+            {cfg.social.links.map((link, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <TextInput
+                  value={link.platform}
+                  onChange={(v) => {
+                    const links = [...cfg.social.links];
+                    links[i] = { ...links[i], platform: v as ProfileConfig["social"]["links"][number]["platform"] };
+                    update("social", { ...cfg.social, links });
+                  }}
+                  placeholder="Platform"
+                />
+                <TextInput
+                  value={link.url}
+                  onChange={(v) => {
+                    const links = [...cfg.social.links];
+                    links[i] = { ...links[i], url: v };
+                    update("social", { ...cfg.social, links });
+                  }}
+                  placeholder="URL"
+                />
                 <button
-                  onClick={() =>
-                    update("social", { ...cfg.social, links: [...cfg.social.links, { platform: "website", url: "", label: "", color: "" }] })
-                  }
+                  onClick={() => update("social", { ...cfg.social, links: cfg.social.links.filter((_, j) => j !== i) })}
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-xs text-white/30 hover:border-red-500/50 hover:text-red-400"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              onClick={() =>
+                update("social", { ...cfg.social, links: [...cfg.social.links, { platform: "website", url: "", label: "", color: "" }] })
+              }
+              className="w-full rounded-lg border border-dashed border-white/15 py-2 text-xs text-white/40 transition hover:border-white/30 hover:text-white/60"
+            >
+              + Add link
+            </button>
+          </SectionCard>
+
+          {/* Social Layout */}
+          <SectionCard title="Social Layout">
+            <SelectInput
+              value={cfg.social.layout}
+              onChange={(v) => updateNested("social", "layout", v)}
+              options={[{ value: "wrap", label: "Wrap" }, { value: "row", label: "Row" }, { value: "grid", label: "Grid" }]}
+            />
+            <SelectInput
+              value={cfg.social.size}
+              onChange={(v) => updateNested("social", "size", v)}
+              options={[{ value: "sm", label: "Small" }, { value: "md", label: "Medium" }, { value: "lg", label: "Large" }]}
+            />
+            <SelectInput
+              value={cfg.social.shape}
+              onChange={(v) => updateNested("social", "shape", v)}
+              options={[{ value: "circle", label: "Circle" }, { value: "square", label: "Square" }, { value: "rounded", label: "Rounded" }]}
+            />
+            <Toggle value={cfg.social.showLabels} onChange={(v) => updateNested("social", "showLabels", v)} label="Show labels" />
+            <Toggle value={cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="Hover effect" />
+          </SectionCard>
+
+          {/* Badges */}
+          <SectionCard title="Badges">
+            <Toggle value={cfg.badges.enabled} onChange={(v) => updateNested("badges", "enabled", v)} label="Enable badges" />
+            {cfg.badges.enabled && (
+              <>
+                <SelectInput
+                  value={cfg.badges.position}
+                  onChange={(v) => updateNested("badges", "position", v)}
+                  options={[{ value: "top", label: "Top" }, { value: "bottom", label: "Bottom" }, { value: "inline", label: "Inline" }]}
+                />
+                {cfg.badges.items.length === 0 ? (
+                  <p className="py-2 text-center text-sm text-white/30">No badges yet.</p>
+                ) : (
+                  cfg.badges.items.map((badge, i) => (
+                    <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="text-lg">{badge.emoji}</span>
+                        <TextInput value={badge.emoji} onChange={(v) => updateBadge(i, "emoji", v)} placeholder="Emoji" />
+                      </div>
+                      <TextInput value={badge.label} onChange={(v) => updateBadge(i, "label", v)} placeholder="Label" />
+                      <div className="mt-2 flex items-center gap-2">
+                        <ColorInput value={badge.color} onChange={(v) => updateBadge(i, "color", v)} />
+                        <input
+                          type="text"
+                          value={badge.tooltip}
+                          onChange={(e) => updateBadge(i, "tooltip", e.target.value)}
+                          placeholder="Tooltip"
+                          className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-violet-400/50"
+                        />
+                        <button
+                          onClick={() => removeBadge(i)}
+                          className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-xs text-white/30 hover:border-red-500/50 hover:text-red-400"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+                <button
+                  onClick={addBadge}
                   className="w-full rounded-lg border border-dashed border-white/15 py-2 text-xs text-white/40 transition hover:border-white/30 hover:text-white/60"
                 >
-                  + Add link
+                  + Add badge
                 </button>
-              </SectionCard>
-              <SectionCard title="Layout">
-                <SelectInput
-                  value={cfg.social.layout}
-                  onChange={(v) => updateNested("social", "layout", v)}
-                  options={[{ value: "wrap", label: "Wrap" }, { value: "row", label: "Row" }, { value: "grid", label: "Grid" }]}
-                />
-                <SelectInput
-                  value={cfg.social.size}
-                  onChange={(v) => updateNested("social", "size", v)}
-                  options={[{ value: "sm", label: "Small" }, { value: "md", label: "Medium" }, { value: "lg", label: "Large" }]}
-                />
-                <SelectInput
-                  value={cfg.social.shape}
-                  onChange={(v) => updateNested("social", "shape", v)}
-                  options={[{ value: "circle", label: "Circle" }, { value: "square", label: "Square" }, { value: "rounded", label: "Rounded" }]}
-                />
-                <Toggle value={cfg.social.showLabels} onChange={(v) => updateNested("social", "showLabels", v)} label="Show labels" />
-                <Toggle value={cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="Hover effect" />
-              </SectionCard>
-            </>
-          )}
+              </>
+            )}
+          </SectionCard>
 
-          {tab === "badges" && (
-            <>
-              <SectionCard title="Settings">
-                <Toggle value={cfg.badges.enabled} onChange={(v) => updateNested("badges", "enabled", v)} label="Enable badges" />
-                {cfg.badges.enabled && (
-                  <SelectInput
-                    value={cfg.badges.position}
-                    onChange={(v) => updateNested("badges", "position", v)}
-                    options={[{ value: "top", label: "Top" }, { value: "bottom", label: "Bottom" }, { value: "inline", label: "Inline" }]}
-                  />
-                )}
-              </SectionCard>
-              {cfg.badges.enabled && (
-                <SectionCard title="Items">
-                  {cfg.badges.items.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-white/30">No badges yet.</p>
-                  ) : (
-                    cfg.badges.items.map((badge, i) => (
-                      <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                        <div className="mb-2 flex items-center gap-2">
-                          <span className="text-lg">{badge.emoji}</span>
-                          <TextInput value={badge.emoji} onChange={(v) => updateBadge(i, "emoji", v)} placeholder="Emoji" />
-                        </div>
-                        <TextInput value={badge.label} onChange={(v) => updateBadge(i, "label", v)} placeholder="Label" />
-                        <div className="mt-2 flex items-center gap-2">
-                          <ColorInput value={badge.color} onChange={(v) => updateBadge(i, "color", v)} />
-                          <input
-                            type="text"
-                            value={badge.tooltip}
-                            onChange={(e) => updateBadge(i, "tooltip", e.target.value)}
-                            placeholder="Tooltip"
-                            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-violet-400/50"
-                          />
-                          <button
-                            onClick={() => removeBadge(i)}
-                            className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-xs text-white/30 hover:border-red-500/50 hover:text-red-400"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                  <button
-                    onClick={addBadge}
-                    className="w-full rounded-lg border border-dashed border-white/15 py-2 text-xs text-white/40 transition hover:border-white/30 hover:text-white/60"
-                  >
-                    + Add badge
-                  </button>
-                </SectionCard>
-              )}
-            </>
-          )}
-
-          {tab === "effects" && (
-            <>
-              <SectionCard title="Cursor">
-                <Toggle value={cfg.effects.cursor.enabled} onChange={(v) => updateCursor("enabled", v)} label="Cursor effect" />
-                {cfg.effects.cursor.enabled && (
-                  <>
-                    <SelectInput value={cfg.effects.cursor.type} onChange={(v) => updateCursor("type", v)} options={cursorOpts} />
-                    <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
-                    <div>
-                      <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.effects.cursor.size}</span>
-                      <Slider value={cfg.effects.cursor.size} onChange={(v) => updateCursor("size", v)} min={2} max={20} step={1} />
-                    </div>
-                  </>
-                )}
-              </SectionCard>
-              <SectionCard title="Click">
-                <Toggle value={cfg.effects.click.enabled} onChange={(v) => updateClick("enabled", v)} label="Click effect" />
-                {cfg.effects.click.enabled && (
-                  <>
-                    <SelectInput
-                      value={cfg.effects.click.type}
-                      onChange={(v) => updateClick("type", v)}
-                      options={[
-                        { value: "burst", label: "Burst" },
-                        { value: "ripple", label: "Ripple" },
-                        { value: "hearts", label: "Hearts" },
-                        { value: "confetti", label: "Confetti" },
-                        { value: "emojis", label: "Emojis" },
-                      ]}
-                    />
-                    <ColorInput value={cfg.effects.click.color} onChange={(v) => updateClick("color", v)} />
-                  </>
-                )}
-              </SectionCard>
-              <SectionCard title="Other">
-                <Toggle value={cfg.effects.tilt3d} onChange={(v) => updateEffect("tilt3d", v)} label="3D tilt" />
-                <Toggle value={cfg.effects.typewriterTitle} onChange={(v) => updateEffect("typewriterTitle", v)} label="Typewriter title" />
-                <Toggle value={cfg.effects.glowPulse} onChange={(v) => updateEffect("glowPulse", v)} label="Glow pulse" />
-                <Toggle value={cfg.effects.textGlow} onChange={(v) => updateEffect("textGlow", v)} label="Text glow" />
-              </SectionCard>
-            </>
-          )}
-
-          {tab === "widgets" && (
-            <>
-              <SectionCard title="Widget Container">
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
-                  <p className="mb-3 text-sm text-white/60">
-                    Wrap your widgets in a custom container with your own accent color and opacity.
-                  </p>
-                  <ColorInput
-                    value={cfg.theme.accentColor}
-                    onChange={(v) => updateNested("theme", "accentColor", v)}
-                  />
-                  <div className="mt-3">
-                    <span className="mb-1 block text-[11px] text-white/30">Container opacity: {cfg.theme.cardOpacity.toFixed(2)}</span>
-                    <Slider value={cfg.theme.cardOpacity} onChange={(v) => updateNested("theme", "cardOpacity", v)} min={0} max={1} step={0.05} />
-                  </div>
-                </div>
-              </SectionCard>
-              <SectionCard title="Layout">
-                <SelectInput
-                  value="list"
-                  onChange={() => {}}
-                  options={widgetLayoutOpts}
-                />
+          {/* Effects */}
+          <SectionCard title="Cursor Effect">
+            <Toggle value={cfg.effects.cursor.enabled} onChange={(v) => updateCursor("enabled", v)} label="Enable cursor effect" />
+            {cfg.effects.cursor.enabled && (
+              <>
+                <SelectInput value={cfg.effects.cursor.type} onChange={(v) => updateCursor("type", v)} options={cursorOpts} />
+                <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
                 <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Spacing</span>
-                  <Slider value={16} onChange={() => {}} min={4} max={48} step={4} />
+                  <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.effects.cursor.size}</span>
+                  <Slider value={cfg.effects.cursor.size} onChange={(v) => updateCursor("size", v)} min={2} max={20} step={1} />
                 </div>
-              </SectionCard>
-              <SectionCard title="Position">
+              </>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Click Effect">
+            <Toggle value={cfg.effects.click.enabled} onChange={(v) => updateClick("enabled", v)} label="Enable click effect" />
+            {cfg.effects.click.enabled && (
+              <>
                 <SelectInput
-                  value={cfg.theme.contentAlign}
-                  onChange={(v) => updateNested("theme", "contentAlign", v)}
-                  options={[{ value: "center", label: "Centered" }, { value: "left", label: "Left aligned" }]}
+                  value={cfg.effects.click.type}
+                  onChange={(v) => updateClick("type", v)}
+                  options={[
+                    { value: "burst", label: "Burst" },
+                    { value: "ripple", label: "Ripple" },
+                    { value: "hearts", label: "Hearts" },
+                    { value: "confetti", label: "Confetti" },
+                    { value: "emojis", label: "Emojis" },
+                  ]}
                 />
-              </SectionCard>
-            </>
-          )}
+                <ColorInput value={cfg.effects.click.color} onChange={(v) => updateClick("color", v)} />
+              </>
+            )}
+          </SectionCard>
 
-          {tab === "seo" && (
-            <>
-              <SectionCard title="Meta">
-                <TextInput value={cfg.seo.title} onChange={(v) => update("seo", { ...cfg.seo, title: v })} placeholder="Page title" />
-                <TextArea value={cfg.seo.description} onChange={(v) => update("seo", { ...cfg.seo, description: v })} placeholder="Meta description" rows={2} />
-                <TextInput value={cfg.seo.ogImage} onChange={(v) => update("seo", { ...cfg.seo, ogImage: v })} placeholder="OG image URL" />
-              </SectionCard>
-              <SectionCard title="Analytics">
-                <Toggle value={cfg.analytics.trackViews} onChange={(v) => update("analytics", { ...cfg.analytics, trackViews: v })} label="Track profile views" />
-              </SectionCard>
-            </>
-          )}
+          <SectionCard title="Other Effects">
+            <Toggle value={cfg.effects.tilt3d} onChange={(v) => updateEffect("tilt3d", v)} label="3D tilt" />
+            <Toggle value={cfg.effects.typewriterTitle} onChange={(v) => updateEffect("typewriterTitle", v)} label="Typewriter title" />
+            <Toggle value={cfg.effects.glowPulse} onChange={(v) => updateEffect("glowPulse", v)} label="Glow pulse" />
+            <Toggle value={cfg.effects.textGlow} onChange={(v) => updateEffect("textGlow", v)} label="Text glow" />
+          </SectionCard>
 
-          {tab === "assets" && (
-            <>
-              <SectionCard title="Upload">
-                <div className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-white/[0.08] px-6 py-8 transition hover:border-white/[0.2]">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04]">
-                    <Upload className="h-5 w-5 text-white/30" />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm text-white/50">
-                      <span className="font-medium text-violet-400">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="mt-1 text-xs text-white/30">PNG, JPG, GIF, MP3, MP4, WEBM up to 10MB</p>
-                  </div>
-                </div>
-              </SectionCard>
-              <SectionCard title="Files">
-                {assets.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-white/30">No assets yet.</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    {assets.map((asset) => (
-                      <div
-                        key={asset.id}
-                        className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/[0.12]"
+          {/* Widgets */}
+          <SectionCard title="Widgets">
+            <p className="text-sm text-white/50">
+              Configure how widgets appear on your profile. Adjust the container styling and layout.
+            </p>
+            <ColorInput value={cfg.theme.accentColor} onChange={(v) => updateNested("theme", "accentColor", v)} />
+            <div>
+              <span className="mb-1 block text-[11px] text-white/30">Container opacity</span>
+              <Slider value={cfg.theme.cardOpacity} onChange={(v) => updateNested("theme", "cardOpacity", v)} min={0} max={1} step={0.05} />
+            </div>
+          </SectionCard>
+
+          {/* Assets */}
+          <SectionCard title="Assets">
+            <div className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-white/[0.08] px-6 py-8 transition hover:border-white/[0.2]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04]">
+                <Upload className="h-5 w-5 text-white/30" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-white/50">
+                  <span className="font-medium text-violet-400">Click to upload</span> or drag and drop
+                </p>
+                <p className="mt-1 text-xs text-white/30">PNG, JPG, GIF, MP3, MP4, WEBM up to 10MB</p>
+              </div>
+            </div>
+            {assets.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {assets.map((asset) => (
+                  <div
+                    key={asset.id}
+                    className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/[0.12]"
+                  >
+                    <p className="truncate text-xs font-medium text-white/70">{asset.name}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="rounded px-1.5 py-0.5 text-[9px] font-medium uppercase text-white/30">{asset.type}</span>
+                      <span className="text-[10px] text-white/20">{asset.size}</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-1">
+                      <button
+                        onClick={() => copyAssetUrl(asset.url, asset.id)}
+                        className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-white/30 transition hover:bg-white/[0.04] hover:text-white/50"
                       >
-                        <div className="mb-2 flex aspect-video items-center justify-center rounded-lg bg-white/[0.03]">
-                          {asset.type === "image" ? (
-                            <div className="flex h-full w-full items-center justify-center rounded-lg bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5">
-                              <Image className="h-6 w-6 text-white/20" />
-                            </div>
-                          ) : asset.type === "audio" ? (
-                            <div className="flex h-full w-full items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500/10 to-blue-500/5">
-                              <Music className="h-6 w-6 text-white/20" />
-                            </div>
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/10 to-orange-500/5">
-                              <svg className="h-6 w-6 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                            </div>
-                          )}
-                        </div>
-                        <p className="truncate text-xs font-medium text-white/70">{asset.name}</p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <span className="rounded px-1.5 py-0.5 text-[9px] font-medium uppercase text-white/30">
-                            {asset.type}
-                          </span>
-                          <span className="text-[10px] text-white/20">{asset.size}</span>
-                        </div>
-                        <div className="mt-2 flex items-center gap-1">
-                          <button
-                            onClick={() => copyAssetUrl(asset.url, asset.id)}
-                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-white/30 transition hover:bg-white/[0.04] hover:text-white/50"
-                          >
-                            {copiedAssetId === asset.id ? <Check className="h-2.5 w-2.5 text-emerald-400" /> : <Copy className="h-2.5 w-2.5" />}
-                            {copiedAssetId === asset.id ? "Copied" : "Copy URL"}
-                          </button>
-                          <button
-                            onClick={() => removeAsset(asset.id)}
-                            className="rounded-lg p-1 text-white/20 transition hover:bg-red-500/10 hover:text-red-400"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                        {copiedAssetId === asset.id ? <Check className="h-2.5 w-2.5 text-emerald-400" /> : <Copy className="h-2.5 w-2.5" />}
+                        {copiedAssetId === asset.id ? "Copied" : "Copy URL"}
+                      </button>
+                      <button
+                        onClick={() => removeAsset(asset.id)}
+                        className="rounded-lg p-1 text-white/20 transition hover:bg-red-500/10 hover:text-red-400"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
-                )}
-              </SectionCard>
-            </>
-          )}
+                ))}
+              </div>
+            )}
+          </SectionCard>
 
-          {tab === "custom" && (
-            <>
-              <SectionCard title="Custom CSS">
-                <TextArea value={cfg.customCss} onChange={(v) => update("customCss", v)} rows={8} placeholder="/* your styles */" />
-              </SectionCard>
-              <SectionCard title="Custom HTML">
-                <TextArea value={cfg.customHtml} onChange={(v) => update("customHtml", v)} rows={8} placeholder="<!-- your html -->" />
-              </SectionCard>
-            </>
-          )}
+          {/* SEO */}
+          <SectionCard title="SEO">
+            <TextInput value={cfg.seo.title} onChange={(v) => update("seo", { ...cfg.seo, title: v })} placeholder="Page title" />
+            <TextArea value={cfg.seo.description} onChange={(v) => update("seo", { ...cfg.seo, description: v })} placeholder="Meta description" rows={2} />
+            <TextInput value={cfg.seo.ogImage} onChange={(v) => update("seo", { ...cfg.seo, ogImage: v })} placeholder="OG image URL" />
+          </SectionCard>
+
+          {/* Analytics */}
+          <SectionCard title="Analytics">
+            <Toggle value={cfg.analytics.trackViews} onChange={(v) => update("analytics", { ...cfg.analytics, trackViews: v })} label="Track profile views" />
+          </SectionCard>
+
+          {/* Custom */}
+          <SectionCard title="Custom CSS">
+            <TextArea value={cfg.customCss} onChange={(v) => update("customCss", v)} rows={6} placeholder="/* your styles */" />
+          </SectionCard>
+          <SectionCard title="Custom HTML">
+            <TextArea value={cfg.customHtml} onChange={(v) => update("customHtml", v)} rows={6} placeholder="<!-- your html -->" />
+          </SectionCard>
         </div>
       </div>
     </div>
