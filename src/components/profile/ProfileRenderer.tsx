@@ -8,11 +8,12 @@ import CursorEffect from "./CursorEffect";
 import ClickEffect from "./ClickEffect";
 import AudioPlayer from "./AudioPlayer";
 import SplashIntro from "./SplashIntro";
+import ViewCounter from "./ViewCounter";
 import { brandIcons } from "./icons";
 
 export default function ProfileRenderer({ config }: { config: ProfileConfig }) {
   const [entered, setEntered] = useState(!config.splash.enabled);
-  const { theme, identity, background, effects, splash, audio, social, badges } = config;
+  const { theme, identity, background, effects, splash, audio, social } = config;
 
   const fontFamily =
     theme.fontFamily === "custom" && theme.fontFamilyUrl
@@ -27,26 +28,31 @@ export default function ProfileRenderer({ config }: { config: ProfileConfig }) {
     width: "100%",
     maxWidth: theme.maxWidth,
     margin: "0 auto",
-    padding: "clamp(20px, 4vw, 40px)",
+    padding: "clamp(24px, 5vw, 44px) clamp(20px, 4vw, 40px)",
     borderRadius: theme.borderRadius,
-    border: `${theme.borderWidth}px solid rgba(255,255,255,${theme.cardStyle === "outline" ? 0.25 : 0.08})`,
+    border: `${theme.borderWidth}px solid rgba(255,255,255,0.08)`,
     backdropFilter: theme.cardStyle === "glass" ? `blur(${theme.cardBlur}px)` : "none",
     WebkitBackdropFilter: theme.cardStyle === "glass" ? `blur(${theme.cardBlur}px)` : "none",
     background:
       theme.cardStyle === "glass"
-        ? `rgba(20, 18, 30, ${theme.cardOpacity})`
-        : theme.cardStyle === "neon"
-          ? "rgba(10, 8, 20, 0.6)"
-          : theme.cardStyle === "minimal"
-            ? "transparent"
-            : `rgba(15, 13, 25, ${theme.cardOpacity})`,
+        ? `rgba(15, 14, 22, ${theme.cardOpacity})`
+        : theme.cardStyle === "minimal"
+          ? "transparent"
+          : `rgba(12, 11, 20, ${theme.cardOpacity})`,
     boxShadow: theme.glow
-      ? `0 0 ${theme.glowIntensity}px ${theme.primaryColor}44, 0 20px 60px rgba(0,0,0,0.5)`
-      : "0 20px 60px rgba(0,0,0,0.5)",
+      ? `0 0 ${theme.glowIntensity}px ${theme.primaryColor}22, 0 24px 70px rgba(0,0,0,0.55)`
+      : "0 24px 70px rgba(0,0,0,0.55)",
     color: theme.textColor,
     fontFamily,
-    textAlign: theme.contentAlign,
-    ["--accent" as string]: theme.accentColor,
+  };
+
+  const container = {
+    initial: { opacity: 0, y: 24 },
+    show: (i: number) => ({
+      opacity: entered ? 1 : 0.12,
+      y: entered ? 0 : 24,
+      transition: { duration: 0.5, delay: 0.06 * i, ease: [0.22, 1, 0.36, 1] as const },
+    }),
   };
 
   return (
@@ -69,51 +75,28 @@ export default function ProfileRenderer({ config }: { config: ProfileConfig }) {
         }}
       >
         <motion.div
-          initial={{ opacity: 0, y: 30, scale: 0.96 }}
-          animate={{ opacity: entered ? 1 : 0.15, y: entered ? 0 : 30, scale: entered ? 1 : 0.96 }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 30, scale: 0.97 }}
+          animate={{
+            opacity: entered ? 1 : 0.12,
+            y: entered ? 0 : 30,
+            scale: entered ? 1 : 0.97,
+          }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           style={cardStyle}
         >
-          {badges.enabled && badges.position === "top" && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-              {badges.items.map((badge, i) => (
-                <span
-                  key={i}
-                  title={badge.tooltip}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "4px 10px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    borderRadius: 999,
-                    background: `${badge.color}22`,
-                    border: `1px solid ${badge.color}44`,
-                    color: badge.color,
-                  }}
-                >
-                  <span>{badge.emoji}</span>
-                  <span>{badge.label}</span>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {identity.avatarUrl && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
-              style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}
-            >
-              <div
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            {identity.avatarUrl && (
+              <motion.div
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: entered ? 1 : 0.6, opacity: entered ? 1 : 0.12 }}
+                transition={{ type: "spring", stiffness: 200, damping: 18, delay: 0.1 }}
                 style={{
-                  width: 96,
-                  height: 96,
+                  width: 108,
+                  height: 108,
                   borderRadius: "50%",
                   padding: 3,
                   background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor}, ${theme.accentColor})`,
+                  boxShadow: `0 0 30px ${theme.primaryColor}55`,
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -125,145 +108,152 @@ export default function ProfileRenderer({ config }: { config: ProfileConfig }) {
                     height: "100%",
                     borderRadius: "50%",
                     objectFit: "cover",
+                    display: "block",
                     background: theme.backgroundColor,
                   }}
                 />
-              </div>
-            </motion.div>
-          )}
-
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            style={{
-              margin: 0,
-              fontSize: "clamp(1.6rem, 5vw, 2.4rem)",
-              fontWeight: 800,
-              letterSpacing: "-0.03em",
-              lineHeight: 1.1,
-              textShadow: effects.textGlow ? `0 0 30px ${theme.accentColor}55` : "none",
-            }}
-          >
-            {identity.displayName || identity.username}
-            {identity.verified && (
-              <span style={{ marginLeft: 6, color: theme.accentColor, fontSize: "0.7em" }}>✓</span>
+              </motion.div>
             )}
-          </motion.h1>
 
-          {(identity.tagline || identity.pronouns || identity.location) && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.7 }}
-              transition={{ delay: 0.3 }}
-              style={{ margin: "8px 0 0", fontSize: 13, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}
-            >
-              {identity.tagline && <span>{identity.tagline}</span>}
-              {identity.pronouns && <span>· {identity.pronouns}</span>}
-              {identity.location && <span>· {identity.location}</span>}
-            </motion.p>
-          )}
-
-          {identity.bio && (
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              style={{
-                margin: "16px auto 0",
-                maxWidth: 420,
-                fontSize: 15,
-                lineHeight: 1.6,
-                opacity: 0.85,
-              }}
-            >
-              {identity.bio}
-            </motion.p>
-          )}
-
-          {social.links.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: social.layout === "row" ? 14 : 10,
-                marginTop: 24,
-                flexWrap: social.layout === "wrap" || social.layout === "grid" ? "wrap" : "nowrap",
-              }}
-            >
-              {social.links.map((link, i) => {
-                const Icon = brandIcons[link.platform] || brandIcons.website;
-                const size = social.size === "sm" ? 18 : social.size === "lg" ? 28 : 22;
-                return (
-                  <a
-                    key={i}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={link.label || link.platform}
+            <motion.div custom={0} variants={container} initial="initial" animate="show" style={{ marginTop: 16 }}>
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: "clamp(1.5rem, 5vw, 2rem)",
+                  fontWeight: 700,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.1,
+                  textShadow: effects.textGlow ? `0 0 24px ${theme.accentColor}66` : "none",
+                }}
+              >
+                {identity.displayName || identity.username}
+                {identity.verified && (
+                  <span
                     style={{
-                      display: "flex",
+                      marginLeft: 7,
+                      display: "inline-flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      width: size + 18,
-                      height: size + 18,
-                      borderRadius: social.shape === "circle" ? "50%" : social.shape === "rounded" ? 12 : 2,
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      color: link.color || theme.textColor,
-                      textDecoration: "none",
-                      transition: "transform 0.2s, background 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (social.hoverEffect) {
-                        e.currentTarget.style.transform = "translateY(-3px) scale(1.1)";
-                        e.currentTarget.style.background = "rgba(255,255,255,0.14)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "";
-                      e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      background: theme.accentColor,
+                      color: theme.backgroundColor,
+                      fontSize: 11,
+                      verticalAlign: "middle",
                     }}
                   >
-                    <Icon size={size} />
-                  </a>
-                );
-              })}
+                    ✓
+                  </span>
+                )}
+              </h1>
             </motion.div>
-          )}
 
-          {badges.enabled && badges.position === "bottom" && (
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 24, flexWrap: "wrap" }}>
-              {badges.items.map((badge, i) => (
-                <span
-                  key={i}
-                  title={badge.tooltip}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "4px 10px",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    borderRadius: 999,
-                    background: `${badge.color}22`,
-                    border: `1px solid ${badge.color}44`,
-                    color: badge.color,
-                  }}
-                >
-                  <span>{badge.emoji}</span>
-                  <span>{badge.label}</span>
-                </span>
-              ))}
-            </div>
-          )}
+            {(identity.tagline || identity.pronouns || identity.location) && (
+              <motion.p
+                custom={1}
+                variants={container}
+                initial="initial"
+                animate="show"
+                style={{
+                  margin: "8px 0 0",
+                  fontSize: 12.5,
+                  color: theme.mutedTextColor,
+                  display: "flex",
+                  gap: 8,
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}
+              >
+                {identity.tagline && <span>{identity.tagline}</span>}
+                {identity.pronouns && <span>· {identity.pronouns}</span>}
+                {identity.location && <span>· {identity.location}</span>}
+              </motion.p>
+            )}
 
-          {config.customHtml && (
-            <div style={{ marginTop: 24 }} dangerouslySetInnerHTML={{ __html: config.customHtml }} />
-          )}
+            {identity.bio && (
+              <motion.p
+                custom={2}
+                variants={container}
+                initial="initial"
+                animate="show"
+                style={{
+                  margin: "18px 0 0",
+                  maxWidth: 360,
+                  fontSize: 14,
+                  lineHeight: 1.65,
+                  color: theme.textColor,
+                  opacity: 0.78,
+                }}
+              >
+                {identity.bio}
+              </motion.p>
+            )}
+
+            {social.links.length > 0 && (
+              <motion.div
+                custom={3}
+                variants={container}
+                initial="initial"
+                animate="show"
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 12,
+                  marginTop: 26,
+                  flexWrap: "wrap",
+                }}
+              >
+                {social.links.map((link, i) => {
+                  const Icon = brandIcons[link.platform] || brandIcons.website;
+                  const color = link.color || theme.textColor;
+                  const size = social.size === "sm" ? 17 : social.size === "lg" ? 24 : 20;
+                  return (
+                    <a
+                      key={i}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={link.label || link.platform}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: size + 24,
+                        height: size + 24,
+                        borderRadius: social.shape === "circle" ? "50%" : social.shape === "rounded" ? 12 : 4,
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                        color,
+                        textDecoration: "none",
+                        transition: "transform 0.18s, background 0.18s, box-shadow 0.18s",
+                      }}
+                      onMouseEnter={(e) => {
+                        if (social.hoverEffect) {
+                          e.currentTarget.style.transform = "translateY(-3px)";
+                          e.currentTarget.style.background = `${color}1f`;
+                          e.currentTarget.style.boxShadow = `0 6px 20px ${color}33`;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "";
+                        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+                        e.currentTarget.style.boxShadow = "";
+                      }}
+                    >
+                      <Icon size={size} />
+                    </a>
+                  );
+                })}
+              </motion.div>
+            )}
+
+            <ViewCounter initial={0} accent={theme.accentColor} />
+
+            {config.customHtml && (
+              <div style={{ marginTop: 20 }} dangerouslySetInnerHTML={{ __html: config.customHtml }} />
+            )}
+          </div>
         </motion.div>
       </div>
 
