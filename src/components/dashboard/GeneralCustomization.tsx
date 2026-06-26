@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
-import type { ProfileConfig, Theme, Effects, Background, Identity, Audio, Social } from "@/lib/profile/schema";
+import type { ProfileConfig, Theme, Effects, Background, Identity, Audio } from "@/lib/profile/schema";
+import { Toggle, SelectInput, Slider } from "./controls";
 
-export function GeneralCustomization({
+ export function GeneralCustomization({
   identity,
   theme,
   background,
@@ -19,14 +19,24 @@ export function GeneralCustomization({
   onUpdate: (section: keyof ProfileConfig, key: string, value: unknown) => void;
 }) {
   const bgEffectValue = background.type ?? "none";
-  const bgEffectOptions: string[] = [
-    "None", "Color", "Gradient", "Particles", "Matrix",
-    "Starfield", "Aurora", "Rain", "Snow", "Bubbles", "Grid", "Image", "Video",
+  const bgEffectOptions = [
+    { value: "none", label: "None" },
+    { value: "color", label: "Color" },
+    { value: "gradient", label: "Gradient" },
+    { value: "particles", label: "Particles" },
+    { value: "matrix", label: "Matrix" },
+    { value: "starfield", label: "Starfield" },
+    { value: "aurora", label: "Aurora" },
+    { value: "rain", label: "Rain" },
+    { value: "snow", label: "Snow" },
+    { value: "bubbles", label: "Bubbles" },
+    { value: "grid", label: "Grid" },
+    { value: "image", label: "Image" },
+    { value: "video", label: "Video" },
   ];
 
   return (
-    <>
-      <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 15 }}>
       <Row label="Description">
         <textarea
           value={identity.bio ?? ""}
@@ -42,9 +52,10 @@ export function GeneralCustomization({
             fontSize: 17,
             fontWeight: 500,
             resize: "none",
-            width: 280,
+            width: "100%",
             fontFamily: "Satoshi, sans-serif",
             outline: "none",
+            boxSizing: "border-box",
           }}
           onFocus={(e) => { e.target.style.borderColor = "#333" }}
           onBlur={(e) => { e.target.style.borderColor = "#1b1b1b" }}
@@ -52,30 +63,31 @@ export function GeneralCustomization({
       </Row>
 
       <Row label="Discord Presence">
-        <Select
-          value="Disabled"
-          onChange={() => {}}
-          options={["Disabled", "Enabled"]}
-        />
+        <div style={{ width: 140 }}>
+          <SelectInput value="Disabled" onChange={() => {}} options={[{ value: "Disabled", label: "Disabled" }, { value: "Enabled", label: "Enabled" }]} />
+        </div>
       </Row>
 
       <Row label="Background Effects">
-        <Select
-          value={bgEffectValue.charAt(0).toUpperCase() + bgEffectValue.slice(1)}
-          onChange={(v) => onUpdate("background", "type", v.toLowerCase())}
-          options={bgEffectOptions}
-        />
+        <div style={{ width: 140 }}>
+          <SelectInput
+            value={bgEffectValue}
+            onChange={(v) => onUpdate("background", "type", v)}
+            options={bgEffectOptions}
+          />
+        </div>
       </Row>
 
       <Row label="Username Effects">
         <Toggle
           value={effects.textGlow ?? false}
           onChange={(v) => onUpdate("effects", "textGlow", v)}
+          label=""
         />
       </Row>
 
       <Row label="Profile Opacity">
-        <div style={{ maxWidth: 160, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 220 }}>
           <Slider
             value={theme.cardOpacity ?? 0.55}
             onChange={(v) => onUpdate("theme", "cardOpacity", v)}
@@ -83,14 +95,14 @@ export function GeneralCustomization({
             max={1}
             step={0.05}
           />
-          <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
+          <span style={{ fontSize: 12, color: "#797979", minWidth: 32, textAlign: "right", flexShrink: 0 }}>
             {Math.round((theme.cardOpacity ?? 0.55) * 100)}%
           </span>
         </div>
       </Row>
 
       <Row label="Profile Blur">
-        <div style={{ maxWidth: 160, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", maxWidth: 220 }}>
           <Slider
             value={theme.cardBlur ?? 20}
             onChange={(v) => onUpdate("theme", "cardBlur", v)}
@@ -98,7 +110,7 @@ export function GeneralCustomization({
             max={60}
             step={1}
           />
-          <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
+          <span style={{ fontSize: 12, color: "#797979", minWidth: 32, textAlign: "right", flexShrink: 0 }}>
             {theme.cardBlur ?? 20}px
           </span>
         </div>
@@ -117,9 +129,10 @@ export function GeneralCustomization({
             color: "#f1f1f1",
             fontSize: 17,
             fontWeight: 500,
-            width: 280,
+            width: "100%",
             fontFamily: "Satoshi, sans-serif",
             outline: "none",
+            boxSizing: "border-box",
           }}
           onFocus={(e) => { e.target.style.borderColor = "#333" }}
           onBlur={(e) => { e.target.style.borderColor = "#1b1b1b" }}
@@ -127,12 +140,13 @@ export function GeneralCustomization({
       </Row>
 
       <Row label="Glow Settings">
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", maxWidth: 280 }}>
           <Toggle
             value={theme.glow ?? false}
             onChange={(v) => onUpdate("theme", "glow", v)}
+            label=""
           />
-          <div style={{ maxWidth: 160, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
             <Slider
               value={theme.glowIntensity ?? 60}
               onChange={(v) => onUpdate("theme", "glowIntensity", v)}
@@ -140,14 +154,13 @@ export function GeneralCustomization({
               max={100}
               step={5}
             />
-            <span style={{ fontSize: 12, color: "#797979", minWidth: 36, textAlign: "right" }}>
+            <span style={{ fontSize: 12, color: "#797979", minWidth: 32, textAlign: "right", flexShrink: 0 }}>
               {theme.glowIntensity ?? 60}%
             </span>
           </div>
         </div>
       </Row>
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -158,171 +171,16 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 10,
+        gap: 12,
+        minHeight: 36,
       }}
     >
-      <span style={{ fontSize: 15, color: "#a5a4a4", fontWeight: 450 }}>{label}</span>
-      <div style={{ flexShrink: 0 }}>{children}</div>
-    </div>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        background: "#1a1a1a",
-        border: "2px solid #222222",
-        borderRadius: 15,
-        padding: "7px 10px",
-        color: "#fafafa",
-        fontSize: 16.5,
-        fontFamily: "Satoshi, sans-serif",
-        width: 140,
-        outline: "none",
-        cursor: "pointer",
-        transition: "border-color 0.25s",
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "#272727" }}
-      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#222222" }}
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>{opt}</option>
-      ))}
-    </select>
-  );
-}
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      onClick={() => onChange(!value)}
-      style={{
-        position: "relative",
-        width: 36,
-        height: 20,
-        borderRadius: 10,
-        border: "none",
-        cursor: "pointer",
-        transition: "background-color 0.2s",
-        backgroundColor: value ? "rgba(218,102,218,0.6)" : "#ffffff26",
-        flexShrink: 0,
-      }}
-    >
-      <span
-        style={{
-          position: "absolute",
-          top: 2,
-          width: 16,
-          height: 16,
-          borderRadius: "50%",
-          backgroundColor: "#fff",
-          transition: "left 0.2s",
-          left: value ? 18 : 2,
-        }}
-      />
-    </button>
-  );
-}
-
-function Slider({
-  value,
-  onChange,
-  min,
-  max,
-  step,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  min: number;
-  max: number;
-  step: number;
-}) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef(false);
-  const valueRef = useRef(value);
-  valueRef.current = value;
-
-  const computeValue = useCallback((clientX: number) => {
-    if (!trackRef.current) return valueRef.current;
-    const rect = trackRef.current.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const raw = min + pct * (max - min);
-    const stepped = Math.round(raw / step) * step;
-    return Math.max(min, Math.min(max, stepped));
-  }, [min, max, step]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    draggingRef.current = true;
-    onChange(computeValue(e.clientX));
-  }, [onChange, computeValue]);
-
-  useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      if (!draggingRef.current) return;
-      onChange(computeValue(e.clientX));
-    };
-    const handleUp = () => { draggingRef.current = false; };
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
-    return () => {
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-    };
-  }, [onChange, computeValue]);
-
-  const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
-
-  return (
-    <div
-      ref={trackRef}
-      style={{
-        position: "relative",
-        width: "100%",
-        height: 4,
-        background: "#2a2a2a",
-        borderRadius: 999,
-        cursor: "pointer",
-        flexShrink: 0,
-      }}
-      onMouseDown={handleMouseDown}
-    >
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          height: "100%",
-          width: `${Math.max(0, Math.min(100, pct))}%`,
-          background: "rgba(218,102,218,0.7)",
-          borderRadius: 999,
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: `${Math.max(0, Math.min(100, pct))}%`,
-          transform: "translate(-50%, -50%)",
-          width: 14,
-          height: 14,
-          borderRadius: "50%",
-          background: "#ffffff",
-          border: "2px solid rgba(218,102,218,0.8)",
-          pointerEvents: "none",
-        }}
-      />
+      <span style={{ fontSize: 15, color: "#a5a4a4", fontWeight: 450, flexShrink: 0, minWidth: 120 }}>
+        {label}
+      </span>
+      <div style={{ display: "flex", justifyContent: "flex-end", flex: 1, maxWidth: 300 }}>
+        {children}
+      </div>
     </div>
   );
 }

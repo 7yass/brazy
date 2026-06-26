@@ -36,14 +36,8 @@ export function ColorCustomization({
 
       <Row label="Profile Gradient">
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <ColorSwatchPicker
-            value={background.color1 ?? "#7c3aed"}
-            onChange={(v) => onUpdate("background", "color1", v)}
-          />
-          <ColorSwatchPicker
-            value={background.color2 ?? "#22d3ee"}
-            onChange={(v) => onUpdate("background", "color2", v)}
-          />
+          <ColorSwatchPicker value={background.color1 ?? "#7c3aed"} onChange={(v) => onUpdate("background", "color1", v)} />
+          <ColorSwatchPicker value={background.color2 ?? "#22d3ee"} onChange={(v) => onUpdate("background", "color2", v)} />
           <select
             value={background.direction ?? "down"}
             onChange={(e) => onUpdate("background", "direction", e.target.value)}
@@ -142,11 +136,16 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        gap: 10,
+        gap: 12,
+        minHeight: 36,
       }}
     >
-      <span style={{ fontSize: 15, color: "#a5a4a4", fontWeight: 450 }}>{label}</span>
-      <div style={{ flexShrink: 0 }}>{children}</div>
+      <span style={{ fontSize: 15, color: "#a5a4a4", fontWeight: 450, flexShrink: 0, minWidth: 120 }}>
+        {label}
+      </span>
+      <div style={{ flexShrink: 0 }}>
+        {children}
+      </div>
     </div>
   );
 }

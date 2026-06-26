@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export function Label({ children }: { children: React.ReactNode }) {
@@ -91,6 +91,7 @@ export function Slider({
   const draggingRef = useRef(false);
   const valueRef = useRef(value);
   valueRef.current = value;
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const computeValue = useCallback((clientX: number) => {
     if (!trackRef.current) return valueRef.current;
@@ -103,6 +104,7 @@ export function Slider({
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     draggingRef.current = true;
+    setShowTooltip(true);
     onChange(computeValue(e.clientX));
   }, [onChange, computeValue]);
 
@@ -111,7 +113,7 @@ export function Slider({
       if (!draggingRef.current) return;
       onChange(computeValue(e.clientX));
     };
-    const handleUp = () => { draggingRef.current = false; };
+    const handleUp = () => { draggingRef.current = false; setTimeout(() => setShowTooltip(false), 500); };
     window.addEventListener("mousemove", handleMove);
     window.addEventListener("mouseup", handleUp);
     return () => {
@@ -122,18 +124,24 @@ export function Slider({
 
   const pct = max !== min ? ((value - min) / (max - min)) * 100 : 0;
 
+  const displayed = max === 1 && step <= 0.05
+    ? `${Math.round(value * 100)}%`
+    : value;
+
   return (
     <div
       ref={trackRef}
-      className="w-full"
       style={{
         position: "relative",
+        width: "100%",
         height: 4,
         background: "#2a2a2a",
         borderRadius: 999,
         cursor: "pointer",
       }}
       onMouseDown={handleMouseDown}
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => { if (!draggingRef.current) setShowTooltip(false); }}
     >
       <div
         style={{
@@ -161,6 +169,27 @@ export function Slider({
           pointerEvents: "none",
         }}
       />
+      {showTooltip && (
+        <div
+          style={{
+            position: "absolute",
+            bottom: "calc(100% + 8px)",
+            left: `${Math.max(0, Math.min(100, pct))}%`,
+            transform: "translateX(-50%)",
+            background: "#1a1a1a",
+            border: "1px solid #2a2a2a",
+            borderRadius: 8,
+            padding: "3px 8px",
+            fontSize: 12,
+            color: "#fafafa",
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 10,
+          }}
+        >
+          {displayed}
+        </div>
+      )}
     </div>
   );
 }
