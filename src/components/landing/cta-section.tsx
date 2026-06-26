@@ -10,16 +10,16 @@ export function CtaSection({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div className="relative">
           <SpiderLogo className="mx-auto mb-6 h-14 w-14 text-primary" />
           <h2 className="text-balance font-heading text-4xl font-bold tracking-tight sm:text-5xl">
-            Claim your name before someone else does
+            You in?
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-pretty text-lg text-muted-foreground">
-            Log in with Discord, claim your <span className="font-mono text-foreground">brazy.it/username</span> and start customizing in seconds.
+            Log in with Discord and make <span className="font-mono text-foreground">brazy.it/username</span> yours.
           </p>
           <div className="mt-8 flex justify-center">
             {isLoggedIn ? (
-              <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Open your dashboard</Link>
+              <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Dashboard</Link>
             ) : (
-              <DiscordLoginButton label="Claim your brazy.it" />
+              <DiscordLoginButton label="Enter" />
             )}
           </div>
         </div>

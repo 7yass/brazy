@@ -15,7 +15,7 @@ export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
           </span>
-          The next-gen bio link platform
+          Members only
         </div>
 
         <SpiderLogo
@@ -24,25 +24,21 @@ export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
         />
 
         <h1 className="text-balance font-heading text-5xl font-bold leading-tight tracking-tight sm:text-6xl md:text-7xl">
-          Your bio,{' '}
           <span className="bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
-            but unhinged
+            brazy.it
           </span>
         </h1>
 
         <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-muted-foreground">
-          Claim your <span className="font-mono text-foreground">brazy.it/you</span> and build a
-          fully customizable profile — backgrounds, music, cursor effects, custom fonts and way
-          more than guns.lol or haunt.gg ever gave you.
+          Your presence, your rules. A private space that&apos;s yours to shape.
         </p>
 
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
           {isLoggedIn ? (
-            <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Go to dashboard</Link>
+            <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Dashboard</Link>
           ) : (
             <DiscordLoginButton />
           )}
-          <a href="#features" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-muted hover:text-foreground">See what&apos;s inside</a>
         </div>
 
         <p className="mt-6 font-mono text-sm text-muted-foreground">

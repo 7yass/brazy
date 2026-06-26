@@ -6,7 +6,7 @@ export function LandingFooter() {
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
         <SpiderWordmark />
         <p className="text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} brazy.it &mdash; your bio, but unhinged.
+          &copy; {new Date().getFullYear()} brazy.it
         </p>
       </div>
     </footer>

@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { LandingNav } from '@/components/landing/landing-nav'
 import { HeroSection } from '@/components/landing/hero-section'
-import { FeaturesSection } from '@/components/landing/features-section'
-import { ComparisonSection } from '@/components/landing/comparison-section'
 import { CtaSection } from '@/components/landing/cta-section'
 import { LandingFooter } from '@/components/landing/landing-footer'
 
@@ -18,8 +16,6 @@ export default async function HomePage() {
     <main className="relative min-h-screen overflow-x-hidden">
       <LandingNav isLoggedIn={isLoggedIn} />
       <HeroSection isLoggedIn={isLoggedIn} />
-      <FeaturesSection />
-      <ComparisonSection />
       <CtaSection isLoggedIn={isLoggedIn} />
       <LandingFooter />
     </main>

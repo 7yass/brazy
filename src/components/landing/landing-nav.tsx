@@ -9,11 +9,6 @@ export function LandingNav({ isLoggedIn }: { isLoggedIn: boolean }) {
         <Link href="/">
           <SpiderWordmark />
         </Link>
-        <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-          <a href="#features" className="transition-colors hover:text-foreground">Features</a>
-          <a href="#compare" className="transition-colors hover:text-foreground">Why brazy</a>
-          <a href="#claim" className="transition-colors hover:text-foreground">Claim</a>
-        </nav>
         {isLoggedIn ? (
           <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-7 gap-1 px-2.5 transition-colors hover:bg-primary/80">Dashboard</Link>
         ) : (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,10 +14,10 @@ import {
   LogOut,
   Layers,
   Puzzle,
-  Image,
   Briefcase,
 } from "lucide-react";
 import { SpiderLogo } from "@/components/spider-logo";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -24,7 +25,6 @@ const navItems = [
   { href: "/dashboard/links", label: "Links", icon: Link2 },
   { href: "/dashboard/customize", label: "Customize", icon: Palette },
   { href: "/dashboard/widgets", label: "Widgets", icon: Puzzle },
-  { href: "/dashboard/assets", label: "Assets", icon: Image },
   { href: "/dashboard/projects", label: "Projects", icon: Briefcase },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/badges", label: "Badges", icon: Award },
@@ -34,6 +34,24 @@ const navItems = [
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<{ username?: string; id: string } | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        const identities = data.user.identities ?? [];
+        const discordIdent = identities.find((i) => i.provider === "discord");
+        const discordUsername =
+          discordIdent?.identity_data?.username as string | undefined ??
+          data.user.user_metadata?.full_name ??
+          data.user.email?.split("@")[0] ??
+          "user";
+        setUser({ username: discordUsername, id: data.user.id.slice(0, 18) });
+      }
+    });
+  }, []);
 
   return (
     <aside className="flex h-full w-56 flex-col border-r border-white/[0.06] bg-[#0a0911]">
@@ -63,6 +81,13 @@ export default function DashboardSidebar() {
       </nav>
 
       <div className="border-t border-white/[0.06] p-2.5">
+        {user && (
+          <div className="mb-1 rounded-xl px-3 py-2 text-xs text-white/30">
+            <div className="truncate font-medium text-white/50">Signed in as</div>
+            <div className="truncate text-white/70">{user.username}</div>
+            <div className="truncate font-mono text-[10px] text-white/20">UID: {user.id}</div>
+          </div>
+        )}
         <Link
           href="/"
           className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-white/30 transition hover:bg-white/[0.04] hover:text-white/50"

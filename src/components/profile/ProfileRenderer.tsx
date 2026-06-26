@@ -11,8 +11,8 @@ import SplashIntro from "./SplashIntro";
 import ViewCounter from "./ViewCounter";
 import { brandIcons } from "./icons";
 
-export default function ProfileRenderer({ config }: { config: ProfileConfig }) {
-  const [entered, setEntered] = useState(!config.splash.enabled);
+export default function ProfileRenderer({ config, preview }: { config: ProfileConfig; preview?: boolean }) {
+  const [entered, setEntered] = useState(preview || !config.splash.enabled);
   const { theme, identity, background, effects, splash, audio, social } = config;
 
   const fontFamily =
