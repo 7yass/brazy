@@ -20,6 +20,7 @@ import {
   UserCircle2,
   MoreHorizontal,
   LogOut,
+  ChevronDown,
 } from "lucide-react";
 import { SpiderLogo } from "@/components/spider-logo";
 import { createClient } from "@/lib/supabase/client";
@@ -31,9 +32,13 @@ const navItems = [
   { href: "/dashboard/customize", label: "Customize", icon: Palette },
   { href: "/dashboard/widgets", label: "Widgets", icon: Puzzle },
   { href: "/dashboard/projects", label: "Projects", icon: Briefcase },
+  { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
+];
+
+const accountSubItems = [
+  { href: "/dashboard/account", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/badges", label: "Badges", icon: Award },
-  { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -43,6 +48,7 @@ export default function DashboardSidebar() {
   const [username, setUsername] = useState<string | null>(null);
   const [showPopover, setShowPopover] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(true);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -124,6 +130,52 @@ export default function DashboardSidebar() {
             </Link>
           );
         })}
+
+        <div className="pt-2">
+          <button
+            onClick={() => setAccountOpen(!accountOpen)}
+            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              accountOpen || accountSubItems.some((s) => pathname === s.href)
+                ? "text-white/70"
+                : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
+            }`}
+          >
+            <UserCircle2 className="h-4 w-4 shrink-0" />
+            <span className="flex-1 text-left">Account</span>
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                accountOpen ? "rotate-0" : "-rotate-90"
+              }`}
+            />
+          </button>
+
+          <div
+            className={`overflow-hidden transition-all duration-200 ${
+              accountOpen ? "max-h-48 opacity-100" : "max-h-0 opacity-0"
+            }`}
+          >
+            <div className="ml-2 mt-0.5 space-y-0.5 border-l border-white/[0.06] pl-2">
+              {accountSubItems.map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-white/[0.06] text-violet-300"
+                        : "text-white/40 hover:bg-white/[0.04] hover:text-white/70"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </nav>
 
       <div className="flex flex-col border-t border-white/[0.06]">

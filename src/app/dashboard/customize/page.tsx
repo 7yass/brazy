@@ -6,7 +6,6 @@ import { AssetsUploader } from "@/components/dashboard/AssetsUploader";
 import { GeneralCustomization } from "@/components/dashboard/GeneralCustomization";
 import { ColorCustomization } from "@/components/dashboard/ColorCustomization";
 import { OtherCustomization } from "@/components/dashboard/OtherCustomization";
-import { MusicSearch } from "@/components/dashboard/MusicSearch";
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { saveProfileAction } from "./actions";
 import type { ProfileConfig } from "@/lib/profile/schema";
@@ -42,11 +41,33 @@ function showToast(msg: string) {
 }
 
 export default function CustomizePage() {
-  const [cfg, setCfg] = useState<ProfileConfig>(() => normalizeConfig(brazyProfile));
-  const [cursorUploadUrl, setCursorUploadUrl] = useState("");
+  const STORAGE_KEY = "brazy_customize_state";
+
+  const loadState = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  };
+
+  const saveState = (state: Record<string, unknown>) => {
+    try {
+      const existing = loadState();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...existing, ...state }));
+    } catch {}
+  };
+
+  const persisted = loadState();
+
+  const [cfg, setCfg] = useState<ProfileConfig>(() => ({
+    ...normalizeConfig(brazyProfile),
+    ...(persisted.config ?? {}),
+  }));
+  const [cursorUploadUrl, setCursorUploadUrl] = useState(persisted.cursorUploadUrl ?? "");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lyrics, setLyrics] = useState<{ time: number | null; text: string }[]>([]);
-  const [selectedTrack, setSelectedTrack] = useState<{ trackId: string; title: string; artist: string; thumb: string } | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<{ trackId: string; title: string; artist: string; thumb: string } | null>(persisted.selectedTrack ?? null);
 
   const cfgRef = useRef(cfg);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,6 +135,7 @@ export default function CustomizePage() {
           [section]: { ...(c[section] as Record<string, unknown>), [key]: value } as never,
         };
         cfgRef.current = next;
+        saveState({ config: next });
         return next;
       });
       scheduleSave(false);
@@ -129,6 +151,7 @@ export default function CustomizePage() {
           [section]: { ...(c[section] as Record<string, unknown>), [key]: value } as never,
         };
         cfgRef.current = next;
+        saveState({ config: next });
         return next;
       });
       scheduleSave(true);
@@ -214,13 +237,23 @@ export default function CustomizePage() {
           avatarUrl={cfg.identity.avatarUrl}
           onAvatarChange={(url) => uploadCallback("identity", "avatarUrl", url)}
           cursorUrl={cursorUploadUrl}
-          onCursorChange={setCursorUploadUrl}
+          onCursorChange={(url) => { setCursorUploadUrl(url); saveState({ cursorUploadUrl: url }); }}
           audioUrl={cfg.audio.src}
           onAudioChange={(url) => uploadCallback("audio", "src", url)}
           audioVolume={cfg.audio.volume}
           onAudioVolumeChange={(v) => updateNested("audio", "volume", v)}
           lyrics={lyrics}
           onLyricsChange={setLyrics}
+          selectedTrack={selectedTrack}
+          onAudioMetaChange={(meta) => {
+            setSelectedTrack(meta);
+            saveState({ selectedTrack: meta });
+            if (meta) {
+              uploadCallback("audio", "src", `https://www.youtube.com/watch?v=${meta.trackId}`);
+            } else {
+              uploadCallback("audio", "src", "");
+            }
+          }}
         />
       </SectionCard>
 
@@ -248,20 +281,6 @@ export default function CustomizePage() {
           effects={cfg.effects}
           audio={cfg.audio}
           onUpdate={updateNested}
-        />
-      </SectionCard>
-
-      <SectionCard title="Music Search">
-        <MusicSearch
-          selectedTrack={selectedTrack}
-          onSelect={(track) => {
-            setSelectedTrack(track);
-            uploadCallback("audio", "src", `https://www.youtube.com/watch?v=${track.trackId}`);
-          }}
-          onClear={() => {
-            setSelectedTrack(null);
-            uploadCallback("audio", "src", "");
-          }}
         />
       </SectionCard>
     </div>

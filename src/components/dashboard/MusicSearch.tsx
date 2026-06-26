@@ -51,7 +51,7 @@ export function MusicSearch({ selectedTrack, onSelect, onClear }: MusicSearchPro
         });
         if (!res.ok) return;
         const data = await res.json();
-        const mapped = (data.results ?? []).map((item: { id?: string; name?: string; artist?: string; albumArt?: string }) => ({
+        const mapped = (Array.isArray(data) ? data : (data.results ?? [])).map((item: { id?: string; name?: string; artist?: string; albumArt?: string }) => ({
           trackId: item.id ?? "",
           title: item.name ?? "",
           artist: item.artist ?? "",

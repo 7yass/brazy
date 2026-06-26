@@ -17,6 +17,8 @@ interface AssetsUploaderProps {
   onAudioVolumeChange: (v: number) => void;
   lyrics?: { time: number | null; text: string }[];
   onLyricsChange?: (lyrics: { time: number | null; text: string }[]) => void;
+  selectedTrack?: { trackId: string; title: string; artist: string; thumb: string } | null;
+  onAudioMetaChange?: (meta: { trackId: string; title: string; artist: string; thumb: string } | null) => void;
 }
 
 type UploadedFile = { name: string; url: string; ext: string; isVideo: boolean } | null;
@@ -29,7 +31,7 @@ function toUploaded(url: string, presetVideo?: boolean): UploadedFile {
   return { name: url.split("/").pop() ?? "file", url, ext, isVideo };
 }
 
-type AudioTab = "url" | "upload" | "spotify";
+type AudioTab = "url" | "upload" | "youtube";
 
 export function AssetsUploader({
   backgroundUrl,
@@ -44,6 +46,8 @@ export function AssetsUploader({
   onAudioVolumeChange,
   lyrics,
   onLyricsChange,
+  selectedTrack: externalTrack,
+  onAudioMetaChange,
 }: AssetsUploaderProps) {
   const bgInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -62,13 +66,8 @@ export function AssetsUploader({
   const [trimEnd, setTrimEnd] = useState(30);
   const [audioDuration, setAudioDuration] = useState(0);
   const [spotifyInput, setSpotifyInput] = useState("");
-  const [searchResults, setSearchResults] = useState<{ id: string; title: string; artist: string; albumArt: string; previewUrl: string; durationMs: number }[]>([]);
+  const [searchResults, setSearchResults] = useState<{ trackId: string; title: string; artist: string; thumb: string }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState<{ id: string; title: string; artist: string; albumArt: string; previewUrl: string; durationMs: number } | null>(null);
-  const [syncLyrics, setSyncLyrics] = useState(false);
-  const [syncedAvailable, setSyncedAvailable] = useState<boolean | null>(null);
-  const [lyricsData, setLyricsData] = useState<{ time: number | null; text: string }[]>(lyrics ?? []);
-  const [lyricsLoading, setLyricsLoading] = useState(false);
 
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -79,38 +78,25 @@ export function AssetsUploader({
     searchDebounceRef.current = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}`);
+        const su = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!su || !anon) return;
+        const res = await fetch(`${su}/functions/v1/spotify-search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${anon}` },
+          body: JSON.stringify({ query: q }),
+        });
+        if (!res.ok) return;
         const data = await res.json();
-        setSearchResults(data.results ?? []);
+        const items = (Array.isArray(data) ? data : (data.results ?? [])).map((item: { id?: string; name?: string; artist?: string; albumArt?: string }) => ({
+          trackId: item.id ?? "", title: item.name ?? "", artist: item.artist ?? "", thumb: item.albumArt ?? "",
+        }));
+        setSearchResults(items);
       } catch { setSearchResults([]); }
       setSearchLoading(false);
-    }, 400);
+    }, 500);
     return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
   }, [spotifyInput]);
-
-  const checkSyncedLyrics = async (trackId: string) => {
-    try {
-      const res = await fetch(`/api/lyrics?trackId=${encodeURIComponent(trackId)}`);
-      const data = await res.json();
-      setSyncedAvailable(data.synced ?? false);
-    } catch { setSyncedAvailable(false); }
-  };
-
-  const selectTrack = (track: typeof searchResults[number]) => {
-    setSelectedTrack(track);
-    if (track.previewUrl) setModalUrl(track.previewUrl);
-    setSearchResults([]);
-    setSpotifyInput("");
-    setSyncedAvailable(null);
-    setSyncLyrics(false);
-    checkSyncedLyrics(track.id);
-  };
-
-  const clearSelectedTrack = () => {
-    setSelectedTrack(null);
-    setSyncedAvailable(null);
-    setSyncLyrics(false);
-  };
 
   const openAudioModal = () => {
     setModalUrl(audioUrl);
@@ -179,7 +165,7 @@ export function AssetsUploader({
   const tabs: { key: AudioTab; label: string }[] = [
     { key: "url", label: "URL" },
     { key: "upload", label: "Upload" },
-    { key: "spotify", label: "Spotify" },
+    { key: "youtube", label: "YouTube" },
   ];
 
   return (
@@ -337,83 +323,57 @@ export function AssetsUploader({
               </div>
             )}
 
-            {audioTab === "spotify" && (
+            {audioTab === "youtube" && (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {selectedTrack ? (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14, padding: 12 }}>
-                      {selectedTrack.albumArt && (
-                        <img src={selectedTrack.albumArt} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }} />
-                      )}
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 14, color: "#fafafa", fontWeight: 500 }}>{selectedTrack.title}</p>
-                        <p style={{ fontSize: 12, color: "#797979" }}>{selectedTrack.artist}</p>
-                      </div>
-                      <button onClick={clearSelectedTrack} style={{ background: "none", border: "none", color: "#797979", cursor: "pointer" }}>
-                        <X style={{ width: 16, height: 16 }} />
-                      </button>
-                    </div>
-
-                    {selectedTrack.previewUrl && (
-                      <p style={{ fontSize: 12, color: "#22c55e" }}>Preview audio set ✓</p>
+                {externalTrack ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14, padding: 12 }}>
+                    {externalTrack.thumb && (
+                      <img src={externalTrack.thumb} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }} />
                     )}
-
-                    {syncedAvailable === true ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 13, color: "#a5a4a4" }}>Sync lyrics</span>
-                        <button
-                          onClick={() => setSyncLyrics(!syncLyrics)}
-                          style={{
-                            position: "relative", width: 36, height: 20, borderRadius: 10, border: "none",
-                            cursor: "pointer", transition: "background-color 0.2s",
-                            backgroundColor: syncLyrics ? "rgba(218,102,218,0.6)" : "#ffffff26",
-                          }}
-                        >
-                          <span style={{
-                            position: "absolute", top: 2, width: 16, height: 16, borderRadius: "50%",
-                            backgroundColor: "#fff", transition: "left 0.2s",
-                            left: syncLyrics ? 18 : 2,
-                          }} />
-                        </button>
-                      </div>
-                    ) : syncedAvailable === false ? (
-                      <p style={{ fontSize: 12, color: "#555" }}>No synced lyrics available</p>
-                    ) : null}
-                  </>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 14, color: "#fafafa", fontWeight: 500 }}>{externalTrack.title}</p>
+                      <p style={{ fontSize: 12, color: "#797979" }}>{externalTrack.artist}</p>
+                    </div>
+                    <button onClick={() => onAudioMetaChange?.(null)} style={{ background: "none", border: "none", color: "#797979", cursor: "pointer" }}>
+                      <X style={{ width: 16, height: 16 }} />
+                    </button>
+                  </div>
                 ) : (
-                  <input
-                    value={spotifyInput}
-                    onChange={(e) => setSpotifyInput(e.target.value)}
-                    placeholder="Search for a song..."
-                    style={{
-                      background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14,
-                      padding: "10px 14px", color: "#f1f1f1", fontSize: 15,
-                      fontFamily: "Satoshi, sans-serif", outline: "none", width: "100%", boxSizing: "border-box",
-                    }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    <input
+                      value={spotifyInput}
+                      onChange={(e) => setSpotifyInput(e.target.value)}
+                      placeholder="Search for a song..."
+                      style={{
+                        background: "#121212", border: "2px solid #1b1b1b", borderRadius: 14,
+                        padding: "10px 14px", color: "#f1f1f1", fontSize: 15,
+                        fontFamily: "Satoshi, sans-serif", outline: "none", width: "100%", boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
                 )}
 
                 {searchLoading && <p style={{ fontSize: 12, color: "#797979" }}>Searching...</p>}
 
-                {searchResults.length > 0 && (
+                {searchResults.length > 0 && !externalTrack && (
                   <div style={{ maxHeight: 200, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
                     {searchResults.map((r) => (
                       <div
-                        key={r.id}
-                        onClick={() => selectTrack(r)}
+                        key={r.trackId}
+                        onClick={() => {
+                          onAudioMetaChange?.({ trackId: r.trackId, title: r.title, artist: r.artist, thumb: r.thumb });
+                          setSearchResults([]);
+                          setSpotifyInput("");
+                        }}
                         style={{
                           display: "flex", alignItems: "center", gap: 10, padding: "6px 10px",
                           borderRadius: 12, cursor: "pointer", height: 52,
-                          background: selectedTrack?.id === r.id ? "rgba(218,102,218,0.08)" : "transparent",
-                          borderLeft: selectedTrack?.id === r.id ? "2px solid rgba(218,102,218,0.5)" : "2px solid transparent",
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = selectedTrack?.id === r.id ? "rgba(218,102,218,0.08)" : "transparent";
-                        }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                       >
-                        {r.albumArt ? (
-                          <img src={r.albumArt} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                        {r.thumb ? (
+                          <img src={r.thumb} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
                         ) : (
                           <div style={{ width: 40, height: 40, borderRadius: 6, background: "#1a1a1a", flexShrink: 0 }} />
                         )}
@@ -425,15 +385,6 @@ export function AssetsUploader({
                             {r.artist}
                           </p>
                         </div>
-                        {r.previewUrl ? (
-                          <span style={{ fontSize: 12, color: "#555", whiteSpace: "nowrap" }}>
-                            {Math.floor(r.durationMs / 60000)}:{String(Math.floor((r.durationMs % 60000) / 1000)).padStart(2, "0")}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 10, background: "#1a1a1a", border: "1px solid #222", borderRadius: 4, padding: "1px 6px", color: "#555", whiteSpace: "nowrap" }}>
-                            No preview
-                          </span>
-                        )}
                       </div>
                     ))}
                   </div>
