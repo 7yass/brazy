@@ -15,11 +15,15 @@ import {
   Trash2,
   Copy,
   Check,
+  Type,
+  LogIn,
+  Award,
+  Search,
+  LayoutTemplate,
 } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
-import ProfileRenderer from "@/components/profile/ProfileRenderer";
 import { TextInput, TextArea, SelectInput, ColorInput, Slider, Toggle } from "./controls";
 import { cn } from "@/lib/utils";
 
@@ -59,11 +63,40 @@ const navItems = [
   { id: "identity", label: "Profile", icon: User },
   { id: "theme", label: "Theme", icon: Palette },
   { id: "background", label: "Background", icon: Image },
-  { id: "assets", label: "Assets", icon: FolderOpen },
-  { id: "effects", label: "Effects", icon: Sparkles },
+  { id: "font", label: "Font", icon: Type },
+  { id: "splash", label: "Splash", icon: LogIn },
   { id: "audio", label: "Audio", icon: Music },
   { id: "social", label: "Social", icon: Link2 },
+  { id: "badges", label: "Badges", icon: Award },
+  { id: "effects", label: "Effects", icon: Sparkles },
+  { id: "widgets", label: "Widgets", icon: LayoutTemplate },
+  { id: "seo", label: "SEO", icon: Search },
+  { id: "assets", label: "Assets", icon: FolderOpen },
   { id: "custom", label: "Custom", icon: Code },
+];
+
+const fontOpts = [
+  { value: "geist" as const, label: "Geist" },
+  { value: "inter" as const, label: "Inter" },
+  { value: "poppins" as const, label: "Poppins" },
+  { value: "mono" as const, label: "Mono" },
+  { value: "serif" as const, label: "Serif" },
+  { value: "comic" as const, label: "Comic" },
+  { value: "custom" as const, label: "Custom" },
+];
+
+const splashTypeOpts = [
+  { value: "blur" as const, label: "Blur" },
+  { value: "black" as const, label: "Black" },
+  { value: "image" as const, label: "Image" },
+  { value: "glitch" as const, label: "Glitch" },
+  { value: "gradient" as const, label: "Gradient" },
+];
+
+const widgetLayoutOpts = [
+  { value: "list" as const, label: "List" },
+  { value: "grid" as const, label: "Grid" },
+  { value: "compact" as const, label: "Compact" },
 ];
 
 function SectionCard({ title, children }: { title?: string; children: React.ReactNode }) {
@@ -128,6 +161,28 @@ export default function ProfileEditor({
     setCfg((c) => ({ ...c, effects: { ...c.effects, click: { ...c.effects.click, [key]: val } } }));
   }, []);
 
+  const updateBadge = useCallback((i: number, key: string, val: string) => {
+    setCfg((c) => {
+      const items = [...c.badges.items];
+      items[i] = { ...items[i], [key]: val };
+      return { ...c, badges: { ...c.badges, items } };
+    });
+  }, []);
+
+  const addBadge = useCallback(() => {
+    setCfg((c) => ({
+      ...c,
+      badges: { ...c.badges, items: [...c.badges.items, { label: "", emoji: "⭐", color: "#22d3ee", tooltip: "" }] },
+    }));
+  }, []);
+
+  const removeBadge = useCallback((i: number) => {
+    setCfg((c) => ({
+      ...c,
+      badges: { ...c.badges, items: c.badges.items.filter((_, j) => j !== i) },
+    }));
+  }, []);
+
   const copyAssetUrl = useCallback(async (url: string, id: string) => {
     try {
       await navigator.clipboard.writeText(url);
@@ -143,24 +198,19 @@ export default function ProfileEditor({
   return (
     <div className="flex h-screen" style={{ background: "#08070d", color: "#e2e8f0" }}>
       {/* Sidebar */}
-      <nav className="flex w-56 shrink-0 flex-col border-r border-white/[0.06] bg-white/[0.02]">
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4">
-          <span className="text-sm font-semibold text-white/60">Editor</span>
-          <button
-            onClick={() => onSave(cfg)}
-            disabled={saving}
-            className={cn(
-              "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
-              saving
-                ? "bg-violet-500/40 text-white/40 cursor-not-allowed"
-                : "bg-violet-500 text-white hover:bg-violet-400 cursor-pointer",
+      <nav className="flex w-64 shrink-0 flex-col border-r border-white/[0.06]" style={{ background: "#0e0e0e" }}>
+        <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/20 text-lg font-bold text-violet-300">
+            {cfg.identity.displayName?.charAt(0)?.toUpperCase() || "?"}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-white/90">{cfg.identity.displayName || "Profile"}</span>
+            {username && (
+              <span className="text-xs text-white/40">@{username}</span>
             )}
-          >
-            <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving..." : "Save"}
-          </button>
+          </div>
         </div>
-        <div className="flex flex-col gap-0.5 p-2">
+        <div className="flex flex-col gap-0.5 p-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = tab === item.id;
@@ -181,11 +231,26 @@ export default function ProfileEditor({
             );
           })}
         </div>
+        <div className="mt-auto border-t border-white/[0.06] p-3">
+          <button
+            onClick={() => onSave(cfg)}
+            disabled={saving}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
+              saving
+                ? "bg-violet-500/40 text-white/40 cursor-not-allowed"
+                : "bg-violet-500 text-white hover:bg-violet-400 cursor-pointer",
+            )}
+          >
+            <Save className="h-4 w-4" />
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
       </nav>
 
       {/* Controls */}
-      <div className="flex w-[420px] shrink-0 flex-col overflow-y-auto border-r border-white/[0.06]">
-        <div className="flex flex-col gap-5 p-6">
+      <div className="flex flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 p-8">
           {tab === "identity" && (
             <>
               <SectionCard title="Display">
@@ -244,6 +309,13 @@ export default function ProfileEditor({
                   </div>
                 )}
               </SectionCard>
+              <SectionCard title="Content">
+                <SelectInput
+                  value={cfg.theme.contentAlign}
+                  onChange={(v) => updateNested("theme", "contentAlign", v)}
+                  options={[{ value: "center", label: "Center" }, { value: "left", label: "Left" }]}
+                />
+              </SectionCard>
             </>
           )}
 
@@ -256,27 +328,31 @@ export default function ProfileEditor({
                   options={backgroundOpts}
                 />
               </SectionCard>
-              <SectionCard title="Colors">
-                <div className="grid grid-cols-3 gap-2">
-                  <ColorInput value={cfg.background.color1} onChange={(v) => updateNested("background", "color1", v)} />
-                  <ColorInput value={cfg.background.color2} onChange={(v) => updateNested("background", "color2", v)} />
-                  <ColorInput value={cfg.background.color3} onChange={(v) => updateNested("background", "color3", v)} />
-                </div>
-              </SectionCard>
-              <SectionCard title="Adjustments">
-                <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Speed: {cfg.background.speed.toFixed(1)}</span>
-                  <Slider value={cfg.background.speed} onChange={(v) => updateNested("background", "speed", v)} min={0} max={5} step={0.2} />
-                </div>
-                <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Density: {cfg.background.density.toFixed(1)}</span>
-                  <Slider value={cfg.background.density} onChange={(v) => updateNested("background", "density", v)} min={0} max={5} step={0.2} />
-                </div>
-                <div>
-                  <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.background.size.toFixed(1)}</span>
-                  <Slider value={cfg.background.size} onChange={(v) => updateNested("background", "size", v)} min={0} max={12} step={1} />
-                </div>
-              </SectionCard>
+              {cfg.background.type !== "none" && cfg.background.type !== "image" && cfg.background.type !== "video" && (
+                <>
+                  <SectionCard title="Colors">
+                    <div className="grid grid-cols-3 gap-2">
+                      <ColorInput value={cfg.background.color1} onChange={(v) => updateNested("background", "color1", v)} />
+                      <ColorInput value={cfg.background.color2} onChange={(v) => updateNested("background", "color2", v)} />
+                      <ColorInput value={cfg.background.color3} onChange={(v) => updateNested("background", "color3", v)} />
+                    </div>
+                  </SectionCard>
+                  <SectionCard title="Adjustments">
+                    <div>
+                      <span className="mb-1 block text-[11px] text-white/30">Speed: {cfg.background.speed.toFixed(1)}</span>
+                      <Slider value={cfg.background.speed} onChange={(v) => updateNested("background", "speed", v)} min={0} max={5} step={0.2} />
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[11px] text-white/30">Density: {cfg.background.density.toFixed(1)}</span>
+                      <Slider value={cfg.background.density} onChange={(v) => updateNested("background", "density", v)} min={0} max={5} step={0.2} />
+                    </div>
+                    <div>
+                      <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.background.size.toFixed(1)}</span>
+                      <Slider value={cfg.background.size} onChange={(v) => updateNested("background", "size", v)} min={0} max={12} step={1} />
+                    </div>
+                  </SectionCard>
+                </>
+              )}
               {cfg.background.type === "image" && (
                 <SectionCard title="Image">
                   <TextInput value={cfg.background.imageUrl} onChange={(v) => updateNested("background", "imageUrl", v)} placeholder="Image URL" />
@@ -290,45 +366,51 @@ export default function ProfileEditor({
             </>
           )}
 
-          {tab === "effects" && (
+          {tab === "font" && (
             <>
-              <SectionCard title="Cursor">
-                <Toggle value={cfg.effects.cursor.enabled} onChange={(v) => updateCursor("enabled", v)} label="Cursor effect" />
-                {cfg.effects.cursor.enabled && (
-                  <>
-                    <SelectInput value={cfg.effects.cursor.type} onChange={(v) => updateCursor("type", v)} options={cursorOpts} />
-                    <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
-                    <div>
-                      <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.effects.cursor.size}</span>
-                      <Slider value={cfg.effects.cursor.size} onChange={(v) => updateCursor("size", v)} min={2} max={20} step={1} />
-                    </div>
-                  </>
+              <SectionCard title="Font Family">
+                <SelectInput value={cfg.theme.fontFamily} onChange={(v) => updateNested("theme", "fontFamily", v)} options={fontOpts} />
+                {cfg.theme.fontFamily === "custom" && (
+                  <TextInput value={cfg.theme.fontFamilyUrl} onChange={(v) => updateNested("theme", "fontFamilyUrl", v)} placeholder="Font URL (e.g. Google Fonts link)" />
                 )}
               </SectionCard>
-              <SectionCard title="Click">
-                <Toggle value={cfg.effects.click.enabled} onChange={(v) => updateClick("enabled", v)} label="Click effect" />
-                {cfg.effects.click.enabled && (
-                  <>
-                    <SelectInput
-                      value={cfg.effects.click.type}
-                      onChange={(v) => updateClick("type", v)}
-                      options={[
-                        { value: "burst", label: "Burst" },
-                        { value: "ripple", label: "Ripple" },
-                        { value: "hearts", label: "Hearts" },
-                        { value: "confetti", label: "Confetti" },
-                        { value: "emojis", label: "Emojis" },
-                      ]}
-                    />
-                    <ColorInput value={cfg.effects.click.color} onChange={(v) => updateClick("color", v)} />
-                  </>
-                )}
+            </>
+          )}
+
+          {tab === "splash" && (
+            <>
+              <SectionCard title="Splash Screen">
+                <Toggle value={cfg.splash.enabled} onChange={(v) => updateNested("splash", "enabled", v)} label="Enable splash intro" />
               </SectionCard>
-              <SectionCard title="Other">
-                <Toggle value={cfg.effects.tilt3d} onChange={(v) => updateEffect("tilt3d", v)} label="3D tilt" />
-                <Toggle value={cfg.effects.glowPulse} onChange={(v) => updateEffect("glowPulse", v)} label="Glow pulse" />
-                <Toggle value={cfg.effects.textGlow} onChange={(v) => updateEffect("textGlow", v)} label="Text glow" />
-              </SectionCard>
+              {cfg.splash.enabled && (
+                <>
+                  <SectionCard title="Content">
+                    <SelectInput value={cfg.splash.type} onChange={(v) => updateNested("splash", "type", v)} options={splashTypeOpts} />
+                    <TextInput value={cfg.splash.text} onChange={(v) => updateNested("splash", "text", v)} placeholder="Main text" />
+                    <TextInput value={cfg.splash.subtext} onChange={(v) => updateNested("splash", "subtext", v)} placeholder="Sub text" />
+                    <TextInput value={cfg.splash.cta} onChange={(v) => updateNested("splash", "cta", v)} placeholder="CTA button text" />
+                    <Toggle value={cfg.splash.showEnterButton} onChange={(v) => updateNested("splash", "showEnterButton", v)} label="Show enter button" />
+                  </SectionCard>
+                  <SectionCard title="Colors">
+                    <ColorInput value={cfg.splash.bgColor} onChange={(v) => updateNested("splash", "bgColor", v)} />
+                    <ColorInput value={cfg.splash.textColor} onChange={(v) => updateNested("splash", "textColor", v)} />
+                    <ColorInput value={cfg.splash.accentColor} onChange={(v) => updateNested("splash", "accentColor", v)} />
+                  </SectionCard>
+                  {cfg.splash.type === "blur" && (
+                    <SectionCard title="Blur">
+                      <div>
+                        <span className="mb-1 block text-[11px] text-white/30">Blur amount: {cfg.splash.blurAmount}px</span>
+                        <Slider value={cfg.splash.blurAmount} onChange={(v) => updateNested("splash", "blurAmount", v)} min={0} max={40} step={2} />
+                      </div>
+                    </SectionCard>
+                  )}
+                  {cfg.splash.type === "image" && (
+                    <SectionCard title="Image">
+                      <TextInput value={cfg.splash.imageUrl} onChange={(v) => updateNested("splash", "imageUrl", v)} placeholder="Background image URL" />
+                    </SectionCard>
+                  )}
+                </>
+              )}
             </>
           )}
 
@@ -414,7 +496,156 @@ export default function ProfileEditor({
                   onChange={(v) => updateNested("social", "shape", v)}
                   options={[{ value: "circle", label: "Circle" }, { value: "square", label: "Square" }, { value: "rounded", label: "Rounded" }]}
                 />
+                <Toggle value={cfg.social.showLabels} onChange={(v) => updateNested("social", "showLabels", v)} label="Show labels" />
                 <Toggle value={cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="Hover effect" />
+              </SectionCard>
+            </>
+          )}
+
+          {tab === "badges" && (
+            <>
+              <SectionCard title="Settings">
+                <Toggle value={cfg.badges.enabled} onChange={(v) => updateNested("badges", "enabled", v)} label="Enable badges" />
+                {cfg.badges.enabled && (
+                  <SelectInput
+                    value={cfg.badges.position}
+                    onChange={(v) => updateNested("badges", "position", v)}
+                    options={[{ value: "top", label: "Top" }, { value: "bottom", label: "Bottom" }, { value: "inline", label: "Inline" }]}
+                  />
+                )}
+              </SectionCard>
+              {cfg.badges.enabled && (
+                <SectionCard title="Items">
+                  {cfg.badges.items.length === 0 ? (
+                    <p className="py-4 text-center text-sm text-white/30">No badges yet.</p>
+                  ) : (
+                    cfg.badges.items.map((badge, i) => (
+                      <div key={i} className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-lg">{badge.emoji}</span>
+                          <TextInput value={badge.emoji} onChange={(v) => updateBadge(i, "emoji", v)} placeholder="Emoji" />
+                        </div>
+                        <TextInput value={badge.label} onChange={(v) => updateBadge(i, "label", v)} placeholder="Label" />
+                        <div className="mt-2 flex items-center gap-2">
+                          <ColorInput value={badge.color} onChange={(v) => updateBadge(i, "color", v)} />
+                          <input
+                            type="text"
+                            value={badge.tooltip}
+                            onChange={(e) => updateBadge(i, "tooltip", e.target.value)}
+                            placeholder="Tooltip"
+                            className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition focus:border-violet-400/50"
+                          />
+                          <button
+                            onClick={() => removeBadge(i)}
+                            className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/10 text-xs text-white/30 hover:border-red-500/50 hover:text-red-400"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <button
+                    onClick={addBadge}
+                    className="w-full rounded-lg border border-dashed border-white/15 py-2 text-xs text-white/40 transition hover:border-white/30 hover:text-white/60"
+                  >
+                    + Add badge
+                  </button>
+                </SectionCard>
+              )}
+            </>
+          )}
+
+          {tab === "effects" && (
+            <>
+              <SectionCard title="Cursor">
+                <Toggle value={cfg.effects.cursor.enabled} onChange={(v) => updateCursor("enabled", v)} label="Cursor effect" />
+                {cfg.effects.cursor.enabled && (
+                  <>
+                    <SelectInput value={cfg.effects.cursor.type} onChange={(v) => updateCursor("type", v)} options={cursorOpts} />
+                    <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
+                    <div>
+                      <span className="mb-1 block text-[11px] text-white/30">Size: {cfg.effects.cursor.size}</span>
+                      <Slider value={cfg.effects.cursor.size} onChange={(v) => updateCursor("size", v)} min={2} max={20} step={1} />
+                    </div>
+                  </>
+                )}
+              </SectionCard>
+              <SectionCard title="Click">
+                <Toggle value={cfg.effects.click.enabled} onChange={(v) => updateClick("enabled", v)} label="Click effect" />
+                {cfg.effects.click.enabled && (
+                  <>
+                    <SelectInput
+                      value={cfg.effects.click.type}
+                      onChange={(v) => updateClick("type", v)}
+                      options={[
+                        { value: "burst", label: "Burst" },
+                        { value: "ripple", label: "Ripple" },
+                        { value: "hearts", label: "Hearts" },
+                        { value: "confetti", label: "Confetti" },
+                        { value: "emojis", label: "Emojis" },
+                      ]}
+                    />
+                    <ColorInput value={cfg.effects.click.color} onChange={(v) => updateClick("color", v)} />
+                  </>
+                )}
+              </SectionCard>
+              <SectionCard title="Other">
+                <Toggle value={cfg.effects.tilt3d} onChange={(v) => updateEffect("tilt3d", v)} label="3D tilt" />
+                <Toggle value={cfg.effects.typewriterTitle} onChange={(v) => updateEffect("typewriterTitle", v)} label="Typewriter title" />
+                <Toggle value={cfg.effects.glowPulse} onChange={(v) => updateEffect("glowPulse", v)} label="Glow pulse" />
+                <Toggle value={cfg.effects.textGlow} onChange={(v) => updateEffect("textGlow", v)} label="Text glow" />
+              </SectionCard>
+            </>
+          )}
+
+          {tab === "widgets" && (
+            <>
+              <SectionCard title="Widget Container">
+                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-4">
+                  <p className="mb-3 text-sm text-white/60">
+                    Wrap your widgets in a custom container with your own accent color and opacity.
+                  </p>
+                  <ColorInput
+                    value={cfg.theme.accentColor}
+                    onChange={(v) => updateNested("theme", "accentColor", v)}
+                  />
+                  <div className="mt-3">
+                    <span className="mb-1 block text-[11px] text-white/30">Container opacity: {cfg.theme.cardOpacity.toFixed(2)}</span>
+                    <Slider value={cfg.theme.cardOpacity} onChange={(v) => updateNested("theme", "cardOpacity", v)} min={0} max={1} step={0.05} />
+                  </div>
+                </div>
+              </SectionCard>
+              <SectionCard title="Layout">
+                <SelectInput
+                  value="list"
+                  onChange={() => {}}
+                  options={widgetLayoutOpts}
+                />
+                <div>
+                  <span className="mb-1 block text-[11px] text-white/30">Spacing</span>
+                  <Slider value={16} onChange={() => {}} min={4} max={48} step={4} />
+                </div>
+              </SectionCard>
+              <SectionCard title="Position">
+                <SelectInput
+                  value={cfg.theme.contentAlign}
+                  onChange={(v) => updateNested("theme", "contentAlign", v)}
+                  options={[{ value: "center", label: "Centered" }, { value: "left", label: "Left aligned" }]}
+                />
+              </SectionCard>
+            </>
+          )}
+
+          {tab === "seo" && (
+            <>
+              <SectionCard title="Meta">
+                <TextInput value={cfg.seo.title} onChange={(v) => update("seo", { ...cfg.seo, title: v })} placeholder="Page title" />
+                <TextArea value={cfg.seo.description} onChange={(v) => update("seo", { ...cfg.seo, description: v })} placeholder="Meta description" rows={2} />
+                <TextInput value={cfg.seo.ogImage} onChange={(v) => update("seo", { ...cfg.seo, ogImage: v })} placeholder="OG image URL" />
+              </SectionCard>
+              <SectionCard title="Analytics">
+                <Toggle value={cfg.analytics.trackViews} onChange={(v) => update("analytics", { ...cfg.analytics, trackViews: v })} label="Track profile views" />
               </SectionCard>
             </>
           )}
@@ -499,13 +730,6 @@ export default function ProfileEditor({
               </SectionCard>
             </>
           )}
-        </div>
-      </div>
-
-      {/* Preview */}
-      <div className="flex flex-1 overflow-hidden">
-        <div className="relative flex-1">
-          <ProfileRenderer config={cfg} preview />
         </div>
       </div>
     </div>
