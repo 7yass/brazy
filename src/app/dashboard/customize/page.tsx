@@ -6,6 +6,7 @@ import { AudioManagerUpload } from "@/components/dashboard/AudioManagerUpload";
 import { CursorUpload } from "@/components/dashboard/CursorUpload";
 import { GeneralCustomization } from "@/components/dashboard/GeneralCustomization";
 import { ColorCustomization } from "@/components/dashboard/ColorCustomization";
+import { OtherCustomization } from "@/components/dashboard/OtherCustomization";
 
 export default function CustomizePage() {
   return (
@@ -29,7 +30,9 @@ export default function CustomizePage() {
         <SectionCard title="Color Customization">
           <ColorCustomization />
         </SectionCard>
-        <SectionCard title="Other Customization" />
+        <SectionCard title="Other Customization">
+          <OtherCustomization />
+        </SectionCard>
       </div>
     </div>
   );
