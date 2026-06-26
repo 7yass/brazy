@@ -51,7 +51,13 @@ export function MusicSearch({ selectedTrack, onSelect, onClear }: MusicSearchPro
         });
         if (!res.ok) return;
         const data = await res.json();
-        setResults(data.results ?? []);
+        const mapped = (data.results ?? []).map((item: { id?: string; name?: string; artist?: string; albumArt?: string }) => ({
+          trackId: item.id ?? "",
+          title: item.name ?? "",
+          artist: item.artist ?? "",
+          thumb: item.albumArt ?? "",
+        }));
+        setResults(mapped);
         setShowDropdown(true);
       } catch {
         setResults([]);

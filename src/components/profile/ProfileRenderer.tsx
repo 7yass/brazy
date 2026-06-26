@@ -74,7 +74,12 @@ export default function ProfileRenderer({
       <BackgroundLayer background={background} />
       <CursorEffect effects={effects} />
       <ClickEffect effects={effects} />
-      <AudioPlayer audio={audio} audioTrackId={audioTrackId} audioTitle={audioTitle} audioArtist={audioArtist} audioThumb={audioThumb} />
+      <AudioPlayer
+        audioTrackId={audioTrackId}
+        audioTitle={audioTitle}
+        audioArtist={audioArtist}
+        audioThumb={audioThumb}
+      />
       <SplashIntro splash={splash} onEnter={() => setEntered(true)} />
 
       <div
