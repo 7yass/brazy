@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { Check } from "lucide-react";
 import { AssetsUploader } from "@/components/dashboard/AssetsUploader";
 import { GeneralCustomization } from "@/components/dashboard/GeneralCustomization";
 import { ColorCustomization } from "@/components/dashboard/ColorCustomization";
@@ -12,11 +13,116 @@ import { normalizeConfig } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
 import { createClient } from "@/lib/supabase/client";
 
+function showToast(msg: string) {
+  const el = document.createElement("div");
+  el.textContent = msg;
+  el.style.cssText = [
+    "position:fixed",
+    "bottom:24px",
+    "left:50%",
+    "transform:translateX(-50%)",
+    "background:#141414",
+    "border:2px solid #181818",
+    "border-radius:999px",
+    "padding:8px 18px",
+    "color:#a1a1a1",
+    "font-size:13px",
+    "font-family:Satoshi,sans-serif",
+    "z-index:99999",
+    "transition:opacity 0.3s",
+    "opacity:1",
+    "pointer-events:none",
+  ].join(";");
+  document.body.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = "0";
+    setTimeout(() => el.remove(), 300);
+  }, 2500);
+}
+
 export default function CustomizePage() {
   const [cfg, setCfg] = useState<ProfileConfig>(() => normalizeConfig(brazyProfile));
   const [cursorUploadUrl, setCursorUploadUrl] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "success" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+  const cfgRef = useRef(cfg);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedFadeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(false);
+  const pendingSaveRef = useRef(false);
+
+  useEffect(() => { cfgRef.current = cfg; }, [cfg]);
+
+  const doSave = useCallback(async (config: ProfileConfig) => {
+    if (isSavingRef.current) {
+      pendingSaveRef.current = true;
+      return;
+    }
+    isSavingRef.current = true;
+    pendingSaveRef.current = false;
+    setSaveStatus("saving");
+    try {
+      await saveProfileAction(config);
+      if (pendingSaveRef.current) {
+        isSavingRef.current = false;
+        doSave(cfgRef.current);
+        return;
+      }
+      setSaveStatus("saved");
+      if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
+      savedFadeRef.current = setTimeout(() => {
+        setSaveStatus("idle");
+        savedFadeRef.current = null;
+      }, 2000);
+    } catch {
+      /* silently retry next change */
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, []);
+
+  const scheduleSave = useCallback((immediate = false) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSaveStatus("saving");
+    if (immediate) {
+      doSave(cfgRef.current);
+    } else {
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        doSave(cfgRef.current);
+      }, 800);
+    }
+  }, [doSave]);
+
+  const updateNested = useCallback(
+    (section: keyof ProfileConfig, key: string, value: unknown) => {
+      setCfg((c) => {
+        const next = {
+          ...c,
+          [section]: { ...(c[section] as Record<string, unknown>), [key]: value } as never,
+        };
+        cfgRef.current = next;
+        return next;
+      });
+      scheduleSave(false);
+    },
+    [scheduleSave],
+  );
+
+  const uploadCallback = useCallback(
+    (section: keyof ProfileConfig, key: string, value: unknown) => {
+      setCfg((c) => {
+        const next = {
+          ...c,
+          [section]: { ...(c[section] as Record<string, unknown>), [key]: value } as never,
+        };
+        cfgRef.current = next;
+        return next;
+      });
+      scheduleSave(true);
+    },
+    [scheduleSave],
+  );
 
   useEffect(() => {
     const supabase = createClient();
@@ -30,55 +136,68 @@ export default function CustomizePage() {
           data.user.user_metadata?.full_name ??
           data.user.email?.split("@")[0] ??
           "user";
-        setCfg((c) => ({
-          ...c,
-          identity: { ...c.identity, username },
-        }));
+        setCfg((c) => {
+          const next = { ...c, identity: { ...c.identity, username } };
+          cfgRef.current = next;
+          return next;
+        });
       }
     });
   }, []);
 
-  const updateNested = useCallback(
-    (section: keyof ProfileConfig, key: string, value: unknown) => {
-      setCfg((c) => ({
-        ...c,
-        [section]: { ...(c[section] as Record<string, unknown>), [key]: value } as never,
-      }));
-    },
-    [],
-  );
-
-  const handleSave = async () => {
-    setSaving(true);
-    setSaveStatus("saving");
-    try {
-      const { error } = await saveProfileAction(cfg);
-      if (error) {
-        setSaveStatus("error");
-        console.error("Save failed:", error);
-      } else {
-        setSaveStatus("success");
-        setTimeout(() => setSaveStatus("idle"), 2500);
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (savedFadeRef.current) clearTimeout(savedFadeRef.current);
+      if (!isSavingRef.current && cfgRef.current) {
+        saveProfileAction(cfgRef.current).then(() => showToast("Changes saved")).catch(() => {});
       }
-    } catch {
-      setSaveStatus("error");
-    } finally {
-      setSaving(false);
-    }
-  };
+    };
+  }, []);
 
   return (
-    <div className="flex flex-col" style={{ gap: 15 }}>
+    <div className="flex flex-col" style={{ gap: 15, position: "relative" }}>
+      {saveStatus !== "idle" && (
+        <div
+          style={{
+            position: "fixed",
+            top: 20,
+            right: 20,
+            zIndex: 100,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "#141414",
+            border: "2px solid #181818",
+            borderRadius: 999,
+            padding: "5px 12px",
+            fontSize: 13,
+            color: "#a1a1a1",
+            fontFamily: "Satoshi, sans-serif",
+            transition: saveStatus === "saved" ? "opacity 0.4s" : "none",
+          }}
+        >
+          {saveStatus === "saving" ? (
+            "Saving..."
+          ) : (
+            <>
+              <Check style={{ width: 12, height: 12, color: "#22c55e" }} />
+              Saved
+            </>
+          )}
+        </div>
+      )}
+
       <SectionCard title="Assets Uploader">
         <AssetsUploader
           backgroundUrl={cfg.background.imageUrl}
-          onBackgroundChange={(url) => updateNested("background", "imageUrl", url)}
+          onBackgroundChange={(url) => uploadCallback("background", "imageUrl", url)}
           avatarUrl={cfg.identity.avatarUrl}
-          onAvatarChange={(url) => updateNested("identity", "avatarUrl", url)}
+          onAvatarChange={(url) => uploadCallback("identity", "avatarUrl", url)}
           cursorUrl={cursorUploadUrl}
           onCursorChange={setCursorUploadUrl}
           audioUrl={cfg.audio.src}
-          onAudioChange={(url) => updateNested("audio", "src", url)}
+          onAudioChange={(url) => uploadCallback("audio", "src", url)}
           audioVolume={cfg.audio.volume}
           onAudioVolumeChange={(v) => updateNested("audio", "volume", v)}
         />
@@ -110,62 +229,6 @@ export default function CustomizePage() {
           onUpdate={updateNested}
         />
       </SectionCard>
-
-      <button
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          color: "#fafafa",
-          width: "100%",
-          backgroundColor:
-            saveStatus === "success"
-              ? "rgba(34,197,94,0.44)"
-              : saveStatus === "error"
-                ? "rgba(239,68,68,0.44)"
-                : "rgba(126,44,139,0.44)",
-          border: `2px solid ${
-            saveStatus === "success"
-              ? "rgba(34,197,94,0.61)"
-              : saveStatus === "error"
-                ? "rgba(239,68,68,0.61)"
-                : "rgba(126,44,139,0.61)"
-          }`,
-          padding: 10,
-          borderRadius: 20,
-          cursor: saving ? "not-allowed" : "pointer",
-          height: 45,
-          alignItems: "center",
-          transition: "0.25s",
-          marginTop: 15,
-          fontSize: 16,
-          fontWeight: 500,
-          fontFamily: "Satoshi, sans-serif",
-          opacity: saving ? 0.6 : 1,
-        }}
-        onMouseEnter={(e) => {
-          if (!saving && saveStatus !== "success" && saveStatus !== "error")
-            e.currentTarget.style.backgroundColor = "rgba(126,44,139,0.49)";
-        }}
-        onMouseDown={(e) => {
-          if (!saving) e.currentTarget.style.transform = "translateY(4px)";
-        }}
-        onMouseUp={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
-        onMouseLeave={(e) => {
-          if (saveStatus !== "success" && saveStatus !== "error")
-            e.currentTarget.style.backgroundColor = "rgba(126,44,139,0.44)";
-          e.currentTarget.style.transform = "translateY(0)";
-        }}
-        onClick={handleSave}
-        disabled={saving}
-      >
-        {saveStatus === "saving"
-          ? "Saving..."
-          : saveStatus === "success"
-            ? "Saved!"
-            : saveStatus === "error"
-              ? "Failed — try again"
-              : "Save Changes"}
-      </button>
     </div>
   );
 }
