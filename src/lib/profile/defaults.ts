@@ -68,6 +68,7 @@ export const brazyProfile: ProfileConfig = {
     typewriterTitle: false,
     glowPulse: false,
     textGlow: true,
+    usernameEffect: "glow",
   },
   splash: {
     enabled: true,

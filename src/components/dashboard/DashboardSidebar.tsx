@@ -24,7 +24,7 @@ import {
 import { SpiderLogo } from "@/components/spider-logo";
 import { createClient } from "@/lib/supabase/client";
 
-// ── Sidebar nav structure (mirrors guns.lol order exactly) ──────────────────
+// ── Sidebar nav structure ────────────────────────────────────────────────────
 // 1. Account  (collapsible)
 //    ├─ Overview
 //    ├─ Analytics
@@ -32,7 +32,7 @@ import { createClient } from "@/lib/supabase/client";
 //    └─ Settings
 // 2. Customize  (standalone)
 // 3. Links      (standalone)
-// 4. Premium    (collapsible)
+// 4. Advance    (collapsible)
 //    ├─ General
 //    ├─ Layout Settings
 //    └─ Profile Metadata
@@ -46,10 +46,10 @@ const accountSubItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-const premiumSubItems = [
-  { href: "/dashboard/premium", label: "General", icon: Gem },
-  { href: "/dashboard/premium/layout", label: "Layout Settings", icon: LayoutTemplate },
-  { href: "/dashboard/premium/metadata", label: "Profile Metadata", icon: UserCircle2 },
+const advanceSubItems = [
+  { href: "/dashboard/advance", label: "General", icon: Gem },
+  { href: "/dashboard/advance/layout", label: "Layout Settings", icon: LayoutTemplate },
+  { href: "/dashboard/advance/metadata", label: "Profile Metadata", icon: UserCircle2 },
 ];
 
 const standaloneItems = [
@@ -64,7 +64,7 @@ export default function DashboardSidebar() {
   const [showPopover, setShowPopover] = useState(false);
   const [copied, setCopied] = useState(false);
   const [accountOpen, setAccountOpen] = useState(true);
-  const [premiumOpen, setPremiumOpen] = useState(false);
+  const [advanceOpen, setAdvanceOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export default function DashboardSidebar() {
 
   // helper: is any sub-item in this group active?
   const isAccountActive = accountSubItems.some((s) => pathname === s.href);
-  const isPremiumActive = premiumSubItems.some((s) => pathname === s.href);
+  const isAdvanceActive = advanceSubItems.some((s) => pathname === s.href);
 
   return (
     <aside className="flex h-full w-48 flex-col border-r border-white/[0.06] bg-[#0d0d0d]">
@@ -164,15 +164,15 @@ export default function DashboardSidebar() {
           <StandaloneLink key={item.href} item={item} pathname={pathname} />
         ))}
 
-        {/* 4. Premium (collapsible) */}
+        {/* 4. Advance (collapsible) */}
         <CollapsibleGroup
-          label="Premium"
+          label="Advance"
           icon={<Gem className="h-4 w-4 shrink-0" />}
-          open={premiumOpen || isPremiumActive}
-          onToggle={() => setPremiumOpen(!premiumOpen)}
-          isActive={isPremiumActive}
+          open={advanceOpen || isAdvanceActive}
+          onToggle={() => setAdvanceOpen(!advanceOpen)}
+          isActive={isAdvanceActive}
         >
-          {premiumSubItems.map((item) => {
+          {advanceSubItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (

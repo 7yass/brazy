@@ -79,11 +79,26 @@ import { Toggle, SelectInput, Slider } from "./controls";
       </Row>
 
       <Row label="Username Effects">
-        <Toggle
-          value={effects.textGlow ?? false}
-          onChange={(v) => onUpdate("effects", "textGlow", v)}
-          label=""
-        />
+        <div style={{ width: 140 }}>
+          <SelectInput
+            value={(effects as Record<string, string | boolean | undefined>).usernameEffect as string ?? "none"}
+            onChange={(v) => {
+              onUpdate("effects", "usernameEffect", v);
+              onUpdate("effects", "typewriterTitle", v === "typewriter");
+              onUpdate("effects", "textGlow", v === "glow" || v === "neon" || v === "rainbow");
+              onUpdate("effects", "glowPulse", v === "glow" || v === "rainbow");
+            }}
+            options={[
+              { value: "none", label: "None" },
+              { value: "glow", label: "Glow" },
+              { value: "glitch", label: "Glitch" },
+              { value: "typewriter", label: "Typewriter" },
+              { value: "rainbow", label: "Rainbow" },
+              { value: "neon", label: "Neon" },
+              { value: "shake", label: "Shake" },
+            ]}
+          />
+        </div>
       </Row>
 
       <Row label="Profile Opacity">

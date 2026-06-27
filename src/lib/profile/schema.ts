@@ -64,7 +64,7 @@ export type Background = z.infer<typeof backgroundSchema>;
 
 const cursorEffectSchema = z.object({
   enabled: z.boolean().default(true),
-  type: z.enum(["trail", "sparkles", "dots", "rings", "none"]).default("sparkles"),
+  type: z.enum(["trail", "sparkles", "dots", "rings", "glow", "snowflakes", "none"]).default("sparkles"),
   color: z.string().default("#22d3ee"),
   size: z.number().min(2).max(24).default(6),
   fade: z.number().min(0).max(1).default(0.12),
@@ -86,6 +86,7 @@ export const effectsSchema = z.object({
   typewriterTitle: z.boolean().default(false),
   glowPulse: z.boolean().default(true),
   textGlow: z.boolean().default(true),
+  usernameEffect: z.enum(["none", "glow", "glitch", "typewriter", "rainbow", "neon", "shake"]).default("none"),
 });
 export type Effects = z.infer<typeof effectsSchema>;
 
