@@ -21,7 +21,7 @@ export default function SettingsPage() {
       const { data: profile } = await supabase
         .from("profiles")
         .select("username")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       if (profile?.username) setUsernameInput(profile.username);
     })();

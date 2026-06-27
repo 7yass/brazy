@@ -18,13 +18,13 @@ export function LandingNav({ isLoggedIn }: { isLoggedIn: boolean }) {
         ) : (
           <div className="flex items-center gap-3">
             <Link
-              href="/auth/login"
+              href="/register"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               sign in
             </Link>
             <Link
-              href="/auth/register"
+              href="/register"
               className="rounded-lg border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
             >
               get started

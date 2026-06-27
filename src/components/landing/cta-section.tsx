@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { SpiderLogo } from '@/components/spider-logo'
-import { DiscordLoginButton } from '@/components/discord-login-button'
 
 export function CtaSection({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
@@ -19,7 +18,7 @@ export function CtaSection({ isLoggedIn }: { isLoggedIn: boolean }) {
             {isLoggedIn ? (
               <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Dashboard</Link>
             ) : (
-              <DiscordLoginButton label="Enter" />
+              <Link href="/register" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-4 transition-colors hover:bg-primary/80">Get started</Link>
             )}
           </div>
         </div>

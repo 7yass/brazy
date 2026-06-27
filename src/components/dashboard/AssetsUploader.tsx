@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 import { Image, FolderOpen, Upload, MousePointer2, Music, X, Search, Scissors } from "lucide-react";
 import { Slider } from "./controls";
 
@@ -69,6 +70,16 @@ export function AssetsUploader({
   const [searchResults, setSearchResults] = useState<{ trackId: string; title: string; artist: string; thumb: string }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
+  const uploadToStorage = async (file: File, bucket: string): Promise<string> => {
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase!.storage.from(bucket).upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data } = supabase!.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -111,28 +122,29 @@ export function AssetsUploader({
     setShowAudioModal(false);
   };
 
-  const handleBgSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBgSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
     setBgIsVideo(file.type.startsWith("video/"));
+    const url = await uploadToStorage(file, "backgrounds");
     onBackgroundChange(url);
     e.target.value = "";
   }, [onBackgroundChange]);
 
-  const handleAvatarSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    onAvatarChange(URL.createObjectURL(file));
+    const url = await uploadToStorage(file, "avatars");
+    onAvatarChange(url);
     e.target.value = "";
   }, [onAvatarChange]);
 
-  const handleCursorSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCursorSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
     const parts = file.name.split(".");
     setCursorExt(parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "");
+    const url = await uploadToStorage(file, "cursors");
     onCursorChange(url);
     e.target.value = "";
   }, [onCursorChange]);
