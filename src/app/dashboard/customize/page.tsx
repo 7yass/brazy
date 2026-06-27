@@ -3,105 +3,238 @@
 import { useState } from "react";
 import { Upload, Music, User, MousePointer2 } from "lucide-react";
 
-// ── exact guns.lol CSS tokens ────────────────────────────────────────────────
-// card:        bg #111111  padding:25px  border-radius:15px  gap:25px
-// section h1:  font-size:19px  font-weight:500  color:#fafafa  margin:0
-// sub-label:   font-size:16px  font-weight:500  color:#989898  margin:0 0 8px 3px
-// btn:         padding:10px  border-radius:15px  bg rgb(49,49,49)  border:2px solid transparent
-//              hover border:#454545  active translateY(4px)  font-size:15px font-weight:500
-// upload row:  bg #131313  border:#191919  padding:9px 14px  gap:8px  border-radius:15px
-//              hover border:#1d1d1d  active translateY(4px)  font-size:14px
-// accordion:   plain flex row justify-between, no bg/border, svg font-size:30px color:#e0e0e0
-//              active translateY(4px)
-// toggle:      pill, active #9849ac, inactive #232323
-// slider stop: bg:#171717 border:#202020 border-radius:15px, active purple
-// input:       bg:#1a1a1a border:#1f1f1f border-radius:15px
+// ── Shared style objects pulled 1:1 from guns.lol CSS ────────────────────────
+const S = {
+  // .GUNS__dd-59729bb1 (card)
+  card: {
+    backgroundColor: "#111111",
+    borderRadius: 15,
+    textAlign: "left" as const,
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: 25,
+    padding: 25,
+  },
+  // card h1
+  cardTitle: {
+    margin: 0,
+    fontSize: 19,
+    color: "#fafafa",
+    fontWeight: 500,
+    fontFamily: "Satoshi, sans-serif",
+  },
+  // .GUNS__34 sub-label h1
+  subLabel: {
+    fontSize: 16,
+    fontWeight: 500,
+    margin: "0 0 8px 3px",
+    color: "#989898",
+    fontFamily: "Satoshi, sans-serif",
+  },
+  // .GUNS__18-72d3b235 list wrapper (General buttons)
+  genList: {
+    display: "flex",
+    flexDirection: "column" as const,
+    marginTop: 13.5,
+    gap: 10,
+  },
+  // .GUNS__18-72d3b235 span (General button — bg rgb(49,49,49), border transparent)
+  genBtn: {
+    color: "#fafafa",
+    padding: "10px",
+    borderRadius: 15,
+    fontFamily: "Satoshi, sans-serif",
+    fontWeight: 500,
+    fontSize: 15,
+    backgroundColor: "rgb(49,49,49)",
+    border: "2px solid transparent",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    transition: ".25s",
+    width: "100%",
+    boxSizing: "border-box" as const,
+  },
+  // .GUNS__71-4c19e60e (Other Customization buttons — bg #191919, border #202020)
+  otherBtn: {
+    textAlign: "center" as const,
+    color: "#fafafa",
+    padding: "10px",
+    backgroundColor: "#191919",
+    border: "2px solid #202020",
+    borderRadius: 15,
+    cursor: "pointer",
+    transition: ".25s",
+    fontFamily: "Satoshi, sans-serif",
+    fontWeight: 500,
+    fontSize: 15,
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    boxSizing: "border-box" as const,
+  },
+  // .GUNS__71-4c19e60e .GUNS__05 (Reset — red)
+  resetBtn: {
+    backgroundColor: "#ff000044",
+    border: "2px solid #ff000033",
+    borderRadius: 15,
+    padding: "10px",
+    color: "#fafafa",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    transition: ".25s",
+    fontFamily: "Satoshi, sans-serif",
+    fontWeight: 500,
+    fontSize: 15,
+    width: "100%",
+    boxSizing: "border-box" as const,
+  },
+  // .GUNS__22-383431a5 (upload row)
+  uploadRow: {
+    display: "inline-flex" as const,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "9px 14px",
+    backgroundColor: "#131313",
+    border: "2px solid #191919",
+    borderRadius: 15,
+    color: "#f2f2f2",
+    fontFamily: "Satoshi, sans-serif",
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: "pointer",
+    transition: ".25s",
+    userSelect: "none" as const,
+    width: "100%",
+    boxSizing: "border-box" as const,
+  },
+  // .GUNS__8b (upload icon box)
+  uploadIcon: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#101010",
+    border: "2px solid #1b1b1b",
+    flexShrink: 0,
+  },
+  // .GUNS__55-e050983d (accordion trigger)
+  accordionTrigger: {
+    textDecoration: "none",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    cursor: "pointer",
+    color: "#fafafa",
+    transition: ".25s",
+    userSelect: "none" as const,
+  },
+  // .GUNS__2d (color row card)
+  colorRow: {
+    textAlign: "left" as const,
+    padding: 15,
+    backgroundColor: "#151515",
+    borderRadius: 15,
+    display: "flex",
+    flexDirection: "row" as const,
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 13,
+  },
+};
+
+// ── Components ───────────────────────────────────────────────────────────────
 
 function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      backgroundColor: "#111111",
-      borderRadius: 15,
-      padding: 25,
-      display: "flex",
-      flexDirection: "column",
-      gap: 25,
-    }}>
-      {children}
-    </div>
-  );
+  return <div style={S.card}>{children}</div>;
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h1 style={{ margin: 0, fontSize: 19, fontWeight: 500, color: "#fafafa" }}>
-      {children}
-    </h1>
-  );
+  return <h1 style={S.cardTitle}>{children}</h1>;
 }
 
 function SubLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <h1 style={{ margin: "0 0 8px 3px", fontSize: 16, fontWeight: 500, color: "#989898" }}>
-      {children}
-    </h1>
-  );
+  return <h1 style={S.subLabel}>{children}</h1>;
 }
 
-// The standard guns.lol button: bg rgb(49,49,49), border transparent → #454545 on hover, translateY(4px) on active
-function Btn({
-  children, onClick, red = false,
-}: {
-  children: React.ReactNode; onClick?: () => void; red?: boolean;
-}) {
-  const [active, setActive] = useState(false);
+// General-section button: rgb(49,49,49), border transparent → #454545 hover, translateY(4px) active
+function GenBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   const [hover, setHover]   = useState(false);
+  const [active, setActive] = useState(false);
   return (
-    <button
+    <span
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => { setHover(false); setActive(false); }}
       onMouseDown={() => setActive(true)}
       onMouseUp={() => setActive(false)}
       style={{
-        width: "100%",
-        padding: "10px",
-        borderRadius: 15,
-        border: `2px solid ${
-          red
-            ? hover ? "rgba(255,56,56,.55)" : "rgba(255,56,56,.33)"
-            : hover ? "#454545" : "transparent"
-        }`,
-        backgroundColor: red
-          ? hover ? "rgba(255,56,56,.3)" : "rgba(255,56,56,.18)"
-          : "rgb(49,49,49)",
-        color: "#fafafa",
-        fontFamily: "Satoshi, sans-serif",
-        fontSize: 15,
-        fontWeight: 500,
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 7,
-        transition: ".25s",
+        ...S.genBtn,
+        border: `2px solid ${hover ? "#454545" : "transparent"}`,
         transform: active ? "translateY(4px)" : "none",
-        boxSizing: "border-box",
       }}
     >
       {children}
-    </button>
+    </span>
   );
 }
 
-// Upload row: bg #131313, border #191919, padding 9px 14px, gap 8, font-size 14
-function UploadRow({
-  icon, label, sub,
-}: {
-  icon: React.ReactNode; label: string; sub: string;
-}) {
-  const [active, setActive] = useState(false);
+// Other-section button: #191919, border #202020 → #323232 hover, translateY(4px) active
+function OtherBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
   const [hover, setHover]   = useState(false);
+  const [active, setActive] = useState(false);
+  return (
+    <span
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setActive(false); }}
+      onMouseDown={() => setActive(true)}
+      onMouseUp={() => setActive(false)}
+      style={{
+        ...S.otherBtn,
+        border: `2px solid ${hover ? "#323232" : "#202020"}`,
+        transform: active ? "translateY(4px)" : "none",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+// Reset button: red, hover border #ff000055, translateY(4px)
+function ResetBtn({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) {
+  const [hover, setHover]   = useState(false);
+  const [active, setActive] = useState(false);
+  return (
+    <span
+      onClick={onClick}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setActive(false); }}
+      onMouseDown={() => setActive(true)}
+      onMouseUp={() => setActive(false)}
+      style={{
+        ...S.resetBtn,
+        border: `2px solid ${hover ? "#ff000055" : "#ff000033"}`,
+        transform: active ? "translateY(4px)" : "none",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+// Upload row: .GUNS__22-383431a5
+function UploadRow({ icon, label, sub }: { icon: React.ReactNode; label: string; sub: string }) {
+  const [hover, setHover]   = useState(false);
+  const [active, setActive] = useState(false);
   return (
     <div
       onMouseEnter={() => setHover(true)}
@@ -109,43 +242,25 @@ function UploadRow({
       onMouseDown={() => setActive(true)}
       onMouseUp={() => setActive(false)}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "9px 14px",
-        backgroundColor: "#131313",
+        ...S.uploadRow,
         border: `2px solid ${hover ? "#1d1d1d" : "#191919"}`,
-        borderRadius: 15,
-        cursor: "pointer",
-        transition: ".25s",
+        backgroundColor: hover ? "#181818" : "#131313",
         transform: active ? "translateY(4px)" : "none",
-        userSelect: "none",
+        justifyContent: "flex-start",
       }}
     >
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 38,
-        height: 38,
-        borderRadius: 10,
-        backgroundColor: "#101010",
-        border: "2px solid #1b1b1b",
-        flexShrink: 0,
-      }}>
-        {icon}
-      </div>
-      <div>
-        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: "#f2f2f2", fontFamily: "Satoshi, sans-serif" }}>{label}</p>
-        <p style={{ margin: 0, fontSize: 12, color: "#5a5a5a", marginTop: 1, fontFamily: "Satoshi, sans-serif" }}>{sub}</p>
+      <div style={S.uploadIcon}>{icon}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <h1 style={{ margin: 0, fontSize: 18, fontWeight: 500, color: "#fafafa", fontFamily: "Satoshi, sans-serif" }}>{label}</h1>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 450, color: "#9d9d9d", fontFamily: "Satoshi, sans-serif", lineHeight: 1.45 }}>{sub}</h3>
       </div>
     </div>
   );
 }
 
-// Accordion: plain flex row, no bg/border, just text + ▲▼ svg 30px, active translateY(4px)
+// Accordion: .GUNS__55-e050983d — plain row, no bg/border, svg 30px #e0e0e0, translateY(4px)
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen]   = useState(false);
+  const [open, setOpen]     = useState(false);
   const [active, setActive] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -155,27 +270,17 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
         onMouseUp={() => setActive(false)}
         onMouseLeave={() => setActive(false)}
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          cursor: "pointer",
-          color: "#fafafa",
-          transition: ".25s",
+          ...S.accordionTrigger,
           transform: active ? "translateY(4px)" : "none",
-          userSelect: "none",
         }}
       >
         <span style={{ fontSize: 15, fontWeight: 500, fontFamily: "Satoshi, sans-serif" }}>{title}</span>
-        {/* guns.lol uses two stacked small triangles (▲▼) as a single svg at 30px */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 24 24"
-          style={{ width: 30, height: 30, color: "#e0e0e0", flexShrink: 0 }}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          style={{ fontSize: 30, width: 30, height: 30, color: "#e0e0e0", flexShrink: 0 }}
+          fill="none" stroke="currentColor" strokeWidth="1.8"
+          strokeLinecap="round" strokeLinejoin="round"
         >
           <polyline points="6 9 12 4 18 9" />
           <polyline points="6 15 12 20 18 15" />
@@ -216,102 +321,51 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
         borderRadius: "50%",
         backgroundColor: "#fafafa",
         transition: ".25s",
+        display: "block",
       }} />
     </div>
   );
 }
 
-// Color picker row
+// Color row: .GUNS__2d-e8adab0c
 function ColorRow({ label }: { label: string }) {
   const [color, setColor] = useState("#ffffff");
   return (
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "10px 14px",
-      backgroundColor: "#151515",
-      border: "2px solid #1b1b1b",
-      borderRadius: 15,
-    }}>
-      <span style={{ fontSize: 15, fontWeight: 500, color: "#e8e8e8", fontFamily: "Satoshi, sans-serif" }}>{label}</span>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+    <div style={S.colorRow}>
+      <h1 style={{ margin: 0, fontSize: 16, fontWeight: 500, color: "#e6e6e6", fontFamily: "Satoshi, sans-serif", fontWeight: 450 } as React.CSSProperties}>{label}</h1>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}>
         <span style={{
           width: 26,
           height: 26,
-          borderRadius: 8,
+          borderRadius: 7,
           border: "2px solid #2a2a2a",
           backgroundColor: color,
           display: "block",
+          flexShrink: 0,
         }} />
         <input
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}
-          style={{ width: 0, height: 0, opacity: 0, position: "absolute" }}
+          style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
         />
-        <span style={{ fontSize: 12, color: "#555", fontFamily: "monospace" }}>{color.toUpperCase()}</span>
       </label>
     </div>
   );
 }
 
-// Slider with preset stops
-function SliderRow({
-  label, unit, stops, min = 0, max = 100,
-}: {
-  label: string; unit: string; stops: number[]; min?: number; max?: number;
-}) {
-  const [val, setVal] = useState(0);
+// Toggle row (label + toggle): same .GUNS__2d structure
+function ToggleRow({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <SubLabel>{label}</SubLabel>
-      <div style={{ display: "flex", gap: 7 }}>
-        {stops.map((s) => {
-          const [active, setActive] = useState(false);
-          const sel = val === s;
-          return (
-            <button
-              key={s}
-              onMouseDown={() => setActive(true)}
-              onMouseUp={() => { setActive(false); setVal(s); }}
-              onMouseLeave={() => setActive(false)}
-              onClick={() => setVal(s)}
-              style={{
-                flex: 1,
-                padding: "8px 0",
-                borderRadius: 15,
-                border: `2px solid ${sel ? "#9849ac55" : "#202020"}`,
-                backgroundColor: sel ? "#9849ac33" : "#171717",
-                color: sel ? "#d283eb" : "#888",
-                fontSize: 13,
-                fontWeight: 500,
-                fontFamily: "Satoshi, sans-serif",
-                cursor: "pointer",
-                transition: ".25s",
-                transform: active ? "translateY(4px)" : "none",
-              }}
-            >
-              {s}{unit}
-            </button>
-          );
-        })}
-      </div>
-      <input
-        type="range" min={min} max={max} value={val}
-        onChange={(e) => setVal(Number(e.target.value))}
-        style={{ width: "100%", accentColor: "#9849ac", cursor: "pointer" }}
-      />
+    <div style={S.colorRow}>
+      <h1 style={{ margin: 0, fontSize: 16, fontWeight: 450, color: "#e6e6e6", fontFamily: "Satoshi, sans-serif" }}>{label}</h1>
+      <Toggle checked={checked} onChange={onChange} />
     </div>
   );
 }
 
 // Text input
-function TextInput({
-  placeholder, value, onChange,
-}: {
-  placeholder: string; value: string; onChange: (v: string) => void;
-}) {
+function TextInput({ placeholder, value, onChange }: { placeholder: string; value: string; onChange: (v: string) => void }) {
   return (
     <input
       type="text"
@@ -331,29 +385,87 @@ function TextInput({
         outline: "none",
         boxSizing: "border-box",
         transition: ".25s",
-      }}
+      } as React.CSSProperties}
     />
   );
 }
 
-// Toggle row (label + toggle)
-function ToggleRow({
-  label, checked, onChange,
-}: {
-  label: string; checked: boolean; onChange: (v: boolean) => void;
+// Slider with preset stops
+// stop: padding:8px 17px, bg:#171717, border:#202020, border-radius:15px, width:fit-content
+function SliderRow({ label, unit, stops, min = 0, max = 100 }: {
+  label: string; unit: string; stops: number[]; min?: number; max?: number;
 }) {
+  const [val, setVal] = useState(0);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <SubLabel>{label}</SubLabel>
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+        {stops.map((s) => {
+          const sel = val === s;
+          return (
+            <StopBtn key={s} label={`${s}${unit}`} selected={sel} onClick={() => setVal(s)} />
+          );
+        })}
+      </div>
+      <input
+        type="range" min={min} max={max} value={val}
+        onChange={(e) => setVal(Number(e.target.value))}
+        style={{ width: "100%", accentColor: "#9849ac", cursor: "pointer" }}
+      />
+    </div>
+  );
+}
+
+function StopBtn({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+  const [active, setActive] = useState(false);
+  return (
+    <span
+      onClick={onClick}
+      onMouseDown={() => setActive(true)}
+      onMouseUp={() => setActive(false)}
+      onMouseLeave={() => setActive(false)}
+      style={{
+        padding: "8px 17px",
+        backgroundColor: selected ? "#9849ac33" : "#171717",
+        border: `2px solid ${selected ? "#9849ac55" : "#202020"}`,
+        borderRadius: 15,
+        display: "flex",
+        cursor: "pointer",
+        transition: ".25s",
+        fontFamily: "Satoshi, sans-serif",
+        fontSize: 13,
+        fontWeight: 500,
+        color: selected ? "#d283eb" : "#888",
+        transform: active ? "translateY(4px)" : "none",
+        userSelect: "none",
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+// Discord connected banner: .GUNS__dd-892c9448 — gradient bg image, purple border
+function DiscordBanner() {
   return (
     <div style={{
+      color: "#fafafa",
+      borderRadius: 15,
+      backgroundImage: "url(https://assets.guns.lol/gradient_background.png)",
+      border: "2px solid #9849ac3a",
+      backgroundOrigin: "border-box",
+      padding: 10,
       display: "flex",
       alignItems: "center",
-      justifyContent: "space-between",
-      padding: "10px 14px",
-      backgroundColor: "#151515",
-      border: "2px solid #1b1b1b",
-      borderRadius: 15,
+      gap: 8,
     }}>
-      <span style={{ fontSize: 15, fontWeight: 500, color: "#e8e8e8", fontFamily: "Satoshi, sans-serif" }}>{label}</span>
-      <Toggle checked={checked} onChange={onChange} />
+      {/* Discord icon */}
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style={{ height: 20, width: 20 }} fill="#fafafa">
+        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057c.002.022.015.043.032.054a19.9 19.9 0 0 0 5.993 3.03.077.077 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.072.072 0 0 0-.041-.1 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.1c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+      </svg>
+      <a style={{ fontWeight: 450, textDecoration: "none", backgroundColor: "transparent", color: "#fafafa", marginLeft: 5, fontSize: 14, fontFamily: "Satoshi, sans-serif" }}>
+        Connect Discord
+      </a>
     </div>
   );
 }
@@ -368,22 +480,16 @@ export default function CustomizePage() {
   const [glowBadges, setGlowBadge]    = useState(false);
 
   return (
-    <div style={{
-      padding: 30,
-      display: "flex",
-      flexDirection: "column",
-      gap: 25,
-      fontFamily: "Satoshi, sans-serif",
-    }}>
+    <div style={{ padding: 30, display: "flex", flexDirection: "column", gap: 25, fontFamily: "Satoshi, sans-serif" }}>
 
       {/* ── Assets Uploader ── */}
       <Card>
         <SectionTitle>Assets Uploader</SectionTitle>
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 13.5, gap: 10 }}>
-          <UploadRow icon={<Upload size={19} color="#888" />} label="Background" sub=".MP4" />
-          <UploadRow icon={<Music size={19} color="#888" />} label="Audio" sub="Click to open audio manager" />
-          <UploadRow icon={<User size={19} color="#888" />} label="Profile Avatar" sub="Click to upload a file" />
-          <UploadRow icon={<MousePointer2 size={19} color="#888" />} label="Custom Cursor" sub=".CUR" />
+        <div style={S.genList}>
+          <UploadRow icon={<Upload style={{ width: 23, height: 23, color: "#888" }} />}  label="Background"    sub=".MP4" />
+          <UploadRow icon={<Music  style={{ width: 23, height: 23, color: "#888" }} />}  label="Audio"         sub="Click to open audio manager" />
+          <UploadRow icon={<User   style={{ width: 23, height: 23, color: "#888" }} />}  label="Profile Avatar" sub="Click to upload a file" />
+          <UploadRow icon={<MousePointer2 style={{ width: 23, height: 23, color: "#888" }} />} label="Custom Cursor" sub=".CUR" />
         </div>
       </Card>
 
@@ -394,47 +500,43 @@ export default function CustomizePage() {
         {/* Description */}
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           <SubLabel>Description</SubLabel>
-          <TextInput
-            placeholder="Write something about yourself…"
-            value={description}
-            onChange={setDescription}
-          />
-          <p style={{ margin: "4px 0 0 3px", fontSize: 13, color: "#555" }}>
+          <TextInput placeholder="Write something about yourself…" value={description} onChange={setDescription} />
+          <p style={{ margin: "4px 0 0 3px", fontSize: 13, color: "#555", fontFamily: "Satoshi, sans-serif" }}>
             Typewriter in{" "}
-            <span style={{ color: "#d283eb", fontWeight: 700 }}>Premium</span>{" "}
-            is already enabled.
+            <span style={{ background: "linear-gradient(90deg,#d283eb,#e3b5f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Premium</span>
+            {" "}is already enabled.
           </p>
         </div>
 
-        {/* Discord Presence */}
+        {/* Discord Presence accordion */}
         <Accordion title="Discord Presence">
-          <Btn>Connect Discord</Btn>
+          <DiscordBanner />
         </Accordion>
 
-        {/* Background Effects */}
+        {/* Background Effects accordion */}
         <Accordion title="Background Effects">
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {["Particles", "Snow", "Rain", "Stars", "Matrix", "Bubbles"].map((fx) => (
-              <Btn key={fx}>{fx}</Btn>
+              <GenBtn key={fx}>{fx}</GenBtn>
             ))}
           </div>
         </Accordion>
 
         {/* Username Effects */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
           <SubLabel>Username Effects</SubLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {["Glitch", "Rainbow", "Shadow", "Neon", "Gradient"].map((fx) => (
-              <Btn key={fx}>{fx}</Btn>
+              <GenBtn key={fx}>{fx}</GenBtn>
             ))}
           </div>
         </div>
 
         {/* Profile Opacity */}
-        <SliderRow label="Profile Opacity" unit="%" stops={[0, 20, 50, 80]} min={0} max={100} />
+        <SliderRow label="Profile Opacity" unit="%"  stops={[0, 20, 50, 80]} min={0} max={100} />
 
         {/* Profile Blur */}
-        <SliderRow label="Profile Blur" unit="px" stops={[0, 20, 50, 80]} min={0} max={80} />
+        <SliderRow label="Profile Blur"    unit="px" stops={[0, 20, 50, 80]} min={0} max={80} />
 
         {/* Location */}
         <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -443,7 +545,7 @@ export default function CustomizePage() {
         </div>
 
         {/* Glow Settings */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
           <SubLabel>Glow Settings</SubLabel>
           <ToggleRow label="Username" checked={glowUsername} onChange={setGlowUser} />
           <ToggleRow label="Socials"  checked={glowSocials}  onChange={setGlowSoc}  />
@@ -454,13 +556,15 @@ export default function CustomizePage() {
       {/* ── Color Customization ── */}
       <Card>
         <SectionTitle>Color Customization</SectionTitle>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {["Accent Color", "Text Color", "Background Color", "Icon Color", "Background Effect Color"].map((c) => (
-            <ColorRow key={c} label={c} />
-          ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+          <ColorRow label="Accent Color" />
+          <ColorRow label="Text Color" />
+          <ColorRow label="Background Color" />
+          <ColorRow label="Icon Color" />
+          <ColorRow label="Background Effect Color" />
         </div>
         <ToggleRow label="Disable Profile Gradient" checked={disableGradient} onChange={setDGrad} />
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
           <ColorRow label="Primary Color" />
           <ColorRow label="Secondary Color" />
         </div>
@@ -469,21 +573,20 @@ export default function CustomizePage() {
       {/* ── Other Customization ── */}
       <Card>
         <SectionTitle>Other Customization</SectionTitle>
-        <div style={{ display: "flex", flexDirection: "column", marginTop: 12, gap: 10 }}>
-          <Btn>Custom Domain</Btn>
-          <Btn>SEO Settings</Btn>
-          <Btn>
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 12, gap: 13 }}>
+          <OtherBtn>Custom Domain</OtherBtn>
+          <OtherBtn>SEO Settings</OtherBtn>
+          <OtherBtn>
             Custom CSS{" "}
             <span style={{
-              marginLeft: 6,
-              fontSize: 11,
               background: "linear-gradient(90deg,#d283eb,#e3b5f1)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               fontWeight: 700,
+              fontSize: 13,
             }}>PREMIUM</span>
-          </Btn>
-          <Btn red>Reset Profile</Btn>
+          </OtherBtn>
+          <ResetBtn>Reset Profile</ResetBtn>
         </div>
       </Card>
 
