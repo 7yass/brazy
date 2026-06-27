@@ -13,7 +13,6 @@ import {
   LayoutTemplate,
   Layers,
   Puzzle,
-  Briefcase,
   HelpCircle,
   ExternalLink,
   Share2,
@@ -31,7 +30,6 @@ const navItems = [
   { href: "/dashboard/links", label: "Links", icon: Link2 },
   { href: "/dashboard/customize", label: "Customize", icon: Palette },
   { href: "/dashboard/widgets", label: "Widgets", icon: Puzzle },
-  { href: "/dashboard/projects", label: "Projects", icon: Briefcase },
   { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
 ];
 
