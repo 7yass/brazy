@@ -1,167 +1,364 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Upload, Music, User, MousePointer2,
-  ChevronUp, ChevronDown, Save
-} from "lucide-react";
+import { Upload, Music, User, MousePointer2 } from "lucide-react";
 
-function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+// ── exact guns.lol CSS tokens ────────────────────────────────────────────────
+// card:        bg #111111  padding:25px  border-radius:15px  gap:25px
+// section h1:  font-size:19px  font-weight:500  color:#fafafa  margin:0
+// sub-label:   font-size:16px  font-weight:500  color:#989898  margin:0 0 8px 3px
+// btn:         padding:10px  border-radius:15px  bg rgb(49,49,49)  border:2px solid transparent
+//              hover border:#454545  active translateY(4px)  font-size:15px font-weight:500
+// upload row:  bg #131313  border:#191919  padding:9px 14px  gap:8px  border-radius:15px
+//              hover border:#1d1d1d  active translateY(4px)  font-size:14px
+// accordion:   plain flex row justify-between, no bg/border, svg font-size:30px color:#e0e0e0
+//              active translateY(4px)
+// toggle:      pill, active #9849ac, inactive #232323
+// slider stop: bg:#171717 border:#202020 border-radius:15px, active purple
+// input:       bg:#1a1a1a border:#1f1f1f border-radius:15px
+
+function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`bg-[#111] rounded-[15px] p-[25px] flex flex-col gap-[13px] ${className}`}>
+    <div style={{
+      backgroundColor: "#111111",
+      borderRadius: 15,
+      padding: 25,
+      display: "flex",
+      flexDirection: "column",
+      gap: 25,
+    }}>
       {children}
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h1 className="m-0 text-[21px] font-[500] text-[#e9e9e9]">{children}</h1>;
+  return (
+    <h1 style={{ margin: 0, fontSize: 19, fontWeight: 500, color: "#fafafa" }}>
+      {children}
+    </h1>
+  );
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <p className="m-0 ml-[3px] text-[16px] font-[500] text-[#989898]">{children}</p>;
+function SubLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h1 style={{ margin: "0 0 8px 3px", fontSize: 16, fontWeight: 500, color: "#989898" }}>
+      {children}
+    </h1>
+  );
 }
 
+// The standard guns.lol button: bg rgb(49,49,49), border transparent → #454545 on hover, translateY(4px) on active
 function Btn({
-  children, onClick, red = false, className = "",
+  children, onClick, red = false,
 }: {
-  children: React.ReactNode; onClick?: () => void; red?: boolean; className?: string;
+  children: React.ReactNode; onClick?: () => void; red?: boolean;
 }) {
+  const [active, setActive] = useState(false);
+  const [hover, setHover]   = useState(false);
   return (
     <button
       onClick={onClick}
-      className={[
-        "w-full min-h-[44px] flex items-center justify-center gap-[8px]",
-        "rounded-[15px] border-2 font-[500] text-[15px] text-[#fafafa]",
-        "cursor-pointer transition-all duration-[.25s] active:translate-y-[3px]",
-        red
-          ? "bg-[rgba(255,56,56,.18)] border-[rgba(255,56,56,.28)] hover:bg-[rgba(255,56,56,.26)] hover:border-[rgba(255,56,56,.38)]"
-          : "bg-[#171717] border-[#232323] hover:bg-[#1d1d1d] hover:border-[#343434]",
-        className,
-      ].join(" ")}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setActive(false); }}
+      onMouseDown={() => setActive(true)}
+      onMouseUp={() => setActive(false)}
+      style={{
+        width: "100%",
+        padding: "10px",
+        borderRadius: 15,
+        border: `2px solid ${
+          red
+            ? hover ? "rgba(255,56,56,.55)" : "rgba(255,56,56,.33)"
+            : hover ? "#454545" : "transparent"
+        }`,
+        backgroundColor: red
+          ? hover ? "rgba(255,56,56,.3)" : "rgba(255,56,56,.18)"
+          : "rgb(49,49,49)",
+        color: "#fafafa",
+        fontFamily: "Satoshi, sans-serif",
+        fontSize: 15,
+        fontWeight: 500,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 7,
+        transition: ".25s",
+        transform: active ? "translateY(4px)" : "none",
+        boxSizing: "border-box",
+      }}
     >
       {children}
     </button>
   );
 }
 
-function UploadBtn({ icon, label, sub }: { icon: React.ReactNode; label: string; sub: string }) {
+// Upload row: bg #131313, border #191919, padding 9px 14px, gap 8, font-size 14
+function UploadRow({
+  icon, label, sub,
+}: {
+  icon: React.ReactNode; label: string; sub: string;
+}) {
+  const [active, setActive] = useState(false);
+  const [hover, setHover]   = useState(false);
   return (
-    <div className="flex items-center gap-[10px] p-[10px] rounded-[15px] bg-[#131313] border-2 border-[#191919] cursor-pointer transition-all duration-[.25s] hover:border-[#252525] active:translate-y-[4px] select-none">
-      <div className="flex items-center justify-center w-[48px] h-[48px] rounded-[14px] bg-[#101010] border-2 border-[#1b1b1b] shrink-0">
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => { setHover(false); setActive(false); }}
+      onMouseDown={() => setActive(true)}
+      onMouseUp={() => setActive(false)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "9px 14px",
+        backgroundColor: "#131313",
+        border: `2px solid ${hover ? "#1d1d1d" : "#191919"}`,
+        borderRadius: 15,
+        cursor: "pointer",
+        transition: ".25s",
+        transform: active ? "translateY(4px)" : "none",
+        userSelect: "none",
+      }}
+    >
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        backgroundColor: "#101010",
+        border: "2px solid #1b1b1b",
+        flexShrink: 0,
+      }}>
         {icon}
       </div>
       <div>
-        <p className="m-0 text-[15px] font-[500] text-[#fafafa]">{label}</p>
-        <p className="m-0 text-[13px] text-[#6e6e6e] mt-[2px]">{sub}</p>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 500, color: "#f2f2f2", fontFamily: "Satoshi, sans-serif" }}>{label}</p>
+        <p style={{ margin: 0, fontSize: 12, color: "#5a5a5a", marginTop: 1, fontFamily: "Satoshi, sans-serif" }}>{sub}</p>
       </div>
     </div>
   );
 }
 
+// Accordion: plain flex row, no bg/border, just text + ▲▼ svg 30px, active translateY(4px)
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]   = useState(false);
+  const [active, setActive] = useState(false);
   return (
-    <div className="flex flex-col gap-[10px]">
-      <button
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between min-h-[44px] px-[14px] rounded-[15px] border-2 border-[#1f1f1f] bg-[#1a1a1a] text-[#f0f0f0] font-[500] text-[15px] cursor-pointer transition-all duration-[.25s] hover:border-[#3a3a3a] hover:bg-[#1f1f1f] active:translate-y-[2px]"
+        onMouseDown={() => setActive(true)}
+        onMouseUp={() => setActive(false)}
+        onMouseLeave={() => setActive(false)}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          cursor: "pointer",
+          color: "#fafafa",
+          transition: ".25s",
+          transform: active ? "translateY(4px)" : "none",
+          userSelect: "none",
+        }}
       >
-        <span>{title}</span>
-        <span className="flex flex-col leading-none">
-          <ChevronUp className="w-[13px] h-[13px] text-[#777]" />
-          <ChevronDown className="w-[13px] h-[13px] text-[#777]" />
-        </span>
-      </button>
-      {open && <div className="flex flex-col gap-[10px] pl-[2px]">{children}</div>}
+        <span style={{ fontSize: 15, fontWeight: 500, fontFamily: "Satoshi, sans-serif" }}>{title}</span>
+        {/* guns.lol uses two stacked small triangles (▲▼) as a single svg at 30px */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          style={{ width: 30, height: 30, color: "#e0e0e0", flexShrink: 0 }}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="6 9 12 4 18 9" />
+          <polyline points="6 15 12 20 18 15" />
+        </svg>
+      </div>
+      {open && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
+// Toggle pill
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button
-      role="switch"
-      aria-checked={checked}
+    <div
       onClick={() => onChange(!checked)}
-      className={[
-        "relative w-[46px] h-[26px] rounded-full border-2 transition-all duration-[.25s] shrink-0 cursor-pointer",
-        checked ? "bg-[#9849ac] border-[#9849ac]" : "bg-[#232323] border-[#2d2d2d]",
-      ].join(" ")}
+      style={{
+        position: "relative",
+        width: 46,
+        height: 26,
+        borderRadius: 999,
+        border: `2px solid ${checked ? "#9849ac" : "#2d2d2d"}`,
+        backgroundColor: checked ? "#9849ac" : "#232323",
+        cursor: "pointer",
+        transition: ".25s",
+        flexShrink: 0,
+      }}
     >
-      <span
-        className={[
-          "absolute top-[2px] w-[18px] h-[18px] rounded-full bg-[#fafafa] transition-all duration-[.25s]",
-          checked ? "left-[22px]" : "left-[2px]",
-        ].join(" ")}
-      />
-    </button>
+      <span style={{
+        position: "absolute",
+        top: 2,
+        left: checked ? 22 : 2,
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        backgroundColor: "#fafafa",
+        transition: ".25s",
+      }} />
+    </div>
   );
 }
 
+// Color picker row
 function ColorRow({ label }: { label: string }) {
   const [color, setColor] = useState("#ffffff");
   return (
-    <div className="flex items-center justify-between px-[14px] min-h-[44px] rounded-[15px] border-2 border-[#1f1f1f] bg-[#1a1a1a]">
-      <span className="text-[15px] font-[500] text-[#f0f0f0]">{label}</span>
-      <label className="flex items-center gap-[8px] cursor-pointer">
-        <span
-          className="w-[28px] h-[28px] rounded-[8px] border-2 border-[#2a2a2a]"
-          style={{ backgroundColor: color }}
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 14px",
+      backgroundColor: "#151515",
+      border: "2px solid #1b1b1b",
+      borderRadius: 15,
+    }}>
+      <span style={{ fontSize: 15, fontWeight: 500, color: "#e8e8e8", fontFamily: "Satoshi, sans-serif" }}>{label}</span>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+        <span style={{
+          width: 26,
+          height: 26,
+          borderRadius: 8,
+          border: "2px solid #2a2a2a",
+          backgroundColor: color,
+          display: "block",
+        }} />
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          style={{ width: 0, height: 0, opacity: 0, position: "absolute" }}
         />
-        <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="sr-only" />
-        <span className="text-[13px] text-[#555] font-mono">{color.toUpperCase()}</span>
+        <span style={{ fontSize: 12, color: "#555", fontFamily: "monospace" }}>{color.toUpperCase()}</span>
       </label>
     </div>
   );
 }
 
+// Slider with preset stops
 function SliderRow({
   label, unit, stops, min = 0, max = 100,
 }: {
-  label: string; unit: string; stops: string[]; min?: number; max?: number;
+  label: string; unit: string; stops: number[]; min?: number; max?: number;
 }) {
   const [val, setVal] = useState(0);
   return (
-    <div className="flex flex-col gap-[8px]">
-      <div className="flex items-center justify-between">
-        <Label>{label}</Label>
-        <span className="text-[13px] text-[#555] font-mono">{val}{unit}</span>
-      </div>
-      <div className="flex gap-[7px]">
-        {stops.map((s) => (
-          <button
-            key={s}
-            onClick={() => setVal(parseInt(s))}
-            className={[
-              "flex-1 py-[7px] rounded-[10px] border-2 text-[13px] font-[500] transition-all duration-[.25s] cursor-pointer active:translate-y-[2px]",
-              val === parseInt(s)
-                ? "bg-[#9849ac33] border-[#9849ac55] text-[#d283eb]"
-                : "bg-[#171717] border-[#202020] text-[#888] hover:border-[#2d2d2d]",
-            ].join(" ")}
-          >
-            {s}{unit}
-          </button>
-        ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <SubLabel>{label}</SubLabel>
+      <div style={{ display: "flex", gap: 7 }}>
+        {stops.map((s) => {
+          const [active, setActive] = useState(false);
+          const sel = val === s;
+          return (
+            <button
+              key={s}
+              onMouseDown={() => setActive(true)}
+              onMouseUp={() => { setActive(false); setVal(s); }}
+              onMouseLeave={() => setActive(false)}
+              onClick={() => setVal(s)}
+              style={{
+                flex: 1,
+                padding: "8px 0",
+                borderRadius: 15,
+                border: `2px solid ${sel ? "#9849ac55" : "#202020"}`,
+                backgroundColor: sel ? "#9849ac33" : "#171717",
+                color: sel ? "#d283eb" : "#888",
+                fontSize: 13,
+                fontWeight: 500,
+                fontFamily: "Satoshi, sans-serif",
+                cursor: "pointer",
+                transition: ".25s",
+                transform: active ? "translateY(4px)" : "none",
+              }}
+            >
+              {s}{unit}
+            </button>
+          );
+        })}
       </div>
       <input
         type="range" min={min} max={max} value={val}
         onChange={(e) => setVal(Number(e.target.value))}
-        className="w-full accent-[#9849ac] h-[4px] rounded-full cursor-pointer"
+        style={{ width: "100%", accentColor: "#9849ac", cursor: "pointer" }}
       />
     </div>
   );
 }
 
-function TextInput({ placeholder, value, onChange }: { placeholder: string; value: string; onChange: (v: string) => void }) {
+// Text input
+function TextInput({
+  placeholder, value, onChange,
+}: {
+  placeholder: string; value: string; onChange: (v: string) => void;
+}) {
   return (
     <input
-      type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
-      className="w-full min-h-[44px] px-[14px] rounded-[15px] border-2 border-[#1f1f1f] bg-[#1a1a1a] text-[#e8e8e8] text-[15px] font-[500] placeholder:text-[#444] outline-none focus:border-[#3a3a3a] transition-colors box-border"
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      style={{
+        width: "100%",
+        padding: "10px 14px",
+        borderRadius: 15,
+        border: "2px solid #1f1f1f",
+        backgroundColor: "#1a1a1a",
+        color: "#e8e8e8",
+        fontSize: 15,
+        fontWeight: 500,
+        fontFamily: "Satoshi, sans-serif",
+        outline: "none",
+        boxSizing: "border-box",
+        transition: ".25s",
+      }}
     />
   );
 }
 
+// Toggle row (label + toggle)
+function ToggleRow({
+  label, checked, onChange,
+}: {
+  label: string; checked: boolean; onChange: (v: boolean) => void;
+}) {
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 14px",
+      backgroundColor: "#151515",
+      border: "2px solid #1b1b1b",
+      borderRadius: 15,
+    }}>
+      <span style={{ fontSize: 15, fontWeight: 500, color: "#e8e8e8", fontFamily: "Satoshi, sans-serif" }}>{label}</span>
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 export default function CustomizePage() {
   const [description, setDescription] = useState("");
   const [location, setLocation]       = useState("");
@@ -171,109 +368,124 @@ export default function CustomizePage() {
   const [glowBadges, setGlowBadge]    = useState(false);
 
   return (
-    <div className="p-[30px] flex flex-col gap-[30px]">
+    <div style={{
+      padding: 30,
+      display: "flex",
+      flexDirection: "column",
+      gap: 25,
+      fontFamily: "Satoshi, sans-serif",
+    }}>
 
-      {/* Assets Uploader */}
+      {/* ── Assets Uploader ── */}
       <Card>
         <SectionTitle>Assets Uploader</SectionTitle>
-        <div className="flex flex-col gap-[10px]">
-          <UploadBtn icon={<Upload className="w-[22px] h-[22px] text-[#888]" />} label="Background" sub=".MP4" />
-          <UploadBtn icon={<Music className="w-[22px] h-[22px] text-[#888]" />} label="Audio" sub="Click to open audio manager" />
-          <UploadBtn icon={<User className="w-[22px] h-[22px] text-[#888]" />} label="Profile Avatar" sub="Click to upload a file" />
-          <UploadBtn icon={<MousePointer2 className="w-[22px] h-[22px] text-[#888]" />} label="Custom Cursor" sub=".CUR" />
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 13.5, gap: 10 }}>
+          <UploadRow icon={<Upload size={19} color="#888" />} label="Background" sub=".MP4" />
+          <UploadRow icon={<Music size={19} color="#888" />} label="Audio" sub="Click to open audio manager" />
+          <UploadRow icon={<User size={19} color="#888" />} label="Profile Avatar" sub="Click to upload a file" />
+          <UploadRow icon={<MousePointer2 size={19} color="#888" />} label="Custom Cursor" sub=".CUR" />
         </div>
       </Card>
 
-      {/* General Customization */}
+      {/* ── General Customization ── */}
       <Card>
         <SectionTitle>General Customization</SectionTitle>
 
-        <div className="flex flex-col gap-[8px]">
-          <Label>Description</Label>
-          <TextInput placeholder="Write something about yourself…" value={description} onChange={setDescription} />
-          <p className="m-0 ml-[3px] text-[13px] text-[#555]">
-            Typewriter in <span className="text-[#d283eb] font-[700]">Premium</span> is already enabled.
+        {/* Description */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <SubLabel>Description</SubLabel>
+          <TextInput
+            placeholder="Write something about yourself…"
+            value={description}
+            onChange={setDescription}
+          />
+          <p style={{ margin: "4px 0 0 3px", fontSize: 13, color: "#555" }}>
+            Typewriter in{" "}
+            <span style={{ color: "#d283eb", fontWeight: 700 }}>Premium</span>{" "}
+            is already enabled.
           </p>
         </div>
 
+        {/* Discord Presence */}
         <Accordion title="Discord Presence">
           <Btn>Connect Discord</Btn>
         </Accordion>
 
+        {/* Background Effects */}
         <Accordion title="Background Effects">
-          <div className="flex flex-col gap-[8px]">
-            {["Particles","Snow","Rain","Stars","Matrix","Bubbles"].map((fx) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {["Particles", "Snow", "Rain", "Stars", "Matrix", "Bubbles"].map((fx) => (
               <Btn key={fx}>{fx}</Btn>
             ))}
           </div>
         </Accordion>
 
-        <div className="flex flex-col gap-[8px]">
-          <Label>Username Effects</Label>
-          <div className="flex flex-col gap-[8px]">
-            {["Glitch","Rainbow","Shadow","Neon","Gradient"].map((fx) => (
+        {/* Username Effects */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <SubLabel>Username Effects</SubLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {["Glitch", "Rainbow", "Shadow", "Neon", "Gradient"].map((fx) => (
               <Btn key={fx}>{fx}</Btn>
             ))}
           </div>
         </div>
 
-        <SliderRow label="Profile Opacity" unit="%" stops={["0","20","50","80"]} min={0} max={100} />
-        <SliderRow label="Profile Blur" unit="px" stops={["0","20","50","80"]} min={0} max={80} />
+        {/* Profile Opacity */}
+        <SliderRow label="Profile Opacity" unit="%" stops={[0, 20, 50, 80]} min={0} max={100} />
 
-        <div className="flex flex-col gap-[8px]">
-          <Label>Location</Label>
+        {/* Profile Blur */}
+        <SliderRow label="Profile Blur" unit="px" stops={[0, 20, 50, 80]} min={0} max={80} />
+
+        {/* Location */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          <SubLabel>Location</SubLabel>
           <TextInput placeholder="e.g. New York, USA" value={location} onChange={setLocation} />
         </div>
 
-        <div className="flex flex-col gap-[10px]">
-          <Label>Glow Settings</Label>
-          {([
-            ["Username", glowUsername, setGlowUser],
-            ["Socials",  glowSocials,  setGlowSoc],
-            ["Badges",   glowBadges,   setGlowBadge],
-          ] as [string, boolean, (v: boolean) => void][]).map(([name, val, set]) => (
-            <div key={name} className="flex items-center justify-between px-[14px] min-h-[44px] rounded-[15px] border-2 border-[#1f1f1f] bg-[#1a1a1a]">
-              <span className="text-[15px] font-[500] text-[#f0f0f0]">{name}</span>
-              <Toggle checked={val} onChange={set} />
-            </div>
-          ))}
+        {/* Glow Settings */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <SubLabel>Glow Settings</SubLabel>
+          <ToggleRow label="Username" checked={glowUsername} onChange={setGlowUser} />
+          <ToggleRow label="Socials"  checked={glowSocials}  onChange={setGlowSoc}  />
+          <ToggleRow label="Badges"   checked={glowBadges}   onChange={setGlowBadge} />
         </div>
       </Card>
 
-      {/* Color Customization */}
+      {/* ── Color Customization ── */}
       <Card>
         <SectionTitle>Color Customization</SectionTitle>
-        <div className="flex flex-col gap-[8px]">
-          {["Accent Color","Text Color","Background Color","Icon Color","Background Effect Color"].map((c) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {["Accent Color", "Text Color", "Background Color", "Icon Color", "Background Effect Color"].map((c) => (
             <ColorRow key={c} label={c} />
           ))}
         </div>
-        <div className="flex items-center justify-between px-[14px] min-h-[44px] rounded-[15px] border-2 border-[#1f1f1f] bg-[#1a1a1a]">
-          <span className="text-[15px] font-[500] text-[#f0f0f0]">Disable Profile Gradient</span>
-          <Toggle checked={disableGradient} onChange={setDGrad} />
-        </div>
-        <div className="flex flex-col gap-[8px]">
+        <ToggleRow label="Disable Profile Gradient" checked={disableGradient} onChange={setDGrad} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <ColorRow label="Primary Color" />
           <ColorRow label="Secondary Color" />
         </div>
       </Card>
 
-      {/* Other Customization */}
+      {/* ── Other Customization ── */}
       <Card>
         <SectionTitle>Other Customization</SectionTitle>
-        <div className="flex flex-col gap-[10px]">
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 12, gap: 10 }}>
           <Btn>Custom Domain</Btn>
           <Btn>SEO Settings</Btn>
-          <Btn>Custom CSS <span className="ml-[6px] text-[12px] bg-[#9849ac33] border border-[#9849ac55] text-[#d283eb] font-[700] px-[6px] py-[2px] rounded-[6px]">PREMIUM</span></Btn>
+          <Btn>
+            Custom CSS{" "}
+            <span style={{
+              marginLeft: 6,
+              fontSize: 11,
+              background: "linear-gradient(90deg,#d283eb,#e3b5f1)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              fontWeight: 700,
+            }}>PREMIUM</span>
+          </Btn>
           <Btn red>Reset Profile</Btn>
         </div>
       </Card>
-
-      {/* Save */}
-      <button className="w-full min-h-[48px] flex items-center justify-center gap-[9px] rounded-[15px] border-2 font-[600] text-[16px] text-[#fafafa] cursor-pointer transition-all duration-[.25s] bg-[#9849ac33] border-[#9849ac55] hover:bg-[#9849ac55] active:translate-y-[3px]">
-        <Save className="w-[20px] h-[20px]" />
-        Save Changes
-      </button>
 
     </div>
   );
