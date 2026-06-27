@@ -138,7 +138,7 @@ export async function saveProfile(
     .from("profiles")
     .upsert(
       {
-        id: userId,
+        user_id: userId,
         username: key,
         config,
         updated_at: new Date().toISOString(),
@@ -148,7 +148,7 @@ export async function saveProfile(
         ...(audioMeta?.audio_artist ? { audio_artist: audioMeta.audio_artist } : {}),
         ...(audioMeta?.audio_thumb ? { audio_thumb: audioMeta.audio_thumb } : {}),
       },
-      { onConflict: "id" },
+      { onConflict: "user_id" },
     );
 
   if (error) {
