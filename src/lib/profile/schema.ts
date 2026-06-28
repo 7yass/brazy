@@ -299,16 +299,35 @@ export const profileConfigSchema = z.object({
 });
 export type ProfileConfig = z.infer<typeof profileConfigSchema>;
 
+import { brazyProfile } from "./defaults";
+
+function deepMerge(target: any, source: any): any {
+  if (target === null || target === undefined) return source;
+  if (typeof target !== "object" || Array.isArray(target)) return target;
+  
+  const output = { ...target };
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+      output[key] = deepMerge(target[key], source[key]);
+    } else if (target[key] === undefined) {
+      output[key] = source[key];
+    }
+  }
+  return output;
+}
+
 export function normalizeConfig(input: unknown): ProfileConfig {
+  let parsed: any;
   try {
-    return profileConfigSchema.parse(input ?? {});
+    parsed = profileConfigSchema.parse(input ?? {});
   } catch (err) {
     console.error("normalizeConfig error, falling back to defaults:", err);
     try {
-      return profileConfigSchema.parse({});
+      parsed = profileConfigSchema.parse({});
     } catch (fallbackErr) {
       console.error("Critical: default schema parsing failed:", fallbackErr);
-      return {} as ProfileConfig;
+      parsed = {};
     }
   }
+  return deepMerge(parsed, brazyProfile);
 }
