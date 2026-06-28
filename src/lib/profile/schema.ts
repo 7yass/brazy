@@ -67,11 +67,12 @@ export type Background = z.infer<typeof backgroundSchema>;
 
 const cursorEffectSchema = z.object({
   enabled: z.boolean().default(true),
-  type: z.enum(["trail", "sparkles", "dots", "rings", "glow", "snowflakes", "cat", "bubble", "snowflake", "none"]).default("sparkles"),
+  type: z.enum(["trail", "sparkles", "dots", "rings", "glow", "snowflakes", "cat", "bubble", "snowflake", "custom", "none"]).default("sparkles"),
   color: z.string().default("#22d3ee"),
   size: z.number().min(2).max(24).default(6),
   fade: z.number().min(0).max(1).default(0.12),
   followLag: z.number().min(0).max(1).default(0.18),
+  url: z.string().default(""),
 });
 
 const clickEffectSchema = z.object({

@@ -59,6 +59,7 @@ export const brazyProfile: ProfileConfig = {
       size: 5,
       fade: 0.1,
       followLag: 0.1,
+      url: "",
     },
     click: {
       enabled: false,

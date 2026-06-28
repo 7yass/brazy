@@ -70,13 +70,13 @@ export function AssetsUploader({
   const [searchResults, setSearchResults] = useState<{ trackId: string; title: string; artist: string; thumb: string }[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const uploadToStorage = async (file: File, bucket: string): Promise<string> => {
+  const uploadToStorage = async (file: File, folder: string): Promise<string> => {
     const supabase = createClient();
     const ext = file.name.split(".").pop();
-    const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase!.storage.from(bucket).upload(path, file, { upsert: true });
+    const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase!.storage.from("assets").upload(path, file, { upsert: true });
     if (error) throw error;
-    const { data } = supabase!.storage.from(bucket).getPublicUrl(path);
+    const { data } = supabase!.storage.from("assets").getPublicUrl(path);
     return data.publicUrl;
   };
 

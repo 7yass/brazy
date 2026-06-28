@@ -5,12 +5,14 @@ import {
   Image as ImageIcon, Palette, Type, MousePointer2, Sparkles,
   Music, Link2, Layout, Globe, Code, ChevronDown, ChevronRight,
   Check, Save, RotateCcw, Zap, Eye, EyeOff, Laptop, Smartphone,
+  Settings, Pin, ShieldCheck, Award
 } from "lucide-react";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
 import { normalizeConfig } from "@/lib/profile/schema";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import ProfileRenderer from "@/components/profile/ProfileRenderer";
+import { AssetsUploader } from "@/components/dashboard/AssetsUploader";
 
 // ─── Shared primitives ─────────────────────────────────────────────────────────
 
@@ -55,14 +57,17 @@ function Row({ label, hint, children }: { label: string; hint?: string; children
   );
 }
 
-function ColorPill({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ColorPill({ value, onChange, label }: { value: string; onChange: (v: string) => void; label?: string }) {
   return (
-    <div className="flex items-center gap-2.5 bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 w-fit hover:border-neutral-700 transition duration-150">
-      <label className="cursor-pointer relative">
-        <div className="w-5 h-5 rounded-md border border-white/10 shrink-0" style={{ backgroundColor: value }} />
-        <input type="color" value={value} onChange={e => onChange(e.target.value)} className="opacity-0 absolute inset-0 cursor-pointer w-full h-full" />
-      </label>
-      <span className="text-[11px] font-mono text-neutral-400 font-semibold">{value.toUpperCase()}</span>
+    <div className="flex flex-col gap-1.5 font-sans">
+      {label && <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{label}</span>}
+      <div className="flex items-center gap-2 bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 w-full max-w-[180px] hover:border-neutral-700 transition duration-150 relative">
+        <label className="cursor-pointer relative shrink-0">
+          <div className="w-5 h-5 rounded-md border border-white/10" style={{ backgroundColor: value }} />
+          <input type="color" value={value} onChange={e => onChange(e.target.value)} className="opacity-0 absolute inset-0 cursor-pointer w-full h-full" />
+        </label>
+        <span className="text-[11px] font-mono text-neutral-400 font-semibold">{value.toUpperCase()}</span>
+      </div>
     </div>
   );
 }
@@ -82,13 +87,17 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
   );
 }
 
-function SliderRow({ value, onChange, min, max, step = 1, format }: {
-  value: number; onChange: (v: number) => void; min: number; max: number; step?: number; format?: (v: number) => string;
+function SliderRow({ value, onChange, min, max, step = 1, format, label }: {
+  value: number; onChange: (v: number) => void; min: number; max: number; step?: number; format?: (v: number) => string; label?: string;
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   const display = format ? format(value) : String(value);
   return (
-    <div className="flex items-center gap-4 w-60 font-sans">
+    <div className="flex flex-col gap-2 font-sans w-full">
+      <div className="flex items-center justify-between">
+        {label && <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{label}</span>}
+        <span className="text-[10px] font-mono text-neutral-500 font-semibold">{display}</span>
+      </div>
       <div className="relative flex-1 h-5 flex items-center">
         <div className="absolute left-0 right-0 h-1 rounded-full bg-neutral-850">
           <div className="absolute left-0 h-full rounded-full bg-gradient-to-r from-red-600 to-rose-500" style={{ width: `${pct}%` }} />
@@ -107,7 +116,6 @@ function SliderRow({ value, onChange, min, max, step = 1, format }: {
           style={{ left: `calc(${pct}% - 7px)` }}
         />
       </div>
-      <span className="text-[10px] font-mono text-neutral-500 font-semibold min-w-[32px] text-right">{display}</span>
     </div>
   );
 }
@@ -132,19 +140,21 @@ function Chips<T extends string>({ value, onChange, options }: { value: T; onCha
   );
 }
 
-function InputText({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+function InputText({ value, onChange, placeholder, icon: Icon }: { value: string; onChange: (v: string) => void; placeholder?: string; icon?: React.ElementType }) {
   return (
-    <input
-      type="text"
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 w-56 transition"
-    />
+    <div className="relative flex items-center w-full font-sans">
+      {Icon && <Icon className="absolute left-3 w-3.5 h-3.5 text-neutral-500 pointer-events-none" />}
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 w-full transition ${Icon ? "pl-9" : ""}`}
+      />
+    </div>
   );
 }
 
-// Re-added helper textarea component
 function TextArea({ value, onChange, placeholder, rows = 3 }: { value: string; onChange: (v: string) => void; placeholder?: string; rows?: number }) {
   return (
     <textarea
@@ -159,22 +169,60 @@ function TextArea({ value, onChange, placeholder, rows = 3 }: { value: string; o
 
 function TileGrid<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string; emoji?: string }[] }) {
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 w-full font-sans">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full font-sans">
       {options.map(o => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`flex flex-col items-center justify-center p-3.5 rounded-xl border bg-neutral-950 transition duration-150 cursor-pointer group text-center ${
+          className={`flex flex-col items-center justify-center p-3 rounded-xl border bg-neutral-950 transition duration-150 cursor-pointer group text-center ${
             value === o.value
               ? "border-red-600/30 bg-red-600/5"
               : "border-neutral-900 hover:border-red-600/30 hover:bg-neutral-900/30"
           }`}
         >
-          {o.emoji && <span className="text-base mb-1.5 transition-transform duration-200 group-hover:scale-110">{o.emoji}</span>}
+          {o.emoji && <span className="text-sm mb-1 transition-transform duration-200 group-hover:scale-110">{o.emoji}</span>}
           <span className={`text-[10px] font-bold tracking-tight truncate w-full ${value === o.value ? "text-red-500" : "text-neutral-400 group-hover:text-white"}`}>{o.label}</span>
         </button>
       ))}
     </div>
+  );
+}
+
+// Custom Select primitive matching guns.lol layout
+function SelectControl<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label?: string }) {
+  return (
+    <div className="flex flex-col gap-1.5 font-sans w-full">
+      {label && <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{label}</span>}
+      <div className="relative w-full">
+        <select
+          value={value}
+          onChange={e => onChange(e.target.value as T)}
+          className="bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-red-500/40 w-full appearance-none transition cursor-pointer"
+        >
+          {options.map(o => (
+            <option key={o.value} value={o.value} className="bg-neutral-950 text-neutral-300">{o.label}</option>
+          ))}
+        </select>
+        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+      </div>
+    </div>
+  );
+}
+
+// Glow setting toggle pill button
+function GlowPill({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold transition duration-200 border cursor-pointer ${
+        active
+          ? "bg-emerald-600/10 border-emerald-600/40 text-emerald-400 hover:bg-emerald-600/20"
+          : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-400 animate-pulse" : "bg-neutral-600"}`} />
+      {label}
+    </button>
   );
 }
 
@@ -309,122 +357,317 @@ export default function CustomizePage() {
 
       <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
 
-        {/* Left Column - Form controls */}
-        <div className="w-full lg:w-[45%] xl:w-[42%] shrink-0 flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-140px)] pr-2 scrollbar-none pb-8">
+        {/* Left Column - Form controls in guns.lol Layout */}
+        <div className="w-full lg:w-[48%] xl:w-[45%] shrink-0 flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-140px)] pr-2 scrollbar-none pb-8">
           
-          {/* ─── Identity ─────────────────────────────────────────────── */}
-          <SectionCard icon={Type} label="Identity" defaultOpen={true}>
-            <Row label="Display name">
-              <InputText value={cfg.identity.displayName} onChange={v => set("identity", "displayName", v)} placeholder="Your name" />
-            </Row>
-            <Row label="Bio" hint="Supports markdown if enabled below">
-              <TextArea value={cfg.identity.bio} onChange={v => set("identity", "bio", v)} placeholder="Tell the world about yourself…" rows={3} />
-            </Row>
-            <Row label="Markdown bio" hint="Bold, italic, links in bio">
-              <Toggle value={cfg.identity.bioMarkdown} onChange={v => set("identity", "bioMarkdown", v)} />
-            </Row>
-            <Row label="Tagline">
-              <InputText value={cfg.identity.tagline} onChange={v => set("identity", "tagline", v)} placeholder="founder · designer" />
-            </Row>
-            <Row label="Pronouns">
-              <InputText value={cfg.identity.pronouns} onChange={v => set("identity", "pronouns", v)} placeholder="they/them" />
-            </Row>
-            <Row label="Location">
-              <InputText value={cfg.identity.location} onChange={v => set("identity", "location", v)} placeholder="earth" />
-            </Row>
-          </SectionCard>
+          {/* 1. Assets Uploader Section */}
+          <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4 font-sans">
+            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
+              Assets Uploader
+            </h2>
+            <AssetsUploader
+              backgroundUrl={cfg.background.imageUrl || cfg.background.videoUrl || ""}
+              onBackgroundChange={(url) => {
+                const isVideo = url.endsWith(".mp4") || url.endsWith(".webm") || url.toLowerCase().includes("video");
+                setCfg(prev => {
+                  if (!prev) return prev;
+                  const next = {
+                    ...prev,
+                    background: {
+                      ...prev.background,
+                      type: url ? (isVideo ? "video" as const : "image" as const) : "none" as const,
+                      imageUrl: isVideo ? "" : url,
+                      videoUrl: isVideo ? url : "",
+                    }
+                  };
+                  scheduleSave(next);
+                  return next;
+                });
+              }}
+              avatarUrl={cfg.identity.avatarUrl}
+              onAvatarChange={(url) => set("identity", "avatarUrl", url)}
+              cursorUrl={cfg.effects.cursor.url || ""}
+              onCursorChange={(url) => {
+                setCfg(prev => {
+                  if (!prev) return prev;
+                  const next = {
+                    ...prev,
+                    effects: {
+                      ...prev.effects,
+                      cursor: {
+                        ...prev.effects.cursor,
+                        type: url ? "custom" as const : "none" as const,
+                        url,
+                      }
+                    }
+                  };
+                  scheduleSave(next);
+                  return next;
+                });
+              }}
+              audioUrl={cfg.audio.src}
+              onAudioChange={(url) => {
+                setCfg(prev => {
+                  if (!prev) return prev;
+                  const next = {
+                    ...prev,
+                    audio: {
+                      ...prev.audio,
+                      enabled: !!url,
+                      src: url,
+                    }
+                  };
+                  scheduleSave(next);
+                  return next;
+                });
+              }}
+              audioVolume={cfg.audio.volume}
+              onAudioVolumeChange={(v) => set("audio", "volume", v)}
+              selectedTrack={cfg.audio.src ? {
+                trackId: "",
+                title: cfg.audio.title,
+                artist: cfg.audio.artist,
+                thumb: "",
+              } : null}
+              onAudioMetaChange={(meta) => {
+                setCfg(prev => {
+                  if (!prev) return prev;
+                  const next = {
+                    ...prev,
+                    audio: {
+                      ...prev.audio,
+                      title: meta?.title || "",
+                      artist: meta?.artist || "",
+                    }
+                  };
+                  scheduleSave(next);
+                  return next;
+                });
+              }}
+            />
+          </div>
 
-          {/* ─── Background ──────────────────────────────────────────────────── */}
-          <SectionCard icon={ImageIcon} label="Background">
-            <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Type</span>
-              <TileGrid
+          {/* 2. General Customization Section */}
+          <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
+            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
+              General Customization
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Description/Bio */}
+              <div className="md:col-span-2 flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Bio / Description</span>
+                <TextArea 
+                  value={cfg.identity.bio} 
+                  onChange={v => set("identity", "bio", v)} 
+                  placeholder="Tell the world about yourself (markdown supported)..." 
+                  rows={2} 
+                />
+              </div>
+
+              {/* Tagline / Pronouns */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Tagline</span>
+                <InputText value={cfg.identity.tagline} onChange={v => set("identity", "tagline", v)} placeholder="founder · designer" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Pronouns</span>
+                <InputText value={cfg.identity.pronouns} onChange={v => set("identity", "pronouns", v)} placeholder="they/them" />
+              </div>
+
+              {/* Discord Presence */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Discord Presence</span>
+                <div className="flex gap-2">
+                  <SelectControl
+                    value={cfg.widgets.discordPresence.enabled ? "enabled" : "disabled"}
+                    onChange={(v) => setCfg(prev => {
+                      if (!prev) return prev;
+                      const next = {
+                        ...prev,
+                        widgets: {
+                          ...prev.widgets,
+                          discordPresence: {
+                            ...prev.widgets.discordPresence,
+                            enabled: v === "enabled",
+                          }
+                        }
+                      };
+                      scheduleSave(next);
+                      return next;
+                    })}
+                    options={[
+                      { value: "enabled", label: "Enabled" },
+                      { value: "disabled", label: "Disabled" },
+                    ]}
+                  />
+                  {cfg.widgets.discordPresence.enabled && (
+                    <div className="w-[120px] shrink-0">
+                      <InputText 
+                        value={cfg.widgets.discordPresence.discordId} 
+                        onChange={(v) => setCfg(prev => {
+                          if (!prev) return prev;
+                          const next = {
+                            ...prev,
+                            widgets: {
+                              ...prev.widgets,
+                              discordPresence: {
+                                ...prev.widgets.discordPresence,
+                                discordId: v,
+                              }
+                            }
+                          };
+                          scheduleSave(next);
+                          return next;
+                        })} 
+                        placeholder="Discord ID" 
+                        icon={Settings} 
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Location</span>
+                <InputText value={cfg.identity.location} onChange={v => set("identity", "location", v)} placeholder="italy" icon={Pin} />
+              </div>
+
+              {/* Profile Opacity */}
+              <SliderRow
+                label="Profile Opacity"
+                value={cfg.theme.cardOpacity}
+                onChange={v => set("theme", "cardOpacity", v)}
+                min={0}
+                max={1}
+                step={0.01}
+                format={v => `${Math.round(v * 100)}%`}
+              />
+
+              {/* Profile Blur */}
+              <SliderRow
+                label="Profile Blur"
+                value={cfg.theme.cardBlur}
+                onChange={v => set("theme", "cardBlur", v)}
+                min={0}
+                max={60}
+                step={1}
+                format={v => `${v}px`}
+              />
+
+              {/* Background Effects */}
+              <SelectControl
+                label="Background Effects"
                 value={cfg.background.type}
                 onChange={v => set("background", "type", v)}
                 options={[
-                  { value: "none", label: "None", emoji: "✕" },
-                  { value: "color", label: "Color", emoji: "🎨" },
-                  { value: "gradient", label: "Gradient", emoji: "🌈" },
-                  { value: "particles", label: "Particles", emoji: "✨" },
-                  { value: "matrix", label: "Matrix", emoji: "🖥️" },
-                  { value: "starfield", label: "Stars", emoji: "⭐" },
-                  { value: "aurora", label: "Aurora", emoji: "🌌" },
-                  { value: "rain", label: "Rain", emoji: "🌧️" },
-                  { value: "snow", label: "Snow", emoji: "❄️" },
-                  { value: "bubbles", label: "Bubbles", emoji: "🫧" },
-                  { value: "grid", label: "Grid", emoji: "▦" },
-                  { value: "image", label: "Image", emoji: "🖼️" },
-                  { value: "video", label: "Video", emoji: "🎬" },
+                  { value: "none", label: "None / Solid" },
+                  { value: "particles", label: "Blurred Particles" },
+                  { value: "matrix", label: "Matrix Rain" },
+                  { value: "starfield", label: "Moving Starfield" },
+                  { value: "aurora", label: "Northern Aurora" },
+                  { value: "rain", label: "Falling Rain" },
+                  { value: "snow", label: "Falling Snow" },
+                  { value: "bubbles", label: "Floating Bubbles" },
+                  { value: "grid", label: "Retro Grid" },
+                  { value: "image", label: "Static Image" },
+                  { value: "video", label: "Looping Video" },
                 ]}
               />
-            </div>
-            <Row label="Primary color">
-              <ColorPill value={cfg.background.color1} onChange={v => set("background", "color1", v)} />
-            </Row>
-            {cfg.background.type !== "none" && cfg.background.type !== "color" && (
-              <>
-                <Row label="Secondary color">
-                  <ColorPill value={cfg.background.color2} onChange={v => set("background", "color2", v)} />
-                </Row>
-                <Row label="Accent color">
-                  <ColorPill value={cfg.background.color3} onChange={v => set("background", "color3", v)} />
-                </Row>
-              </>
-            )}
-            {(cfg.background.type === "particles" || cfg.background.type === "matrix" || cfg.background.type === "starfield" || cfg.background.type === "rain" || cfg.background.type === "snow" || cfg.background.type === "bubbles") && (
-              <>
-                <Divider />
-                <Row label="Speed">
-                  <SliderRow value={cfg.background.speed} onChange={v => set("background", "speed", v)} min={0} max={5} step={0.1} format={v => `${v.toFixed(1)}×`} />
-                </Row>
-                <Row label="Density">
-                  <SliderRow value={cfg.background.density} onChange={v => set("background", "density", v)} min={0} max={5} step={0.1} format={v => `${v.toFixed(1)}×`} />
-                </Row>
-                <Row label="Size">
-                  <SliderRow value={cfg.background.size} onChange={v => set("background", "size", v)} min={1} max={12} step={0.5} format={v => `${v}px`} />
-                </Row>
-                <Row label="Particle glow">
-                  <Toggle value={cfg.background.glow} onChange={v => set("background", "glow", v)} />
-                </Row>
-              </>
-            )}
-            {(cfg.background.type === "image" || cfg.background.type === "video") && (
-              <>
-                <Divider />
-                <Row label={cfg.background.type === "image" ? "Image URL" : "Video URL"}>
-                  <InputText
-                    value={cfg.background.type === "image" ? cfg.background.imageUrl : cfg.background.videoUrl}
-                    onChange={v => set("background", cfg.background.type === "image" ? "imageUrl" : "videoUrl", v)}
-                    placeholder={cfg.background.type === "image" ? "https://..." : "https://..."}
-                  />
-                </Row>
-              </>
-            )}
-          </SectionCard>
 
-          {/* ─── Theme & Colors ─────────────────────────────────────────────── */}
-          <SectionCard icon={Palette} label="Theme & Colors">
-            <Row label="Primary color">
-              <ColorPill value={cfg.theme.primaryColor} onChange={v => set("theme", "primaryColor", v)} />
+              {/* Username Effects */}
+              <SelectControl
+                label="Username Effects"
+                value={cfg.effects.usernameEffect}
+                onChange={v => set("effects", "usernameEffect", v)}
+                options={[
+                  { value: "none", label: "Default" },
+                  { value: "glow", label: "Pulsing Glow" },
+                  { value: "glitch", label: "Glitch Scanlines" },
+                  { value: "typewriter", label: "Typewriter Text" },
+                  { value: "rainbow", label: "Rainbow Flow" },
+                  { value: "neon", label: "Neon Sparkle" },
+                  { value: "shake", label: "Shaking Text" },
+                ]}
+              />
+
+              {/* Glow Settings */}
+              <div className="md:col-span-2 flex flex-col gap-2">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Glow Settings</span>
+                <div className="flex gap-2 flex-wrap">
+                  <GlowPill 
+                    label="Username" 
+                    active={cfg.effects.textGlow} 
+                    onClick={() => set("effects", "textGlow", !cfg.effects.textGlow)} 
+                  />
+                  <GlowPill 
+                    label="Socials" 
+                    active={cfg.theme.glow} 
+                    onClick={() => set("theme", "glow", !cfg.theme.glow)} 
+                  />
+                  <GlowPill 
+                    label="Badges" 
+                    active={cfg.badges.enabled} 
+                    onClick={() => set("badges", "enabled", !cfg.badges.enabled)} 
+                  />
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* 3. Color Customization Section */}
+          <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
+            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
+              Color Customization
+            </h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              <ColorPill label="Accent Color" value={cfg.theme.primaryColor} onChange={v => set("theme", "primaryColor", v)} />
+              <ColorPill label="Text Color" value={cfg.theme.textColor} onChange={v => set("theme", "textColor", v)} />
+              <ColorPill label="Muted Color" value={cfg.theme.mutedTextColor} onChange={v => set("theme", "mutedTextColor", v)} />
+              
+              <ColorPill label="Primary BG" value={cfg.background.color1} onChange={v => set("background", "color1", v)} />
+              <ColorPill label="Secondary BG" value={cfg.background.color2} onChange={v => set("background", "color2", v)} />
+              <ColorPill label="Accent BG" value={cfg.background.color3} onChange={v => set("background", "color3", v)} />
+            </div>
+
+            <Divider />
+
+            <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-xs font-bold text-neutral-300">Disable Background Gradient</span>
+                <span className="text-[10px] text-neutral-500">Locks background to a solid color type</span>
+              </div>
+              <button
+                onClick={() => set("background", "type", cfg.background.type === "color" ? "gradient" : "color")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition duration-200 border cursor-pointer text-center ${
+                  cfg.background.type === "color"
+                    ? "bg-red-600/10 border-red-600/40 text-red-500"
+                    : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white"
+                }`}
+              >
+                {cfg.background.type === "color" ? "Enable Background Gradient" : "Disable Background Gradient"}
+              </button>
+            </div>
+          </div>
+
+          {/* 4. Layout & Details Section */}
+          <SectionCard icon={Layout} label="Card Border & Typography">
+            <Row label="Border radius">
+              <SliderRow value={cfg.theme.borderRadius} onChange={v => set("theme", "borderRadius", v)} min={0} max={48} step={1} format={v => `${v}px`} />
             </Row>
-            <Row label="Secondary color">
-              <ColorPill value={cfg.theme.secondaryColor} onChange={v => set("theme", "secondaryColor", v)} />
+            <Row label="Border width">
+              <SliderRow value={cfg.theme.borderWidth} onChange={v => set("theme", "borderWidth", v)} min={0} max={8} step={0.5} format={v => `${v}px`} />
             </Row>
-            <Row label="Accent color">
-              <ColorPill value={cfg.theme.accentColor} onChange={v => set("theme", "accentColor", v)} />
-            </Row>
-            <Row label="Text color">
-              <ColorPill value={cfg.theme.textColor} onChange={v => set("theme", "textColor", v)} />
-            </Row>
-            <Row label="Muted text">
-              <ColorPill value={cfg.theme.mutedTextColor} onChange={v => set("theme", "mutedTextColor", v)} />
-            </Row>
-            <Row label="Background color">
-              <ColorPill value={cfg.theme.backgroundColor} onChange={v => set("theme", "backgroundColor", v)} />
+            <Row label="Card border animation" hint="Rotating gradient rainbow border">
+              <Toggle value={cfg.theme.animatedBorder} onChange={v => set("theme", "animatedBorder", v)} />
             </Row>
             <Divider />
             <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Card style</span>
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2">Card style</span>
               <Chips
                 value={cfg.theme.cardStyle}
                 onChange={v => set("theme", "cardStyle", v)}
@@ -437,286 +680,24 @@ export default function CustomizePage() {
                 ]}
               />
             </div>
-            <Row label="Card opacity">
-              <SliderRow value={cfg.theme.cardOpacity} onChange={v => set("theme", "cardOpacity", v)} min={0} max={1} step={0.01} format={v => `${Math.round(v * 100)}%`} />
-            </Row>
-            <Row label="Card blur">
-              <SliderRow value={cfg.theme.cardBlur} onChange={v => set("theme", "cardBlur", v)} min={0} max={60} step={1} format={v => `${v}px`} />
-            </Row>
-            <Row label="Border radius">
-              <SliderRow value={cfg.theme.borderRadius} onChange={v => set("theme", "borderRadius", v)} min={0} max={48} step={1} format={v => `${v}px`} />
-            </Row>
-            <Row label="Border width">
-              <SliderRow value={cfg.theme.borderWidth} onChange={v => set("theme", "borderWidth", v)} min={0} max={8} step={0.5} format={v => `${v}px`} />
-            </Row>
-            <Row label="Animated border" hint="Rainbow rotating gradient border">
-              <Toggle value={cfg.theme.animatedBorder} onChange={v => set("theme", "animatedBorder", v)} />
-            </Row>
-            <Divider />
-            <Row label="Glow">
-              <Toggle value={cfg.theme.glow} onChange={v => set("theme", "glow", v)} />
-            </Row>
-            {cfg.theme.glow && (
-              <Row label="Glow intensity">
-                <SliderRow value={cfg.theme.glowIntensity} onChange={v => set("theme", "glowIntensity", v)} min={0} max={100} step={5} format={v => `${v}%`} />
-              </Row>
-            )}
-            <Divider />
             <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Font family</span>
-              <TileGrid
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2">Font family</span>
+              <Chips
                 value={cfg.theme.fontFamily}
                 onChange={v => set("theme", "fontFamily", v)}
                 options={[
-                  { value: "geist", label: "Geist", emoji: "Gg" },
-                  { value: "inter", label: "Inter", emoji: "Ii" },
-                  { value: "poppins", label: "Poppins", emoji: "Pp" },
-                  { value: "mono", label: "Mono", emoji: "</>" },
-                  { value: "serif", label: "Serif", emoji: "𝕊𝕤" },
-                ]}
-              />
-            </div>
-            <Divider />
-            <div className="mb-2">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Profile size</span>
-              <Chips
-                value={cfg.theme.profileSize}
-                onChange={v => set("theme", "profileSize", v)}
-                options={[
-                  { value: "default", label: "Default" },
-                  { value: "medium", label: "Medium" },
-                  { value: "large", label: "Large" },
+                  { value: "geist", label: "Geist" },
+                  { value: "inter", label: "Inter" },
+                  { value: "poppins", label: "Poppins" },
+                  { value: "mono", label: "Monospace" },
+                  { value: "serif", label: "Serif" },
                 ]}
               />
             </div>
           </SectionCard>
 
-          {/* ─── Effects ─────────────────────────────────────────────────────── */}
-          <SectionCard icon={Sparkles} label="Effects">
-            <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Username effect</span>
-              <TileGrid
-                value={cfg.effects.usernameEffect}
-                onChange={v => set("effects", "usernameEffect", v)}
-                options={[
-                  { value: "none", label: "None", emoji: "—" },
-                  { value: "glow", label: "Glow", emoji: "💡" },
-                  { value: "glitch", label: "Glitch", emoji: "📺" },
-                  { value: "typewriter", label: "Type", emoji: "⌨️" },
-                  { value: "rainbow", label: "Rainbow", emoji: "🌈" },
-                  { value: "neon", label: "Neon", emoji: "🔮" },
-                  { value: "shake", label: "Shake", emoji: "📳" },
-                ]}
-              />
-            </div>
-            <Divider />
-            <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Cursor effect</span>
-              <TileGrid
-                value={cfg.effects.cursor.type}
-                onChange={v => setCursor("type", v)}
-                options={[
-                  { value: "none", label: "None", emoji: "✕" },
-                  { value: "trail", label: "Trail", emoji: "〰️" },
-                  { value: "sparkles", label: "Sparkles", emoji: "✨" },
-                  { value: "dots", label: "Dots", emoji: "⚬" },
-                  { value: "rings", label: "Rings", emoji: "◎" },
-                  { value: "cat", label: "Cat", emoji: "🐱" },
-                  { value: "bubble", label: "Bubble", emoji: "🫧" },
-                  { value: "snowflake", label: "Snow", emoji: "❄️" },
-                ]}
-              />
-            </div>
-            {cfg.effects.cursor.type !== "none" && (
-              <>
-                <Row label="Cursor color">
-                  <ColorPill value={cfg.effects.cursor.color} onChange={v => setCursor("color", v)} />
-                </Row>
-                <Row label="Cursor size">
-                  <SliderRow value={cfg.effects.cursor.size} onChange={v => setCursor("size", v)} min={2} max={24} step={1} format={v => `${v}px`} />
-                </Row>
-              </>
-            )}
-            <Divider />
-            <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Click effect</span>
-              <TileGrid
-                value={cfg.effects.click.type}
-                onChange={v => setClick("type", v)}
-                options={[
-                  { value: "none", label: "None", emoji: "✕" },
-                  { value: "burst", label: "Burst", emoji: "💥" },
-                  { value: "ripple", label: "Ripple", emoji: "💧" },
-                  { value: "hearts", label: "Hearts", emoji: "❤️" },
-                  { value: "confetti", label: "Confetti", emoji: "🎊" },
-                  { value: "emojis", label: "Emojis", emoji: "😄" },
-                ]}
-              />
-            </div>
-            {cfg.effects.click.type === "emojis" && (
-              <Row label="Emoji">
-                <InputText value={cfg.effects.click.emoji} onChange={v => setClick("emoji", v)} placeholder="✨" />
-              </Row>
-            )}
-            {cfg.effects.click.type !== "none" && (
-              <>
-                <Row label="Click color">
-                  <ColorPill value={cfg.effects.click.color} onChange={v => setClick("color", v)} />
-                </Row>
-                <Row label="Particle count">
-                  <SliderRow value={cfg.effects.click.count} onChange={v => setClick("count", v)} min={2} max={40} step={1} />
-                </Row>
-              </>
-            )}
-            <Divider />
-            <Row label="3D tilt" hint="Card tilts on mouse hover">
-              <Toggle value={cfg.effects.tilt3d} onChange={v => set("effects", "tilt3d", v)} />
-            </Row>
-            {cfg.effects.tilt3d && (
-              <Row label="Tilt intensity">
-                <SliderRow value={cfg.effects.tiltIntensity} onChange={v => set("effects", "tiltIntensity", v)} min={1} max={30} step={1} format={v => `${v}°`} />
-              </Row>
-            )}
-            <Row label="Glow pulse">
-              <Toggle value={cfg.effects.glowPulse} onChange={v => set("effects", "glowPulse", v)} />
-            </Row>
-            <Row label="Text glow">
-              <Toggle value={cfg.effects.textGlow} onChange={v => set("effects", "textGlow", v)} />
-            </Row>
-          </SectionCard>
-
-          {/* ─── Splash / Enter Screen ──────────────────────────────────────── */}
-          <SectionCard icon={Eye} label="Enter Screen">
-            <Row label="Enable enter screen">
-              <Toggle value={cfg.splash.enabled} onChange={v => set("splash", "enabled", v)} />
-            </Row>
-            {cfg.splash.enabled && (
-              <>
-                <div className="mb-4">
-                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Type</span>
-                  <Chips
-                    value={cfg.splash.type}
-                    onChange={v => set("splash", "type", v)}
-                    options={[
-                      { value: "blur", label: "Blur" },
-                      { value: "black", label: "Black" },
-                      { value: "glitch", label: "Glitch" },
-                      { value: "gradient", label: "Gradient" },
-                      { value: "image", label: "Image" },
-                    ]}
-                  />
-                </div>
-                <Row label="Title text">
-                  <InputText value={cfg.splash.text} onChange={v => set("splash", "text", v)} placeholder="brazy" />
-                </Row>
-                <Row label="Subtext">
-                  <InputText value={cfg.splash.subtext} onChange={v => set("splash", "subtext", v)} placeholder="click to enter" />
-                </Row>
-                <Row label="Enter button text">
-                  <InputText value={cfg.splash.cta} onChange={v => set("splash", "cta", v)} placeholder="enter" />
-                </Row>
-                <Row label="Enter sound URL" hint="Plays when visitor clicks enter">
-                  <InputText value={cfg.splash.enterSoundUrl} onChange={v => set("splash", "enterSoundUrl", v)} placeholder="https://..." />
-                </Row>
-                {cfg.splash.type === "blur" && (
-                  <Row label="Blur amount">
-                    <SliderRow value={cfg.splash.blurAmount} onChange={v => set("splash", "blurAmount", v)} min={0} max={40} step={1} format={v => `${v}px`} />
-                  </Row>
-                )}
-                {cfg.splash.type === "image" && (
-                  <Row label="Background image URL">
-                    <InputText value={cfg.splash.imageUrl} onChange={v => set("splash", "imageUrl", v)} placeholder="https://..." />
-                  </Row>
-                )}
-                <Divider />
-                <Row label="BG color">
-                  <ColorPill value={cfg.splash.bgColor} onChange={v => set("splash", "bgColor", v)} />
-                </Row>
-                <Row label="Text color">
-                  <ColorPill value={cfg.splash.textColor} onChange={v => set("splash", "textColor", v)} />
-                </Row>
-                <Row label="Accent color">
-                  <ColorPill value={cfg.splash.accentColor} onChange={v => set("splash", "accentColor", v)} />
-                </Row>
-              </>
-            )}
-          </SectionCard>
-
-          {/* ─── Audio ──────────────────────────────────────────────────────── */}
-          <SectionCard icon={Music} label="Audio">
-            <Row label="Enable audio player">
-              <Toggle value={cfg.audio.enabled} onChange={v => set("audio", "enabled", v)} />
-            </Row>
-            {cfg.audio.enabled && (
-              <>
-                <Row label="Audio URL (mp3 / wav)">
-                  <InputText value={cfg.audio.src} onChange={v => set("audio", "src", v)} placeholder="https://..." />
-                </Row>
-                <Row label="Track title">
-                  <InputText value={cfg.audio.title} onChange={v => set("audio", "title", v)} placeholder="Track name" />
-                </Row>
-                <Row label="Artist">
-                  <InputText value={cfg.audio.artist} onChange={v => set("audio", "artist", v)} placeholder="Artist name" />
-                </Row>
-                <Divider />
-                <Row label="Volume">
-                  <SliderRow value={cfg.audio.volume} onChange={v => set("audio", "volume", v)} min={0} max={1} step={0.01} format={v => `${Math.round(v * 100)}%`} />
-                </Row>
-                <Row label="Autoplay">
-                  <Toggle value={cfg.audio.autoplay} onChange={v => set("audio", "autoplay", v)} />
-                </Row>
-                <Row label="Loop">
-                  <Toggle value={cfg.audio.loop} onChange={v => set("audio", "loop", v)} />
-                </Row>
-                <Row label="Visualizer bars">
-                  <Toggle value={cfg.audio.showVisualizer} onChange={v => set("audio", "showVisualizer", v)} />
-                </Row>
-                <Divider />
-                <div className="mb-2">
-                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Player style</span>
-                  <Chips
-                    value={cfg.audio.style}
-                    onChange={v => set("audio", "style", v)}
-                    options={[
-                      { value: "pill", label: "Pill" },
-                      { value: "minimal", label: "Minimal" },
-                      { value: "full", label: "Full" },
-                    ]}
-                  />
-                </div>
-              </>
-            )}
-          </SectionCard>
-
-          {/* ─── Layout ──────────────────────────────────────────────────────── */}
-          <SectionCard icon={Layout} label="Layout">
-            <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Content alignment</span>
-              <Chips
-                value={cfg.theme.contentAlign}
-                onChange={v => set("theme", "contentAlign", v)}
-                options={[
-                  { value: "center", label: "Center" },
-                  { value: "left", label: "Left" },
-                ]}
-              />
-            </div>
-            <Row label="Max width">
-              <SliderRow value={cfg.theme.maxWidth} onChange={v => set("theme", "maxWidth", v)} min={280} max={900} step={10} format={v => `${v}px`} />
-            </Row>
-            <Divider />
-            <Row label="Animated browser title" hint="Scrolling text in browser tab">
-              <Toggle value={cfg.effects.animatedTitle} onChange={v => set("effects", "animatedTitle", v)} />
-            </Row>
-            {cfg.effects.animatedTitle && (
-              <Row label="Title text">
-                <InputText value={cfg.effects.animatedTitleText} onChange={v => set("effects", "animatedTitleText", v)} placeholder="custom scrolling title…" />
-              </Row>
-            )}
-          </SectionCard>
-
-          {/* ─── SEO ─────────────────────────────────────────────────────────── */}
-          <SectionCard icon={Globe} label="SEO & Metadata">
+          {/* 5. SEO & Custom Injections Accordion */}
+          <SectionCard icon={Globe} label="SEO & Custom Code Injection">
             <Row label="Page title">
               <InputText value={cfg.seo.title} onChange={v => setCfg(prev => {
                 if (!prev) return prev;
@@ -731,7 +712,7 @@ export default function CustomizePage() {
                 const next = { ...prev, seo: { ...prev.seo, description: v } };
                 scheduleSave(next);
                 return next;
-              })} placeholder="A short description for search engines and link previews…" rows={2} />
+              })} placeholder="A short description for previews…" rows={2} />
             </Row>
             <Row label="OG image URL">
               <InputText value={cfg.seo.ogImage} onChange={v => setCfg(prev => {
@@ -741,35 +722,32 @@ export default function CustomizePage() {
                 return next;
               })} placeholder="https://..." />
             </Row>
-          </SectionCard>
-
-          {/* ─── Custom CSS ─────────────────────────────────────────────────── */}
-          <SectionCard icon={Code} label="Custom CSS">
-            <p className="text-[10px] text-neutral-500 leading-normal mb-3">
-              Injected into your public profile page. Target <code className="font-mono bg-neutral-900 px-1 py-0.5 rounded text-neutral-300">.brazy-card</code> for the main card.
-            </p>
-            <textarea
-              value={cfg.customCss}
-              onChange={e => {
-                const v = e.target.value;
-                setCfg(prev => {
-                  if (!prev) return prev;
-                  const next = { ...prev, customCss: v };
-                  scheduleSave(next);
-                  return next;
-                });
-              }}
-              placeholder="/* Write your custom CSS styles here */"
-              rows={8}
-              className="w-full bg-neutral-900 border border-neutral-850 rounded-xl p-4 text-xs font-mono text-neutral-300 placeholder-neutral-700 outline-none resize-none leading-relaxed transition"
-            />
+            <Divider />
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Custom CSS Injection</span>
+              <textarea
+                value={cfg.customCss}
+                onChange={e => {
+                  const v = e.target.value;
+                  setCfg(prev => {
+                    if (!prev) return prev;
+                    const next = { ...prev, customCss: v };
+                    scheduleSave(next);
+                    return next;
+                  });
+                }}
+                placeholder="/* Write your custom CSS styles here */"
+                rows={4}
+                className="w-full bg-neutral-900 border border-neutral-850 rounded-xl p-4 text-xs font-mono text-neutral-300 placeholder-neutral-700 outline-none resize-none leading-relaxed transition"
+              />
+            </div>
           </SectionCard>
 
         </div>
 
         {/* Right Column - Live Preview Mockup */}
         <div className="flex-1 w-full lg:sticky lg:top-[85px] flex flex-col items-center justify-start gap-4">
-          <div className="flex items-center justify-between w-full max-w-[340px] bg-neutral-950/40 border border-neutral-900/60 rounded-xl p-2">
+          <div className="flex items-center justify-between w-full max-w-[340px] bg-neutral-950/40 border border-neutral-900/60 rounded-xl p-2 font-sans">
             <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-2.5">Live Preview</span>
             <div className="flex gap-1">
               <button 
@@ -810,7 +788,7 @@ export default function CustomizePage() {
             /* Desktop Mockup */
             <div className="relative w-full max-w-[680px] h-[480px] rounded-2xl border-4 border-neutral-900 bg-neutral-950 shadow-2xl overflow-hidden flex flex-col">
               {/* Header Bar */}
-              <div className="h-7 w-full bg-neutral-900 border-b border-neutral-850 flex items-center justify-between px-4 shrink-0">
+              <div className="h-7 w-full bg-neutral-900 border-b border-neutral-850 flex items-center justify-between px-4 shrink-0 font-sans">
                 <div className="flex gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-red-500/80" />
                   <div className="w-2 h-2 rounded-full bg-yellow-500/80" />

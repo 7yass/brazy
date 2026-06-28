@@ -629,6 +629,13 @@ export default function ProfileRenderer({
       ) : null}
 
       {config.customCss && <style dangerouslySetInnerHTML={{ __html: config.customCss }} />}
+      {effects.cursor.type === "custom" && effects.cursor.url && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          body, html, *, .brazy-card, a, button, input, textarea {
+            cursor: url(${effects.cursor.url}), auto !important;
+          }
+        `}} />
+      )}
     </>
   );
 }
