@@ -1,20 +1,33 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Effects } from "@/lib/profile/schema";
 
-type TrailPoint = { x: number; y: number; age: number };
+type TrailPoint = { x: number; y: number; age: number; rot?: number };
 
 export default function CursorEffect({ effects }: { effects: Effects }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<TrailPoint[]>([]);
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const smoothRef = useRef({ x: 0, y: 0 });
+  const mouseRef = useRef({ x: -999, y: -999 });
+  const smoothRef = useRef({ x: -999, y: -999 });
   const animRef = useRef<number>(0);
 
+  // Emoji cursor overlay position
+  const [emojiPos, setEmojiPos] = useState({ x: -999, y: -999 });
+
+  const type = effects.cursor.type;
+  const isEmojiType = type === "cat" || type === "bubble" || type === "snowflake";
+
   useEffect(() => {
+    if (!effects.cursor.enabled || type === "none") return;
+    if (isEmojiType) {
+      const onMove = (e: MouseEvent) => setEmojiPos({ x: e.clientX, y: e.clientY });
+      window.addEventListener("mousemove", onMove);
+      return () => window.removeEventListener("mousemove", onMove);
+    }
+
     const canvas = canvasRef.current;
-    if (!canvas || !effects.cursor.enabled) return;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -39,19 +52,21 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
       const mx = mouseRef.current.x;
       const my = mouseRef.current.y;
       const sm = smoothRef.current;
-      sm.x += (mx - sm.x) * effects.cursor.followLag;
-      sm.y += (my - sm.y) * effects.cursor.followLag;
 
-      trailRef.current.push({ x: sm.x, y: sm.y, age: 0 });
+      const lag = effects.cursor.followLag ?? 0.18;
+      sm.x += (mx - sm.x) * lag;
+      sm.y += (my - sm.y) * lag;
+
+      trailRef.current.push({ x: sm.x, y: sm.y, age: 0, rot: Math.random() * Math.PI * 2 });
       trailRef.current = trailRef.current.filter((p) => {
-        p.age += effects.cursor.fade;
+        p.age += effects.cursor.fade ?? 0.12;
         return p.age < 1;
       });
 
       const color = effects.cursor.color;
-      const size = effects.cursor.size;
+      const size = effects.cursor.size ?? 6;
 
-      if (effects.cursor.type === "trail") {
+      if (type === "trail") {
         for (let i = 1; i < trailRef.current.length; i++) {
           const p = trailRef.current[i];
           const prev = trailRef.current[i - 1];
@@ -64,7 +79,7 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
           ctx.lineCap = "round";
           ctx.stroke();
         }
-      } else if (effects.cursor.type === "dots") {
+      } else if (type === "dots") {
         for (const p of trailRef.current) {
           ctx.beginPath();
           ctx.arc(p.x, p.y, size * 0.5, 0, Math.PI * 2);
@@ -72,19 +87,19 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
           ctx.globalAlpha = 1 - p.age;
           ctx.fill();
         }
-      } else if (effects.cursor.type === "sparkles") {
+      } else if (type === "sparkles") {
         for (const p of trailRef.current) {
           const sparkleSize = size * (1 - p.age);
           ctx.save();
           ctx.translate(p.x, p.y);
-          ctx.rotate(p.age * Math.PI);
+          ctx.rotate((p.rot ?? 0) + p.age * Math.PI);
           ctx.globalAlpha = (1 - p.age) * 0.9;
           ctx.fillStyle = color;
           drawStar(ctx, 0, 0, 4, sparkleSize, sparkleSize * 0.4);
           ctx.fill();
           ctx.restore();
         }
-      } else if (effects.cursor.type === "rings") {
+      } else if (type === "rings") {
         for (let i = 0; i < trailRef.current.length; i += 4) {
           const p = trailRef.current[i];
           ctx.beginPath();
@@ -94,6 +109,15 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
+      } else if (type === "glow") {
+        const gradient = ctx.createRadialGradient(sm.x, sm.y, 0, sm.x, sm.y, size * 8);
+        gradient.addColorStop(0, color + "66");
+        gradient.addColorStop(1, color + "00");
+        ctx.fillStyle = gradient;
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.arc(sm.x, sm.y, size * 8, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       ctx.globalAlpha = 1;
@@ -107,9 +131,33 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMove);
     };
-  }, [effects.cursor]);
+  }, [effects.cursor, type, isEmojiType]);
 
-  if (!effects.cursor.enabled || effects.cursor.type === "none") return null;
+  if (!effects.cursor.enabled || type === "none") return null;
+
+  const emojiMap = { cat: "🐱", bubble: "🫧", snowflake: "❄️" };
+
+  if (isEmojiType) {
+    return (
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          left: emojiPos.x,
+          top: emojiPos.y,
+          transform: "translate(-50%, -50%)",
+          fontSize: 22,
+          pointerEvents: "none",
+          zIndex: 9999,
+          userSelect: "none",
+          transition: "left 0.04s linear, top 0.04s linear",
+          filter: type === "bubble" ? `drop-shadow(0 0 6px ${effects.cursor.color})` : "none",
+        }}
+      >
+        {emojiMap[type as keyof typeof emojiMap]}
+      </div>
+    );
+  }
 
   return (
     <canvas
@@ -121,7 +169,7 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
         width: "100%",
         height: "100%",
         pointerEvents: "none",
-        zIndex: 50,
+        zIndex: 9999,
       }}
     />
   );

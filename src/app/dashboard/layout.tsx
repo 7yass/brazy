@@ -24,9 +24,7 @@ export default async function DashboardLayout({
       <DashboardSidebar />
       <main
         className="flex-1 overflow-y-auto overflow-x-hidden"
-        style={{
-          padding: "45px",
-        }}
+        style={{ padding: "40px 48px" }}
       >
         {children}
       </main>

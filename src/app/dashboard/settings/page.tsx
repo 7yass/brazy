@@ -1,178 +1,127 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Mail, ShieldAlert, Bell, Palette, Save } from "lucide-react";
+import { User, Mail, Bell, ShieldAlert, Check, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+
+const F = "Satoshi, system-ui, sans-serif";
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ borderRadius: 20, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+      {children}
+    </div>
+  );
+}
+
+function Row({ label, description, children }: { label: string; description?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#fafafa" }}>{label}</p>
+        {description && <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{description}</p>}
+      </div>
+      <div style={{ flexShrink: 0, minWidth: 200 }}>{children}</div>
+    </div>
+  );
+}
+
+function SectionHeader({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <div style={{ padding: "14px 24px", display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.01)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+      <Icon style={{ width: 13, height: 13, color: "#dc2626" }} />
+      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.07em" }}>{title}</p>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const [username, setUsername] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setEmail(user.email ?? "");
-      const identities = user.identities ?? [];
-      const discordIdent = identities.find((i) => i.provider === "discord");
-      const name =
-        (discordIdent?.identity_data?.username as string | undefined) ??
-        user.user_metadata?.full_name ??
-        user.email?.split("@")[0] ??
-        "";
-      setUsername(name);
-      setDisplayName(name);
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (profile?.username) { setUsername(profile.username); setDisplayName(profile.username); }
+      try {
+        const supabase = createClient();
+        if (!supabase) return;
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setUserId(user.id);
+        setEmail(user.email ?? "");
+        const identities = user.identities ?? [];
+        const discordIdent = identities.find((i) => i.provider === "discord");
+        const fallback =
+          (discordIdent?.identity_data?.username as string | undefined) ??
+          user.user_metadata?.full_name ??
+          user.email?.split("@")[0] ?? "";
+        const { data: profile } = await supabase.from("profiles").select("username").eq("user_id", user.id).maybeSingle();
+        setUsername(profile?.username ?? fallback);
+      } catch {}
     })();
   }, []);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      if (!supabase) return;
+      await supabase.from("profiles").update({ username }).eq("user_id", userId);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {}
+    finally { setSaving(false); }
   };
 
-  const Field = ({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) => (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-white/40">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-white/[0.06] bg-white/[0.03] px-3.5 py-2.5 text-sm text-white/80 outline-none placeholder:text-white/20 focus:border-white/20 focus:ring-0 transition-colors"
-      />
-    </div>
-  );
+  const inputBase: React.CSSProperties = { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "9px 14px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none", width: "100%", boxSizing: "border-box" };
 
   return (
-    <div className="space-y-6 p-8">
-      <div>
-        <h1 className="text-xl font-bold text-white">Settings</h1>
-        <p className="mt-1 text-sm text-white/30">Manage your account settings.</p>
-      </div>
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 24, fontFamily: F }}>
 
-      {/* Profile Settings */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="mb-4 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04]">
-            <User className="h-4 w-4 text-white/40" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white/70">Profile</h2>
-            <p className="text-xs text-white/30">Update your public-facing info.</p>
-          </div>
+      <header style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Settings</h1>
+          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Manage your account preferences.</p>
         </div>
-        <div className="space-y-3">
-          <Field label="Username" value={username} onChange={setUsername} />
-          <Field label="Display Name" value={displayName} onChange={setDisplayName} />
-        </div>
-      </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 18px", borderRadius: 12, background: "linear-gradient(135deg,#dc2626,#e11d48)", border: "none", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "default" : "pointer", fontFamily: F, boxShadow: "0 4px 14px rgba(220,38,38,0.25)", flexShrink: 0, opacity: saving ? 0.7 : 1 }}
+        >
+          {saved ? <><Check style={{ width: 13, height: 13 }} /> Saved!</> : saving ? "Saving…" : <><Save style={{ width: 13, height: 13 }} /> Save changes</>}
+        </button>
+      </header>
 
-      {/* Account Settings */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="mb-4 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04]">
-            <Mail className="h-4 w-4 text-white/40" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white/70">Account</h2>
-            <p className="text-xs text-white/30">Your login credentials.</p>
-          </div>
-        </div>
-        <Field label="Email Address" value={email} onChange={setEmail} type="email" />
-      </div>
+      {/* Profile */}
+      <Card>
+        <SectionHeader icon={User} title="Profile" />
+        <Row label="Display name" description="Shown on your public profile page.">
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username" style={inputBase} />
+        </Row>
+        <Row label="Email" description="Your login email. Cannot be changed here.">
+          <input value={email} readOnly style={{ ...inputBase, background: "rgba(255,255,255,0.02)", color: "rgba(255,255,255,0.35)", cursor: "not-allowed", border: "1px solid rgba(255,255,255,0.04)" }} />
+        </Row>
+      </Card>
 
       {/* Notifications */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="mb-4 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04]">
-            <Bell className="h-4 w-4 text-white/40" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white/70">Notifications</h2>
-            <p className="text-xs text-white/30">Choose what you want to be notified about.</p>
-          </div>
+      <Card>
+        <SectionHeader icon={Bell} title="Notifications" />
+        <div style={{ padding: "28px 24px", textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.25)" }}>Notification preferences coming soon.</p>
         </div>
-        {[
-          { label: "Profile view milestones", sub: "Get notified when your profile hits view goals" },
-          { label: "New badge earned", sub: "Notify me when I unlock a new badge" },
-          { label: "Product updates", sub: "News and announcements from brazy" },
-        ].map((item) => (
-          <div key={item.label} className="flex items-center justify-between border-t border-white/[0.04] py-3 first:border-t-0">
-            <div>
-              <p className="text-sm text-white/60">{item.label}</p>
-              <p className="text-xs text-white/25">{item.sub}</p>
-            </div>
-            <button
-              role="switch"
-              className="relative h-5 w-9 rounded-full bg-white/[0.06] transition-colors"
-            >
-              <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white/20 transition-transform" />
-            </button>
-          </div>
-        ))}
-      </div>
+      </Card>
 
-      {/* Appearance */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-        <div className="mb-4 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.04]">
-            <Palette className="h-4 w-4 text-white/40" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-white/70">Appearance</h2>
-            <p className="text-xs text-white/30">Dashboard theme preferences.</p>
-          </div>
+      {/* Privacy */}
+      <Card>
+        <SectionHeader icon={ShieldAlert} title="Privacy" />
+        <div style={{ padding: "28px 24px", textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.25)" }}>Privacy controls coming soon.</p>
         </div>
-        <div className="flex gap-2">
-          {["Dark", "System"].map((theme) => (
-            <button
-              key={theme}
-              className={`flex-1 rounded-xl border py-2.5 text-xs font-medium transition-all ${
-                theme === "Dark"
-                  ? "border-violet-500/30 bg-violet-500/10 text-violet-300"
-                  : "border-white/[0.06] bg-white/[0.02] text-white/30 hover:border-white/[0.10]"
-              }`}
-            >
-              {theme}
-            </button>
-          ))}
-        </div>
-      </div>
+      </Card>
 
-      {/* Save Button */}
-      <button
-        onClick={handleSave}
-        className="flex items-center gap-2 rounded-xl bg-violet-500/20 px-5 py-2.5 text-sm font-medium text-violet-300 transition-all hover:bg-violet-500/30"
-      >
-        <Save className="h-4 w-4" />
-        {saved ? "Saved!" : "Save Changes"}
-      </button>
-
-      {/* Danger Zone */}
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.03] p-5">
-        <div className="mb-3 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-500/10">
-            <ShieldAlert className="h-4 w-4 text-red-400" />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-red-400">Danger Zone</h2>
-            <p className="text-xs text-red-400/50">Irreversible actions.</p>
-          </div>
-        </div>
-        <p className="mb-4 text-sm text-white/30">Once you delete your account, there is no going back. Please be certain.</p>
-        <button className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-all hover:bg-red-500/20">
-          Delete Account
-        </button>
-      </div>
     </div>
   );
 }

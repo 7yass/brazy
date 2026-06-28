@@ -10,6 +10,13 @@ export default function SplashIntro({ splash, onEnter }: { splash: Splash; onEnt
   if (!splash.enabled || exited) return null;
 
   const handleEnter = () => {
+    if (splash.enterSoundUrl) {
+      try {
+        const audio = new Audio(splash.enterSoundUrl);
+        audio.volume = 0.7;
+        audio.play().catch(() => {});
+      } catch {}
+    }
     setExited(true);
     onEnter();
   };

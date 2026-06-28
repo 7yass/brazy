@@ -11,6 +11,7 @@ export const brazyProfile: ProfileConfig = {
     pronouns: "they/them",
     location: "brazy.it",
     verified: true,
+    bioMarkdown: false,
   },
   theme: {
     mode: "dark",
@@ -34,6 +35,8 @@ export const brazyProfile: ProfileConfig = {
     backgroundImage: "",
     backgroundOverlayColor: "#000000",
     backgroundOverlayOpacity: 0.5,
+    animatedBorder: false,
+    profileSize: "default",
   },
   background: {
     type: "starfield",
@@ -65,10 +68,13 @@ export const brazyProfile: ProfileConfig = {
       count: 8,
     },
     tilt3d: false,
+    tiltIntensity: 12,
     typewriterTitle: false,
     glowPulse: false,
     textGlow: true,
     usernameEffect: "glow",
+    animatedTitle: false,
+    animatedTitleText: "",
   },
   splash: {
     enabled: true,
@@ -83,6 +89,7 @@ export const brazyProfile: ProfileConfig = {
     imageUrl: "",
     showEnterButton: false,
     duration: 0,
+    enterSoundUrl: "",
   },
   audio: {
     enabled: true,
@@ -114,6 +121,28 @@ export const brazyProfile: ProfileConfig = {
     enabled: false,
     items: [],
     position: "top",
+  },
+  skills: {
+    enabled: false,
+    items: [],
+  },
+  projects: {
+    enabled: false,
+    items: [],
+  },
+  sections: {
+    order: [
+      "avatar", "name", "identity", "bio", "badges",
+      "social", "audio", "discord", "views", "skills", "projects", "customHtml"
+    ],
+    visibility: {},
+  },
+  widgets: {
+    discordPresence: { enabled: false, discordId: "", placement: "card" },
+    youtube: { enabled: false, url: "", placement: "bottom" },
+    github: { enabled: false, username: "", placement: "bottom" },
+    time: { enabled: false, timezone: "UTC", format: "12h", placement: "card" },
+    spotify: { enabled: false, url: "", placement: "card" },
   },
   customCss: "",
   customHtml: "",

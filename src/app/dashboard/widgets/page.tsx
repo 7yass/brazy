@@ -1,116 +1,17 @@
 "use client";
-
-import { useState } from "react";
-import {
-  Music, Clock, Code, MessageSquare, Settings2, Eye, EyeOff,
-} from "lucide-react";
-
-interface Widget {
-  id: string;
-  type: string;
-  label: string;
-  enabled: boolean;
-  accentColor: string;
-  opacity: number;
-  description: string;
-}
-
-const presetWidgets: Widget[] = [
-  { id: "1", type: "audio", label: "Audio Player", enabled: true, accentColor: "#a855f7", opacity: 0.4, description: "Music player with waveform visualizer" },
-  { id: "2", type: "countdown", label: "Countdown Timer", enabled: false, accentColor: "#22d3ee", opacity: 0.3, description: "Countdown to a target date" },
-  { id: "3", type: "custom-html", label: "Custom HTML", enabled: false, accentColor: "#f59e0b", opacity: 0.3, description: "Embed any HTML content" },
-  { id: "4", type: "spotify", label: "Spotify Embed", enabled: false, accentColor: "#1DB954", opacity: 0.3, description: "Spotify track or playlist embed" },
-  { id: "5", type: "text", label: "Rich Text", enabled: true, accentColor: "#e9d5ff", opacity: 0.2, description: "Formatted text block" },
-  { id: "6", type: "weather", label: "Weather", enabled: false, accentColor: "#60a5fa", opacity: 0.3, description: "Live weather display" },
-];
-
-const widgetIcons: Record<string, typeof Music> = {
-  audio: Music, countdown: Clock, "custom-html": Code,
-  spotify: Music, text: MessageSquare,
-};
-
-const widgetColors: Record<string, string> = {
-  audio: "text-violet-400", countdown: "text-cyan-400", "custom-html": "text-amber-400",
-  spotify: "text-emerald-400", text: "text-pink-400",
-};
-
+import { Sparkles } from "lucide-react";
+const F = "Satoshi, sans-serif";
 export default function WidgetsPage() {
-  const [widgets, setWidgets] = useState<Widget[]>(presetWidgets);
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const toggleWidget = (id: string) => setWidgets(widgets.map((w) => (w.id === id ? { ...w, enabled: !w.enabled } : w)));
-  const updateWidget = (id: string, key: keyof Widget, value: string | number | boolean) => setWidgets(widgets.map((w) => (w.id === id ? { ...w, [key]: value } : w)));
-
   return (
-    <div className="space-y-8 p-8">
+    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 24, fontFamily: F }}>
       <div>
-        <h1 className="text-2xl font-bold text-white">Widgets</h1>
-        <p className="mt-1 text-sm text-white/40">Manage profile widgets and their styling.</p>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Widgets</h1>
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Embeds, music players & more.</p>
       </div>
-
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-white/30">Available Widgets</p>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {widgets.map((widget) => {
-            const Icon = widgetIcons[widget.type] || Code;
-            const colorClass = widgetColors[widget.type] || "text-white/50";
-            return (
-              <div
-                key={widget.id}
-                className={`overflow-hidden rounded-2xl border p-5 transition-all duration-200 ${
-                  widget.enabled
-                    ? "border-white/[0.08] bg-white/[0.02] hover:border-white/[0.10]"
-                    : "border-white/[0.04] bg-white/[0.01] opacity-50"
-                }`}
-                style={{ backdropFilter: widget.enabled ? "blur(4px)" : undefined }}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
-                      <Icon className={`h-5 w-5 ${colorClass}`} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-white">{widget.label}</h3>
-                      <p className="text-xs text-white/30">{widget.description}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => toggleWidget(widget.id)}
-                    className={`rounded-lg p-2 transition-all duration-200 ${widget.enabled ? "text-emerald-400 hover:bg-emerald-500/10" : "text-white/20 hover:bg-white/5"}`}
-                  >
-                    {widget.enabled ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                </div>
-
-                {editingId === widget.id ? (
-                  <div className="mt-4 space-y-3 border-t border-white/[0.06] pt-4">
-                    <div>
-                      <label className="mb-1.5 block text-xs text-white/40">Accent Color</label>
-                      <div className="flex items-center gap-2">
-                        <input type="color" value={widget.accentColor} onChange={(e) => updateWidget(widget.id, "accentColor", e.target.value)} className="h-8 w-8 cursor-pointer rounded-lg border border-white/10 bg-transparent" />
-                        <span className="text-xs text-white/50">{widget.accentColor}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs text-white/40">Container Opacity: {Math.round(widget.opacity * 100)}%</label>
-                      <input type="range" min="0" max="1" step="0.05" value={widget.opacity} onChange={(e) => updateWidget(widget.id, "opacity", parseFloat(e.target.value))} className="w-full accent-violet-500" />
-                      <div className="mt-2 flex items-center gap-2">
-                        <button className="rounded-lg border border-white/[0.08] bg-transparent px-3 py-1.5 text-xs text-white/40 transition-all duration-200 hover:border-violet-500/30 hover:text-violet-400">Glass</button>
-                        <button className="rounded-lg border border-white/[0.08] bg-transparent px-3 py-1.5 text-xs text-white/40 transition-all duration-200 hover:border-violet-500/30 hover:text-violet-400">Solid</button>
-                        <button className="rounded-lg border border-white/[0.08] bg-transparent px-3 py-1.5 text-xs text-white/40 transition-all duration-200 hover:border-violet-500/30 hover:text-violet-400">Outline</button>
-                      </div>
-                    </div>
-                    <button onClick={() => setEditingId(null)} className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-all duration-200 hover:bg-violet-500">Done</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setEditingId(widget.id)} className="mt-3 flex items-center gap-1.5 text-xs text-white/30 transition-all duration-200 hover:text-white/50">
-                    <Settings2 className="h-3 w-3" /> Widget styling
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+      <div style={{ borderRadius: 16, border: "1px solid rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.015)", padding: "48px 24px", textAlign: "center" }}>
+        <Sparkles style={{ width: 32, height: 32, color: "rgba(255,255,255,0.15)", margin: "0 auto 12px" }} />
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>Widget library coming soon</p>
+        <p style={{ margin: "6px 0 0", fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Spotify, YouTube, Discord widgets and more.</p>
       </div>
     </div>
   );

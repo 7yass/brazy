@@ -44,6 +44,9 @@ export const themeSchema = z.object({
   backgroundImage: z.string().default(""),
   backgroundOverlayColor: z.string().default("#000000"),
   backgroundOverlayOpacity: z.number().min(0).max(1).default(0.45),
+  // New fields
+  animatedBorder: z.boolean().default(false),
+  profileSize: z.enum(["default", "medium", "large"]).default("default"),
 });
 export type Theme = z.infer<typeof themeSchema>;
 
@@ -64,7 +67,7 @@ export type Background = z.infer<typeof backgroundSchema>;
 
 const cursorEffectSchema = z.object({
   enabled: z.boolean().default(true),
-  type: z.enum(["trail", "sparkles", "dots", "rings", "glow", "snowflakes", "none"]).default("sparkles"),
+  type: z.enum(["trail", "sparkles", "dots", "rings", "glow", "snowflakes", "cat", "bubble", "snowflake", "none"]).default("sparkles"),
   color: z.string().default("#22d3ee"),
   size: z.number().min(2).max(24).default(6),
   fade: z.number().min(0).max(1).default(0.12),
@@ -83,10 +86,14 @@ export const effectsSchema = z.object({
   cursor: cursorEffectSchema,
   click: clickEffectSchema,
   tilt3d: z.boolean().default(true),
+  tiltIntensity: z.number().min(0).max(30).default(12),
   typewriterTitle: z.boolean().default(false),
   glowPulse: z.boolean().default(true),
   textGlow: z.boolean().default(true),
   usernameEffect: z.enum(["none", "glow", "glitch", "typewriter", "rainbow", "neon", "shake"]).default("none"),
+  // New fields
+  animatedTitle: z.boolean().default(false),
+  animatedTitleText: z.string().default(""),
 });
 export type Effects = z.infer<typeof effectsSchema>;
 
@@ -103,6 +110,8 @@ export const splashSchema = z.object({
   imageUrl: z.string().default(""),
   showEnterButton: z.boolean().default(false),
   duration: z.number().min(0).max(6).default(0),
+  // New field
+  enterSoundUrl: z.string().default(""),
 });
 export type Splash = z.infer<typeof splashSchema>;
 
@@ -135,6 +144,15 @@ export const socialPlatformSchema = z.enum([
   "email",
   "website",
   "custom",
+  // New platforms
+  "bluesky",
+  "mastodon",
+  "threads",
+  "roblox",
+  "soundcloud",
+  "steam",
+  "paypal",
+  "linkedin",
 ]);
 export type SocialPlatform = z.infer<typeof socialPlatformSchema>;
 
@@ -177,8 +195,79 @@ export const identitySchema = z.object({
   pronouns: z.string().default(""),
   location: z.string().default(""),
   verified: z.boolean().default(false),
+  bioMarkdown: z.boolean().default(false),
 });
 export type Identity = z.infer<typeof identitySchema>;
+
+// Skills section
+const skillSchema = z.object({
+  name: z.string().default(""),
+  level: z.number().min(0).max(100).default(80),
+  icon: z.string().default(""),
+  color: z.string().default("#7c3aed"),
+});
+
+export const skillsSchema = z.object({
+  enabled: z.boolean().default(false),
+  items: z.array(skillSchema).default([]),
+});
+export type Skills = z.infer<typeof skillsSchema>;
+
+// Projects section
+const projectSchema = z.object({
+  title: z.string().default(""),
+  description: z.string().default(""),
+  url: z.string().default(""),
+  image: z.string().default(""),
+  color: z.string().default("#7c3aed"),
+});
+
+export const projectsSchema = z.object({
+  enabled: z.boolean().default(false),
+  items: z.array(projectSchema).default([]),
+});
+export type Projects = z.infer<typeof projectsSchema>;
+
+// Sections order & visibility
+export const sectionsSchema = z.object({
+  order: z.array(z.string()).default([
+    "avatar", "name", "identity", "bio", "badges",
+    "social", "audio", "discord", "views", "skills", "projects", "customHtml"
+  ]),
+  visibility: z.record(z.string(), z.boolean()).default({}),
+});
+export type Sections = z.infer<typeof sectionsSchema>;
+
+// Widgets
+export const widgetsSchema = z.object({
+  discordPresence: z.object({
+    enabled: z.boolean().default(false),
+    discordId: z.string().default(""),
+    placement: z.enum(["card", "bottom"]).default("card"),
+  }).default(() => ({ enabled: false, discordId: "", placement: "card" as const })),
+  youtube: z.object({
+    enabled: z.boolean().default(false),
+    url: z.string().default(""),
+    placement: z.enum(["card", "bottom"]).default("bottom"),
+  }).default(() => ({ enabled: false, url: "", placement: "bottom" as const })),
+  github: z.object({
+    enabled: z.boolean().default(false),
+    username: z.string().default(""),
+    placement: z.enum(["card", "bottom"]).default("bottom"),
+  }).default(() => ({ enabled: false, username: "", placement: "bottom" as const })),
+  time: z.object({
+    enabled: z.boolean().default(false),
+    timezone: z.string().default("UTC"),
+    format: z.enum(["12h", "24h"]).default("12h"),
+    placement: z.enum(["card", "bottom"]).default("card"),
+  }).default(() => ({ enabled: false, timezone: "UTC", format: "12h" as const, placement: "card" as const })),
+  spotify: z.object({
+    enabled: z.boolean().default(false),
+    url: z.string().default(""),
+    placement: z.enum(["card", "bottom"]).default("card"),
+  }).default(() => ({ enabled: false, url: "", placement: "card" as const })),
+});
+export type Widgets = z.infer<typeof widgetsSchema>;
 
 export const profileConfigSchema = z.object({
   version: z.number().default(1),
@@ -190,6 +279,10 @@ export const profileConfigSchema = z.object({
   audio: audioSchema,
   social: socialSchema,
   badges: badgesSchema,
+  skills: skillsSchema,
+  projects: projectsSchema,
+  sections: sectionsSchema,
+  widgets: widgetsSchema,
   customCss: z.string().default(""),
   customHtml: z.string().default(""),
   seo: z
