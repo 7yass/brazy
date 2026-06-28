@@ -31,7 +31,7 @@ export default function LoginPage() {
     if (!supabase) return;
     await supabase.auth.signInWithOAuth({
       provider: "discord",
-      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/dashboard` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
     });
   };
 

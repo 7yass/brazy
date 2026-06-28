@@ -175,7 +175,6 @@ export async function saveProfile(
   const payload = {
     username: key,
     config,
-    updated_at: new Date().toISOString(),
     ...(audioMeta?.audio_track_id ? { audio_track_id: audioMeta.audio_track_id } : {}),
     ...(audioMeta?.audio_source ? { audio_source: audioMeta.audio_source } : {}),
     ...(audioMeta?.audio_title ? { audio_title: audioMeta.audio_title } : {}),

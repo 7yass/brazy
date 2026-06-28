@@ -9,6 +9,7 @@ import {
   UserCircle2, MoreHorizontal, LogOut, ChevronDown, Layers, Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { SpiderLogo } from "@/components/spider-logo";
 
 const accountSubItems = [
   { href: "/account", label: "Overview", icon: LayoutDashboard },
@@ -95,11 +96,9 @@ export default function DashboardSidebar() {
   return (
     <aside className="flex h-full w-56 flex-col border-r border-neutral-900 bg-neutral-950/80 backdrop-blur-md select-none font-sans">
       {/* Brand Logo */}
-      <div className="flex items-center gap-2 border-b border-neutral-900 px-6 py-5">
-        <Link href="/" className="flex items-center gap-1.5 group">
-          <span className="text-xl font-black text-white tracking-tight">brazy</span>
-          <span className="text-xl font-black text-red-500 animate-pulse">.</span>
-          <span className="text-xs font-semibold text-neutral-500 mt-1.5 transition-colors group-hover:text-red-400">dashboard</span>
+      <div className="flex items-center justify-center border-b border-neutral-900 px-6 py-5">
+        <Link href="/" className="flex items-center justify-center group">
+          <SpiderLogo className="h-9 w-9 text-red-600 hover:text-red-500 transition-colors duration-200" />
         </Link>
       </div>
 

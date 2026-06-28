@@ -114,12 +114,14 @@ export default function LinksPage() {
   const [dragOver, setDragOver] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
+  const fullConfigRef = useRef<any | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
         const { userId: uid, config: cfg, profile } = await clientGetProfile();
         setUserId(uid);
+        fullConfigRef.current = cfg;
         if (cfg.social.links.length > 0) {
           setLinks(cfg.social.links.map((l, i) => ({
             id: `link-${i}-${l.platform}`,
@@ -143,10 +145,10 @@ export default function LinksPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSaveStatus("saving");
     debounceRef.current = setTimeout(async () => {
-      if (savingRef.current || !userId) { setSaveStatus("idle"); return; }
+      if (savingRef.current || !userId || !fullConfigRef.current) { setSaveStatus("idle"); return; }
       savingRef.current = true;
       try {
-        const { config: cfg } = await clientGetProfile();
+        const cfg = fullConfigRef.current;
         const newCfg = {
           ...cfg,
           social: {
@@ -156,6 +158,7 @@ export default function LinksPage() {
           },
         };
         await clientSaveProfile(newCfg);
+        fullConfigRef.current = newCfg;
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
       } catch (err) {

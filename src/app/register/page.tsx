@@ -54,7 +54,7 @@ export default function RegisterPage() {
     try { localStorage.setItem("brazy_pending_username", username.trim().toLowerCase()); } catch {}
     await supabase.auth.signInWithOAuth({
       provider: "discord",
-      options: { redirectTo: `${window.location.origin}/api/auth/callback?next=/register/complete` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/register/complete` },
     });
   };
 

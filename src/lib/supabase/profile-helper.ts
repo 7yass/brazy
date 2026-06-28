@@ -53,7 +53,6 @@ export async function clientSaveProfile(config: ProfileConfig) {
       {
         id: user.id,
         config,
-        updated_at: new Date().toISOString(),
       },
       { onConflict: "id" }
     );
@@ -67,7 +66,6 @@ export async function clientSaveProfile(config: ProfileConfig) {
       {
         user_id: user.id,
         config,
-        updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id" }
     );
