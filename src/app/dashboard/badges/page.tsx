@@ -5,6 +5,8 @@ import { Plus, GripVertical, Trash2, Check, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeConfig, ProfileConfig } from "@/lib/profile/schema";
 
+import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
+
 const F = "Satoshi, system-ui, sans-serif";
 
 type BadgeItem = { id: string; label: string; emoji: string; color: string; tooltip: string };
@@ -42,20 +44,18 @@ export default function BadgesPage() {
   useEffect(() => {
     (async () => {
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        setUserId(user.id);
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", user.id).maybeSingle();
-        const loaded = normalizeConfig(profile?.config ?? {});
+        const { userId: uid, config: loaded } = await clientGetProfile();
+        setUserId(uid);
         // ensure items have unique ids for drag and drop
         if (loaded.badges && loaded.badges.items) {
           loaded.badges.items = loaded.badges.items.map((b: any) => ({ ...b, id: b.id || Math.random().toString(36).slice(2) }));
         }
         setCfg(loaded);
         cfgRef.current = loaded;
-      } catch { setCfg(normalizeConfig({})); }
+      } catch (err) {
+        console.error("Load badges error:", err);
+        setCfg(normalizeConfig({}));
+      }
     })();
   }, []);
 
@@ -67,14 +67,16 @@ export default function BadgesPage() {
       if (!userId || savingRef.current) { setSaveStatus("idle"); return; }
       savingRef.current = true;
       try {
-        const supabase = createClient();
-        if (!supabase) return;
         // strip internal 'id' before saving
-        const toSave = { ...cfgRef.current, badges: { ...cfgRef.current?.badges, items: cfgRef.current?.badges.items.map(({ id, ...rest }: any) => rest) } };
-        await supabase.from("profiles").upsert({ user_id: userId, config: toSave, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+        const toSave = { ...cfgRef.current, badges: { ...cfgRef.current?.badges, items: cfgRef.current?.badges.items.map(({ id, ...rest }: any) => rest) } } as ProfileConfig;
+        await clientSaveProfile(toSave);
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch { setSaveStatus("error"); setTimeout(() => setSaveStatus("idle"), 3000); }
+      } catch (err) {
+        console.error("Save badges error:", err);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
       finally { savingRef.current = false; }
     }, 800);
   }, [userId]);

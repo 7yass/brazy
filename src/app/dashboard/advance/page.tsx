@@ -5,6 +5,8 @@ import { Globe, AlertTriangle, Check, Code2, Code, BarChart, Trash2 } from "luci
 import { createClient } from "@/lib/supabase/client";
 import { normalizeConfig, ProfileConfig } from "@/lib/profile/schema";
 
+import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
+
 const F = "Satoshi, system-ui, sans-serif";
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
@@ -52,16 +54,14 @@ export default function AdvancePage() {
   useEffect(() => {
     (async () => {
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        setUserId(user.id);
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", user.id).maybeSingle();
-        const loaded = normalizeConfig(profile?.config ?? {});
+        const { userId: uid, config: loaded } = await clientGetProfile();
+        setUserId(uid);
         setCfg(loaded);
         cfgRef.current = loaded;
-      } catch { setCfg(normalizeConfig({})); }
+      } catch (err) {
+        console.error("Load advance error:", err);
+        setCfg(normalizeConfig({}));
+      }
     })();
   }, []);
 
@@ -73,12 +73,14 @@ export default function AdvancePage() {
       if (!userId || savingRef.current) return;
       savingRef.current = true;
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        await supabase.from("profiles").upsert({ user_id: userId, config: cfgRef.current, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+        await clientSaveProfile(next);
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch { setSaveStatus("error"); setTimeout(() => setSaveStatus("idle"), 3000); }
+      } catch (err) {
+        console.error("Save advance error:", err);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
       finally { savingRef.current = false; }
     }, 800);
   }, [userId]);

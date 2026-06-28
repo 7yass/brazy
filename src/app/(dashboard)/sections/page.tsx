@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { normalizeConfig } from "@/lib/profile/schema";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { GripVertical, Eye, EyeOff, Check } from "lucide-react";
+import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
 
 const F = "Satoshi, system-ui, sans-serif";
 
@@ -23,12 +24,12 @@ const ALL_SECTIONS = [
   { id: "customHtml","label": "Custom HTML",        desc: "Inject your own HTML block",             emoji: "</>" },
 ];
 
-const DEFAULT_ORDER = ALL_SECTIONS.map(s => s.id);
-const DEFAULT_VISIBILITY: Record<string, boolean> = Object.fromEntries(ALL_SECTIONS.map(s => [s.id, true]));
-
 export default function SectionsPage() {
-  const [order, setOrder] = useState<string[]>(DEFAULT_ORDER);
-  const [visibility, setVisibility] = useState<Record<string, boolean>>(DEFAULT_VISIBILITY);
+  const [order, setOrder] = useState<string[]>([]);
+  const [visibility, setVisibility] = useState<Record<string, boolean>>({
+    avatar: true, name: true, identity: true, bio: true, badges: true,
+    social: true, audio: true, discord: true, views: true, skills: true, projects: true, customHtml: true
+  });
   const [userId, setUserId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -39,18 +40,15 @@ export default function SectionsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        setUserId(user.id);
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", user.id).maybeSingle();
-        const cfg = normalizeConfig(profile?.config ?? {});
+        const { userId: uid, config: cfg } = await clientGetProfile();
+        setUserId(uid);
         if (cfg.sections?.order?.length) setOrder(cfg.sections.order);
         if (cfg.sections?.visibility && Object.keys(cfg.sections.visibility).length) {
           setVisibility(prev => ({ ...prev, ...cfg.sections.visibility }));
         }
-      } catch {}
+      } catch (err) {
+        console.error("Load sections error:", err);
+      }
     })();
   }, []);
 
@@ -61,15 +59,16 @@ export default function SectionsPage() {
       if (!userId || savingRef.current) { setSaveStatus("idle"); return; }
       savingRef.current = true;
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", userId).maybeSingle();
-        const cfg = normalizeConfig(profile?.config ?? {});
+        const { config: cfg } = await clientGetProfile();
         const next: ProfileConfig = { ...cfg, sections: { order: nextOrder, visibility: nextVis } };
-        await supabase.from("profiles").upsert({ user_id: userId, config: next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+        await clientSaveProfile(next);
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch { setSaveStatus("error"); setTimeout(() => setSaveStatus("idle"), 3000); }
+      } catch (err) {
+        console.error("Save sections error:", err);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
       finally { savingRef.current = false; }
     }, 600);
   }, [userId]);

@@ -10,6 +10,8 @@ import {
   Check, Save, RotateCcw, Zap, Eye, EyeOff,
 } from "lucide-react";
 
+import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
+
 const F = "Satoshi, system-ui, sans-serif";
 
 // ─── Shared primitives ─────────────────────────────────────────────────────────
@@ -173,16 +175,14 @@ export default function CustomizePage() {
   useEffect(() => {
     (async () => {
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        setUserId(user.id);
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", user.id).maybeSingle();
-        const loaded = normalizeConfig(profile?.config ?? {});
+        const { userId: uid, config: loaded } = await clientGetProfile();
+        setUserId(uid);
         setCfg(loaded);
         cfgRef.current = loaded;
-      } catch { setCfg(normalizeConfig({})); }
+      } catch (err) {
+        console.error("Load customize error:", err);
+        setCfg(normalizeConfig({}));
+      }
     })();
   }, []);
 
@@ -191,12 +191,11 @@ export default function CustomizePage() {
     savingRef.current = true;
     setSaveStatus("saving");
     try {
-      const supabase = createClient();
-      if (!supabase) return;
-      await supabase.from("profiles").upsert({ user_id: userId, config, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+      await clientSaveProfile(config);
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch {
+    } catch (err) {
+      console.error("Save customize error:", err);
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
     } finally { savingRef.current = false; }

@@ -57,7 +57,11 @@ export default function SettingsPage() {
           (discordIdent?.identity_data?.username as string | undefined) ??
           user.user_metadata?.full_name ??
           user.email?.split("@")[0] ?? "";
-        const { data: profile } = await supabase.from("profiles").select("username").eq("user_id", user.id).maybeSingle();
+        let { data: profile, error } = await supabase.from("profiles").select("username").eq("user_id", user.id).maybeSingle();
+        if (error || !profile) {
+          const { data: profileById } = await supabase.from("profiles").select("username").eq("id", user.id).maybeSingle();
+          if (profileById) profile = profileById;
+        }
         setUsername(profile?.username ?? fallback);
       } catch {}
     })();
@@ -69,7 +73,10 @@ export default function SettingsPage() {
     try {
       const supabase = createClient();
       if (!supabase) return;
-      await supabase.from("profiles").update({ username }).eq("user_id", userId);
+      const { error: errorId } = await supabase.from("profiles").update({ username }).eq("id", userId);
+      if (errorId) {
+        await supabase.from("profiles").update({ username }).eq("user_id", userId);
+      }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {}

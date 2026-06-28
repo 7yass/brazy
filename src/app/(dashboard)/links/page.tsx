@@ -15,6 +15,8 @@ import {
 } from "react-icons/fa6";
 import { SiThreads, SiMastodon, SiKick, SiRoblox } from "react-icons/si";
 
+import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
+
 const F = "Satoshi, system-ui, sans-serif";
 
 const PLATFORMS = [
@@ -173,13 +175,8 @@ export default function LinksPage() {
   useEffect(() => {
     (async () => {
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        setUserId(user.id);
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", user.id).maybeSingle();
-        const cfg = normalizeConfig(profile?.config ?? {});
+        const { userId: uid, config: cfg, profile } = await clientGetProfile();
+        setUserId(uid);
         if (cfg.social.links.length > 0) {
           setLinks(cfg.social.links.map((l, i) => ({
             id: `link-${i}-${l.platform}`,
@@ -194,7 +191,9 @@ export default function LinksPage() {
         const legacy = (profile?.config as Record<string, unknown>)?.social as Record<string, unknown> | undefined;
         if (legacy?.display_mode) setMode(legacy.display_mode as DisplayMode);
         if (legacy?.link_custom) setCustom(prev => ({ ...prev, ...(legacy.link_custom as Partial<LinkCustom>) }));
-      } catch {}
+      } catch (err) {
+        console.error("Load links error:", err);
+      }
     })();
   }, []);
 
@@ -205,22 +204,23 @@ export default function LinksPage() {
       if (savingRef.current || !userId) { setSaveStatus("idle"); return; }
       savingRef.current = true;
       try {
-        const supabase = createClient();
-        if (!supabase) return;
-        const { data: profile } = await supabase.from("profiles").select("config").eq("user_id", userId).maybeSingle();
-        const cfg = normalizeConfig(profile?.config ?? {});
+        const { config: cfg } = await clientGetProfile();
         const newCfg = {
           ...cfg,
           social: {
             ...cfg.social,
-            links: nextLinks.map(l => ({ platform: l.platform as "discord", url: l.url, label: l.label, color: l.color })),
+            links: nextLinks.map(l => ({ platform: l.platform as any, url: l.url, label: l.label, color: l.color })),
             layout: nextMode === "icons" ? ("grid" as const) : ("wrap" as const),
           },
         };
-        await supabase.from("profiles").upsert({ user_id: userId, config: newCfg, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+        await clientSaveProfile(newCfg);
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
-      } catch { setSaveStatus("error"); setTimeout(() => setSaveStatus("idle"), 3000); }
+      } catch (err) {
+        console.error("Save links error:", err);
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
       finally { savingRef.current = false; }
     }, 600);
   }, [userId]);

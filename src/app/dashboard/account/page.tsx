@@ -37,7 +37,11 @@ export default function AccountPage() {
           user.user_metadata?.full_name ??
           user.email?.split("@")[0] ?? "user";
         
-        const { data: profile } = await supabase.from("profiles").select("username, config").eq("user_id", user.id).maybeSingle();
+        let { data: profile, error } = await supabase.from("profiles").select("username, config").eq("user_id", user.id).maybeSingle();
+        if (error || !profile) {
+          const { data: profileById } = await supabase.from("profiles").select("username, config").eq("id", user.id).maybeSingle();
+          if (profileById) profile = profileById;
+        }
         setUsername(profile?.username ?? fallback);
         if (profile?.config) {
           setConfig(normalizeConfig(profile.config));

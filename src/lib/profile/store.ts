@@ -29,11 +29,29 @@ export async function getProfile(
   const supabase = await createClient();
 
   if (supabase) {
-    const { data, error } = await supabase
+    // Try querying with user_id first
+    let { data, error } = await supabase
       .from("profiles")
       .select("username, config, views, created_at, user_id, audio_track_id, audio_source, audio_title, audio_artist, audio_thumb")
       .eq("username", key)
       .maybeSingle();
+
+    // If that fails or column doesn't exist, try querying with id
+    if (error || !data) {
+      const { data: dataId, error: errorId } = await supabase
+        .from("profiles")
+        .select("username, config, views, created_at, id, audio_track_id, audio_source, audio_title, audio_artist, audio_thumb")
+        .eq("username", key)
+        .maybeSingle();
+
+      if (!errorId && dataId) {
+        data = {
+          ...dataId,
+          user_id: dataId.id,
+        };
+        error = null;
+      }
+    }
 
     if (error || !data) {
       return seedProfiles[key]
@@ -97,12 +115,30 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
 export async function getCurrentUserProfile(userId: string): Promise<ProfileRecord | null> {
   const supabase = await createClient();
   if (!supabase) return null;
-  const { data } = await supabase
+
+  // Try querying by user_id
+  let { data, error } = await supabase
     .from("profiles")
     .select("username, config, views, created_at")
     .eq("user_id", userId)
     .maybeSingle();
-  if (!data) return null;
+
+  if (error || !data) {
+    // Try querying by id
+    const { data: dataId, error: errorId } = await supabase
+      .from("profiles")
+      .select("username, config, views, created_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!errorId && dataId) {
+      data = dataId;
+      error = null;
+    }
+  }
+
+  if (error || !data) return null;
+
   return {
     username: data.username,
     config: normalizeConfig(data.config),
@@ -136,28 +172,46 @@ export async function saveProfile(
     return { error: "database not configured" };
   }
 
-  const { error } = await supabase
+  const payload = {
+    username: key,
+    config,
+    updated_at: new Date().toISOString(),
+    ...(audioMeta?.audio_track_id ? { audio_track_id: audioMeta.audio_track_id } : {}),
+    ...(audioMeta?.audio_source ? { audio_source: audioMeta.audio_source } : {}),
+    ...(audioMeta?.audio_title ? { audio_title: audioMeta.audio_title } : {}),
+    ...(audioMeta?.audio_artist ? { audio_artist: audioMeta.audio_artist } : {}),
+    ...(audioMeta?.audio_thumb ? { audio_thumb: audioMeta.audio_thumb } : {}),
+  };
+
+  // Try upserting with id first
+  const { error: errorId } = await supabase
+    .from("profiles")
+    .upsert(
+      {
+        id: userId,
+        ...payload,
+      },
+      { onConflict: "id" }
+    );
+
+  if (!errorId) return { error: null };
+
+  // If that fails, try upserting with user_id
+  const { error: errorUserId } = await supabase
     .from("profiles")
     .upsert(
       {
         user_id: userId,
-        username: key,
-        config,
-        updated_at: new Date().toISOString(),
-        ...(audioMeta?.audio_track_id ? { audio_track_id: audioMeta.audio_track_id } : {}),
-        ...(audioMeta?.audio_source ? { audio_source: audioMeta.audio_source } : {}),
-        ...(audioMeta?.audio_title ? { audio_title: audioMeta.audio_title } : {}),
-        ...(audioMeta?.audio_artist ? { audio_artist: audioMeta.audio_artist } : {}),
-        ...(audioMeta?.audio_thumb ? { audio_thumb: audioMeta.audio_thumb } : {}),
+        ...payload,
       },
-      { onConflict: "user_id" },
+      { onConflict: "user_id" }
     );
 
-  if (error) {
-    if (error.code === "23505") {
+  if (errorUserId) {
+    if (errorUserId.code === "23505" || errorId.code === "23505") {
       return { error: "that username is already taken" };
     }
-    return { error: error.message };
+    return { error: errorUserId.message || errorId.message };
   }
 
   return { error: null };
