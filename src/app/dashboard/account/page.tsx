@@ -1,26 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, Link2, Award, BarChart3, ChevronRight, Settings, ExternalLink, ShieldCheck } from "lucide-react";
+import {
+  Eye, Link2, Award, BarChart3, ChevronRight, Settings, ExternalLink,
+  ShieldCheck, Sparkles, Globe, Copy, Check, Layers, UserCircle2, Palette
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { normalizeConfig, ProfileConfig } from "@/lib/profile/schema";
 
-const F = "Satoshi, system-ui, sans-serif";
-
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl overflow-hidden shadow-2xl">
-      {children}
-    </div>
-  );
-}
-
 export default function AccountPage() {
   const [username, setUsername] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<ProfileConfig | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -30,6 +25,8 @@ export default function AccountPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         setEmail(user.email ?? null);
+        setUserId(user.id);
+        
         const identities = user.identities ?? [];
         const discordIdent = identities.find((i) => i.provider === "discord");
         const fallback =
@@ -46,21 +43,16 @@ export default function AccountPage() {
         if (profile?.config) {
           setConfig(normalizeConfig(profile.config));
         }
-      } finally { setLoading(false); }
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
-  const profileViews = config?.analytics?.trackViews ? "Tracking" : "Off";
+  const profileViews = config?.analytics?.trackViews ? "Tracking" : "Disabled";
   const numLinks = config?.social?.links?.length ?? 0;
   const numBadges = config?.badges?.items?.length ?? 0;
   const numWidgets = Object.values(config?.widgets || {}).filter((w: any) => w.enabled).length;
-
-  const stats = [
-    { icon: Eye,      label: "Profile Views", value: profileViews, href: "/dashboard/analytics" },
-    { icon: Link2,    label: "Social Links",  value: numLinks.toString(), href: "/dashboard/links" },
-    { icon: Award,    label: "Badges",        value: numBadges.toString(), href: "/dashboard/badges" },
-    { icon: BarChart3,label: "Widgets",       value: numWidgets.toString(), href: "/dashboard/widgets" },
-  ];
 
   // Calculate completeness
   let score = 0;
@@ -71,95 +63,194 @@ export default function AccountPage() {
     if (config.background.type !== "color") score += 20;
     if (config.theme.primaryColor !== "#a855f7") score += 20;
   }
-  const completeness = Math.min(100, score || 10);
+  const completeness = Math.min(100, score || 15);
+
+  const copyUserId = () => {
+    if (!userId) return;
+    navigator.clipboard.writeText(userId);
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none">
-
+    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none font-sans">
+      
+      {/* Header */}
       <header className="border-b border-white/[0.04] pb-5">
-        <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
-          Overview
+        <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+          Welcome back, {loading ? "..." : username}
         </h1>
-        <p className="text-neutral-400 text-sm mt-1">Your profile details, statistics, and profile strength at a glance.</p>
+        <p className="text-neutral-400 text-xs mt-1">Here's a quick look at your brazy.it page.</p>
       </header>
 
-      <Card>
-        <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-center gap-4.5">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center text-2xl font-black text-white shrink-0 shadow-[0_0_24px_rgba(220,38,38,0.35)] overflow-hidden">
-              {config?.identity?.avatarUrl ? (
-                <img src={config.identity.avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : loading ? "?" : (username?.[0]?.toUpperCase() ?? "?")}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-base font-extrabold text-white truncate max-w-xs leading-snug">
-                  {loading ? "Loading profile…" : username}
-                </p>
-                {config?.identity?.verified && <ShieldCheck className="w-4 h-4 text-blue-500 shrink-0" />}
-              </div>
-              <p className="text-xs text-neutral-500 mt-1 font-semibold truncate max-w-xs">{email ?? ""}</p>
-              {!loading && username && (
-                <p className="text-xs text-red-500 font-bold mt-1.5 flex items-center gap-1">
-                  brazy.it/{username}
-                </p>
-              )}
-            </div>
+      {/* 4-Column Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Public Profile Link */}
+        <a 
+          href={username ? `/${username}` : "#"} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="group flex flex-col justify-between p-5 rounded-2xl border border-white/[0.03] bg-neutral-900/20 hover:bg-neutral-900/40 transition duration-150"
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-500">Your Page</span>
+            <Globe className="w-4 h-4 text-neutral-500 group-hover:text-red-500 transition duration-150" />
           </div>
-          <div className="flex gap-2.5 shrink-0 self-start md:self-center">
-            <Link href="/dashboard/settings" className="flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-neutral-900 border border-neutral-850 hover:bg-neutral-900/60 text-neutral-400 hover:text-white text-xs font-bold transition">
-              <Settings className="w-3.5 h-3.5" /> Settings
-            </Link>
-            {username && (
-              <a href={`/${username}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4.5 py-2 rounded-xl bg-neutral-900 border border-neutral-850 hover:bg-neutral-900/60 text-neutral-400 hover:text-white text-xs font-bold transition">
-                <ExternalLink className="w-3.5 h-3.5" /> View live page
-              </a>
-            )}
+          <div className="mt-4">
+            <p className="text-sm font-black text-white truncate group-hover:underline">
+              {loading ? "loading..." : `brazy.it/${username || "page"}`}
+            </p>
           </div>
-        </div>
-        
-        {/* Completeness bar */}
-        <div className="p-6 border-t border-neutral-900/60 bg-neutral-950/20">
-          <div className="flex justify-between items-center mb-2.5">
-            <span className="text-xs font-bold text-neutral-400">Profile completeness</span>
-            <span className={`text-xs font-black ${completeness === 100 ? "text-green-400" : "text-red-500"}`}>{completeness}%</span>
-          </div>
-          <div className="w-full h-2 bg-neutral-900 border border-neutral-850/60 rounded-full overflow-hidden">
-            <div className={`h-full transition-all duration-500 ease-out rounded-full ${
-              completeness === 100 ? "bg-green-500" : "bg-gradient-to-r from-red-600 to-rose-500"
-            }`} style={{ width: `${completeness}%` }} />
-          </div>
-          {completeness < 100 && (
-            <p className="text-[10px] text-neutral-500 font-medium mt-2">Finish editing your profile details to unlock 100% completion badge.</p>
-          )}
-        </div>
-      </Card>
+        </a>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <Link key={s.label} href={s.href} className="group">
-              <div className="bg-neutral-950/40 border border-neutral-900/85 hover:border-neutral-800 rounded-2xl p-5 flex items-center justify-between transition duration-150">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-red-600/10 flex items-center justify-center shrink-0">
-                    <Icon className="w-5 h-5 text-red-500" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-black text-white">{loading ? "—" : s.value}</p>
-                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-0.5">{s.label}</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-4.5 h-4.5 text-neutral-600 group-hover:text-neutral-400 transition-transform group-hover:translate-x-0.5" />
-              </div>
-            </Link>
-          );
-        })}
+        {/* Card 2: Completeness */}
+        <div className="flex flex-col justify-between p-5 rounded-2xl border border-white/[0.03] bg-neutral-900/20">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-500">Page Strength</span>
+            <Sparkles className="w-4 h-4 text-neutral-500" />
+          </div>
+          <div className="mt-4">
+            <p className="text-lg font-black text-white">{completeness}%</p>
+            <div className="w-full h-1 bg-neutral-800 rounded-full mt-2 overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-red-600 to-rose-500 rounded-full transition-all duration-500" 
+                style={{ width: `${completeness}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Views */}
+        <Link 
+          href="/account/analytics"
+          className="group flex flex-col justify-between p-5 rounded-2xl border border-white/[0.03] bg-neutral-900/20 hover:bg-neutral-900/40 transition duration-150"
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-500">Profile Views</span>
+            <Eye className="w-4 h-4 text-neutral-500 group-hover:text-red-500 transition duration-150" />
+          </div>
+          <div className="mt-4">
+            <p className="text-lg font-black text-white">{profileViews}</p>
+          </div>
+        </Link>
+
+        {/* Card 4: Membership */}
+        <div className="flex flex-col justify-between p-5 rounded-2xl border border-white/[0.03] bg-neutral-900/20">
+          <div className="flex items-center justify-between w-full">
+            <span className="text-[9px] font-extrabold uppercase tracking-widest text-neutral-500">Membership</span>
+            <ShieldCheck className="w-4 h-4 text-neutral-500" />
+          </div>
+          <div className="mt-4">
+            <p className="text-sm font-black text-white">Free Member</p>
+          </div>
+        </div>
       </div>
 
-      <Link href="/dashboard/customize" className="w-full block text-center py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-[0_4px_24px_rgba(220,38,38,0.25)] transition">
-        Customize my profile bio
-      </Link>
+      {/* Quick Access Card Actions Grid */}
+      <div className="flex flex-col gap-4">
+        <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 px-1">Quick Customization</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <Link href="/customize" className="group">
+            <div className="bg-neutral-950/40 border border-neutral-900/80 hover:border-neutral-800 rounded-2xl p-5 flex items-center justify-between transition duration-150">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-600/10 flex items-center justify-center shrink-0 border border-red-500/5">
+                  <Palette className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Customize Profile Look</h4>
+                  <p className="text-[10px] text-neutral-500 mt-1 leading-snug">Backgrounds, cursor files, colors, and layouts.</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </Link>
+
+          <Link href="/links" className="group">
+            <div className="bg-neutral-950/40 border border-neutral-900/80 hover:border-neutral-800 rounded-2xl p-5 flex items-center justify-between transition duration-150">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-600/10 flex items-center justify-center shrink-0 border border-red-500/5">
+                  <Link2 className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Social Links ({numLinks})</h4>
+                  <p className="text-[10px] text-neutral-500 mt-1 leading-snug">Configure your active socials list and buttons.</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </Link>
+
+          <Link href="/account/badges" className="group">
+            <div className="bg-neutral-950/40 border border-neutral-900/80 hover:border-neutral-800 rounded-2xl p-5 flex items-center justify-between transition duration-150">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-600/10 flex items-center justify-center shrink-0 border border-red-500/5">
+                  <Award className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Profile Badges ({numBadges})</h4>
+                  <p className="text-[10px] text-neutral-500 mt-1 leading-snug">Claim and reorder SVG name badges.</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </Link>
+
+          <Link href="/sections" className="group">
+            <div className="bg-neutral-950/40 border border-neutral-900/80 hover:border-neutral-800 rounded-2xl p-5 flex items-center justify-between transition duration-150">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-600/10 flex items-center justify-center shrink-0 border border-red-500/5">
+                  <Layers className="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Card Sections & Widgets ({numWidgets})</h4>
+                  <p className="text-[10px] text-neutral-500 mt-1 leading-snug">Build profile section tabs and widgets.</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-transform group-hover:translate-x-0.5" />
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Account Details Box */}
+      <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4">
+        <div className="border-b border-neutral-900 pb-3">
+          <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">Account Details</h3>
+          <p className="text-[10px] text-neutral-500 mt-1">Your secure credentials and account metadata details.</p>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <div className="flex items-center justify-between py-1.5 border-b border-neutral-900/50">
+            <span className="text-xs font-bold text-neutral-500">Email Address</span>
+            <span className="text-xs text-white font-medium">{email ?? "..."}</span>
+          </div>
+
+          <div className="flex items-center justify-between py-1.5 border-b border-neutral-900/50">
+            <span className="text-xs font-bold text-neutral-500">User UUID</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-neutral-400 truncate max-w-[200px] sm:max-w-none">{userId ?? "..."}</span>
+              <button 
+                onClick={copyUserId}
+                className="text-neutral-500 hover:text-neutral-300 p-1 hover:bg-neutral-900 rounded-lg transition cursor-pointer"
+                title="Copy User ID"
+              >
+                {copiedId ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-xs font-bold text-neutral-500">General Settings</span>
+            <Link 
+              href="/account/settings"
+              className="flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-400 transition"
+            >
+              <Settings className="w-3.5 h-3.5" /> Edit Account Settings
+            </Link>
+          </div>
+        </div>
+      </div>
 
     </div>
   );

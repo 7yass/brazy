@@ -12,6 +12,7 @@ import ViewCounter from "./ViewCounter";
 import { brandIcons } from "./icons";
 import { SpiderLogo } from "@/components/spider-logo";
 import { DiscordPresenceWidget, SkillsWidget, ProjectsWidget } from "./Widgets";
+import { PREDEFINED_BADGES } from "@/lib/profile/badges-data";
 
 interface Badge {
   id: string;
@@ -687,10 +688,20 @@ function SocialLink({ href, label, color, textColor, children }: {
 
 function BadgeIcon({ badge }: { badge: Badge }) {
   const [show, setShow] = useState(false);
+  const lowerIcon = badge.icon?.toLowerCase().replace(/ /g, "_");
+  const predefined = PREDEFINED_BADGES[lowerIcon];
+
   return (
     <div style={{ position: "relative", display: "inline-flex", alignItems: "center", cursor: "help" }}
       onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
-      <span style={{ fontSize: 16, lineHeight: 1 }}>{badge.icon}</span>
+      {predefined ? (
+        <div 
+          style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: predefined.color }} 
+          dangerouslySetInnerHTML={{ __html: predefined.svg }}
+        />
+      ) : (
+        <span style={{ fontSize: 16, lineHeight: 1 }}>{badge.icon}</span>
+      )}
       <AnimatePresence>
         {show && (
           <motion.div

@@ -50,6 +50,17 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     }
   }
 
+  if (config.badges?.enabled && config.badges.items) {
+    const configBadges = config.badges.items.map((item: any) => ({
+      id: item.id || item.emoji || Math.random().toString(),
+      label: item.label || item.emoji,
+      description: item.tooltip || "",
+      icon: item.emoji,
+      color: item.color || "#ffffff"
+    }));
+    profileBadges = [...profileBadges, ...configBadges];
+  }
+
   return (
     <ProfileRenderer
       config={config}
