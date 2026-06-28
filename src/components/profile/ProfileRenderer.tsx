@@ -13,6 +13,7 @@ import { brandIcons } from "./icons";
 import { SpiderLogo } from "@/components/spider-logo";
 import { DiscordPresenceWidget, SkillsWidget, ProjectsWidget } from "./Widgets";
 import { PREDEFINED_BADGES } from "@/lib/profile/badges-data";
+import { getPipedStreamUrl } from "@/lib/profile/audio-resolver";
 
 interface Badge {
   id: string;
@@ -545,6 +546,9 @@ export default function ProfileRenderer({
             accentColor={accent}
             textColor={theme.textColor}
             mutedTextColor={theme.mutedTextColor}
+            volume={config.audio?.volume ?? 0.6}
+            loop={config.audio?.loop ?? true}
+            entered={entered}
           />
         </motion.div>
       )}
@@ -728,40 +732,64 @@ function BadgeIcon({ badge }: { badge: Badge }) {
 // ─── Audio Pill ────────────────────────────────────────────────────────────────
 
 function AudioPill({
-  audioTrackId, title, artist, thumb, accentColor, textColor, mutedTextColor,
+  audioTrackId, title, artist, thumb, accentColor, textColor, mutedTextColor, volume, loop, entered,
 }: {
   audioTrackId?: string; title?: string; artist?: string; thumb?: string;
   accentColor: string; textColor?: string; mutedTextColor?: string;
+  volume: number; loop: boolean; entered: boolean;
 }) {
-  const playerRef = useRef<YTPlayer | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!audioTrackId) return;
-    const init = () => {
-      playerRef.current = new window.YT!.Player("yt-player-inline", {
-        videoId: audioTrackId,
-        playerVars: { autoplay: 0, enablejsapi: 1, rel: 0, modestbranding: 1 },
-        events: { onStateChange: (e: { data: number }) => setPlaying(e.data === window.YT?.PlayerState.PLAYING) },
-      });
-    };
-    if (window.YT) init();
-    else {
-      window.onYouTubeIframeAPIReady = init;
-      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-        const tag = document.createElement("script");
-        tag.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(tag);
+    let active = true;
+    (async () => {
+      const url = await getPipedStreamUrl(audioTrackId);
+      if (active) {
+        setStreamUrl(url);
       }
-    }
-    return () => { playerRef.current?.destroy(); playerRef.current = null; };
+    })();
+    return () => { active = false; };
   }, [audioTrackId]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.volume = volume;
+  }, [volume, streamUrl]);
+
+  useEffect(() => {
+    if (!audioRef.current || !streamUrl) return;
+    if (entered) {
+      audioRef.current.play()
+        .then(() => setPlaying(true))
+        .catch((e) => console.log("Autoplay blocked by browser policy:", e));
+    }
+  }, [entered, streamUrl]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.play().catch(() => setPlaying(false));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [playing]);
 
   if (!audioTrackId) return null;
 
   return (
     <>
-      <div id="yt-player-inline" style={{ width: 0, height: 0, position: "absolute", pointerEvents: "none", opacity: 0 }} />
+      {streamUrl && (
+        <audio 
+          ref={audioRef} 
+          src={streamUrl} 
+          loop={loop} 
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+        />
+      )}
       <div style={{
         display: "flex", alignItems: "center", gap: 10, padding: "9px 14px",
         background: "rgba(255,255,255,0.04)", border: `1px solid ${accentColor}22`,
@@ -773,7 +801,7 @@ function AudioPill({
           {artist && <p style={{ margin: "1px 0 0", fontSize: 11, color: mutedTextColor ?? "rgba(255,255,255,0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{artist}</p>}
         </div>
         <button
-          onClick={() => { const p = playerRef.current; if (!p) return; if (playing) { p.pauseVideo(); setPlaying(false); } else { p.playVideo(); setPlaying(true); } }}
+          onClick={() => setPlaying(!playing)}
           style={{ width: 32, height: 32, borderRadius: "50%", background: `${accentColor}22`, border: `1px solid ${accentColor}44`, color: "#fafafa", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.18s" }}
           aria-label={playing ? "Pause" : "Play"}
         >
@@ -782,21 +810,4 @@ function AudioPill({
       </div>
     </>
   );
-}
-
-declare global {
-  interface Window {
-    YT?: {
-      Player: new (id: string, opts: Record<string, unknown>) => YTPlayer;
-      PlayerState: { PLAYING: number; [key: string]: number };
-      ready?: boolean;
-    };
-    onYouTubeIframeAPIReady?: () => void;
-  }
-}
-interface YTPlayer {
-  playVideo: () => void;
-  pauseVideo: () => void;
-  getPlayerState: () => number;
-  destroy: () => void;
 }
