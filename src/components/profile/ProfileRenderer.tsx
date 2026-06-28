@@ -11,6 +11,7 @@ import SplashIntro from "./SplashIntro";
 import ViewCounter from "./ViewCounter";
 import { brandIcons } from "./icons";
 import { SpiderLogo } from "@/components/spider-logo";
+import { DiscordPresenceWidget, SkillsWidget, ProjectsWidget } from "./Widgets";
 
 interface Badge {
   id: string;
@@ -444,12 +445,33 @@ export default function ProfileRenderer({
           </motion.div>
         )}
 
+        {/* Discord Presence (card) */}
+        {widgets?.discordPresence?.enabled && widgets.discordPresence.placement === "card" && widgets.discordPresence.discordId && (
+          <motion.div {...stagger(4)} style={{ marginTop: 14, width: "100%", maxWidth: 360 }}>
+            <DiscordPresenceWidget discordId={widgets.discordPresence.discordId} />
+          </motion.div>
+        )}
+
+        {/* Skills */}
+        {config.skills?.enabled && config.skills.items?.length > 0 && (
+          <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360, display: "flex", justifyContent: "center" }}>
+            <SkillsWidget skills={config.skills.items} />
+          </motion.div>
+        )}
+
+        {/* Projects */}
+        {config.projects?.enabled && config.projects.items?.length > 0 && (
+          <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360 }}>
+            <ProjectsWidget projects={config.projects.items} />
+          </motion.div>
+        )}
+
         {/* View counter */}
         <motion.div
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
           transition={{ duration: 0.55, delay: 0.28, ease: EASE }}
-          style={{ marginTop: 14 }}
+          style={{ marginTop: 18 }}
         >
           <ViewCounter initial={0} accent={accent} />
         </motion.div>

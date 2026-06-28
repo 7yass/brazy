@@ -290,11 +290,11 @@ export const profileConfigSchema = z.object({
       title: z.string().default(""),
       description: z.string().default(""),
       ogImage: z.string().default(""),
-    }),
+    }).default(() => ({ title: "", description: "", ogImage: "" })),
   analytics: z
     .object({
       trackViews: z.boolean().default(true),
-    }),
+    }).default(() => ({ trackViews: true })),
 });
 export type ProfileConfig = z.infer<typeof profileConfigSchema>;
 
