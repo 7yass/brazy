@@ -355,10 +355,7 @@ export default function CustomizePage() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
-
-        {/* Left Column - Form controls in guns.lol Layout */}
-        <div className="w-full lg:w-[48%] xl:w-[45%] shrink-0 flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-140px)] pr-2 scrollbar-none pb-8">
+      <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 pb-8">
           
           {/* 1. Assets Uploader Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4 font-sans">
@@ -742,69 +739,6 @@ export default function CustomizePage() {
               />
             </div>
           </SectionCard>
-
-        </div>
-
-        {/* Right Column - Live Preview Mockup */}
-        <div className="flex-1 w-full lg:sticky lg:top-[85px] flex flex-col items-center justify-start gap-4">
-          <div className="flex items-center justify-between w-full max-w-[340px] bg-neutral-950/40 border border-neutral-900/60 rounded-xl p-2 font-sans">
-            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-2.5">Live Preview</span>
-            <div className="flex gap-1">
-              <button 
-                onClick={() => setPreviewDevice("mobile")}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
-                  previewDevice === "mobile" 
-                    ? "bg-red-600/10 border-red-600/30 text-red-500" 
-                    : "bg-neutral-900 border-transparent text-neutral-400 hover:text-white"
-                }`}
-              >
-                <Smartphone className="w-3.5 h-3.5" /> Mobile
-              </button>
-              <button 
-                onClick={() => setPreviewDevice("desktop")}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
-                  previewDevice === "desktop" 
-                    ? "bg-red-600/10 border-red-600/30 text-red-500" 
-                    : "bg-neutral-900 border-transparent text-neutral-400 hover:text-white"
-                }`}
-              >
-                <Laptop className="w-3.5 h-3.5" /> Desktop
-              </button>
-            </div>
-          </div>
-
-          {/* Viewport Frame */}
-          {previewDevice === "mobile" ? (
-            /* Mobile Device Mockup */
-            <div className="relative w-[340px] h-[600px] rounded-[44px] border-[8px] border-neutral-900 bg-neutral-950 shadow-2xl overflow-hidden flex flex-col no-scrollbar">
-              {/* iPhone Notch/Island */}
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full bg-black z-50 flex items-center justify-center" />
-              {/* Inner content */}
-              <div className="preview-wrapper flex-1 w-full overflow-y-auto no-scrollbar relative">
-                <ProfileRenderer config={cfg} preview={true} />
-              </div>
-            </div>
-          ) : (
-            /* Desktop Mockup */
-            <div className="relative w-full max-w-[680px] h-[480px] rounded-2xl border-4 border-neutral-900 bg-neutral-950 shadow-2xl overflow-hidden flex flex-col">
-              {/* Header Bar */}
-              <div className="h-7 w-full bg-neutral-900 border-b border-neutral-850 flex items-center justify-between px-4 shrink-0 font-sans">
-                <div className="flex gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-red-500/80" />
-                  <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
-                  <div className="w-2 h-2 rounded-full bg-green-500/80" />
-                </div>
-                <div className="text-[8px] text-neutral-500 select-none font-mono">brazy.it/{cfg.identity.username || "preview"}</div>
-                <div className="w-10" />
-              </div>
-              {/* Inner Content */}
-              <div className="preview-wrapper flex-1 w-full overflow-y-auto no-scrollbar relative">
-                <ProfileRenderer config={cfg} preview={true} />
-              </div>
-            </div>
-          )}
-
-        </div>
 
       </div>
 
