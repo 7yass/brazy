@@ -84,8 +84,8 @@ const clickEffectSchema = z.object({
 });
 
 export const effectsSchema = z.object({
-  cursor: cursorEffectSchema,
-  click: clickEffectSchema,
+  cursor: cursorEffectSchema.default(() => ({} as any)),
+  click: clickEffectSchema.default(() => ({} as any)),
   tilt3d: z.boolean().default(true),
   tiltIntensity: z.number().min(0).max(30).default(12),
   typewriterTitle: z.boolean().default(false),
@@ -300,5 +300,15 @@ export const profileConfigSchema = z.object({
 export type ProfileConfig = z.infer<typeof profileConfigSchema>;
 
 export function normalizeConfig(input: unknown): ProfileConfig {
-  return profileConfigSchema.parse(input ?? {});
+  try {
+    return profileConfigSchema.parse(input ?? {});
+  } catch (err) {
+    console.error("normalizeConfig error, falling back to defaults:", err);
+    try {
+      return profileConfigSchema.parse({});
+    } catch (fallbackErr) {
+      console.error("Critical: default schema parsing failed:", fallbackErr);
+      return {} as ProfileConfig;
+    }
+  }
 }
