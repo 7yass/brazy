@@ -6,41 +6,54 @@ import { normalizeConfig } from "@/lib/profile/schema";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import {
   MessageSquare, Clock, Music2,
-  Check, ChevronDown, ChevronRight, ExternalLink,
+  Check, ChevronDown, ChevronRight, ExternalLink, Sparkles,
 } from "lucide-react";
 import { FaYoutube, FaGithub } from "react-icons/fa6";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
 
-const F = "Satoshi, system-ui, sans-serif";
-
 // ─── Shared primitives ──────────────────────────────────────────────
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button role="switch" aria-checked={value} onClick={() => onChange(!value)}
-      style={{ width: 44, height: 24, borderRadius: 99, cursor: "pointer", border: "none", padding: 2, background: value ? "#dc2626" : "rgba(255,255,255,0.1)", transition: "background 0.2s", display: "flex", alignItems: "center", flexShrink: 0 }}>
-      <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", transform: value ? "translateX(20px)" : "translateX(0)", transition: "transform 0.2s cubic-bezier(0.22,1,0.36,1)", display: "block", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
+    <button
+      role="switch"
+      aria-checked={value}
+      onClick={() => onChange(!value)}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${value ? "bg-red-600" : "bg-neutral-800"}`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? "translate-x-5" : "translate-x-0"}`}
+      />
     </button>
   );
 }
 
 function InputText({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 12px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" }}
-      onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.5)"; }}
-      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
+    <input
+      type="text"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 w-56 transition"
     />
   );
 }
 
 function Chips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
   return (
-    <div style={{ display: "flex", gap: 6 }}>
+    <div className="flex gap-2">
       {options.map(o => (
-        <button key={o.value} onClick={() => onChange(o.value)}
-          style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: F, cursor: "pointer", border: value === o.value ? "1px solid rgba(220,38,38,0.5)" : "1px solid rgba(255,255,255,0.07)", background: value === o.value ? "rgba(220,38,38,0.12)" : "rgba(255,255,255,0.03)", color: value === o.value ? "#dc2626" : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}>
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
+            value === o.value
+              ? "bg-red-600/10 border-red-600/40 text-red-500"
+              : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-neutral-250 hover:bg-neutral-900/60"
+          }`}
+        >
           {o.label}
         </button>
       ))}
@@ -57,37 +70,36 @@ function WidgetCard({
   const [open, setOpen] = useState(defaultOpen || enabled);
 
   return (
-    <div style={{ borderRadius: 18, border: `1px solid ${enabled ? "rgba(220,38,38,0.2)" : "rgba(255,255,255,0.06)"}`, background: enabled ? "rgba(220,38,38,0.04)" : "rgba(255,255,255,0.018)", overflow: "hidden", transition: "border-color 0.2s, background 0.2s" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "18px 20px" }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: `${iconColor}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Icon style={{ width: 18, height: 18, color: iconColor }} />
+    <div className={`bg-neutral-950/40 border rounded-2xl overflow-hidden transition-all duration-200 ${
+      enabled ? "border-red-500/20 bg-red-950/[0.02]" : "border-neutral-900/80"
+    }`}>
+      <div className="flex items-center gap-3.5 p-5">
+        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${iconColor}15` }}>
+          <Icon className="w-5 h-5" style={{ color: iconColor }} />
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#fafafa" }}>{label}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-white">{label}</span>
             {badge && (
-              <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", color: "#22c55e", letterSpacing: "0.05em", textTransform: "uppercase" }}>{badge}</span>
+              <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 uppercase tracking-wide">{badge}</span>
             )}
           </div>
-          <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.35)" }}>{description}</p>
+          <p className="text-[11px] text-neutral-500 mt-0.5 leading-normal">{description}</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <div className="flex items-center gap-3 shrink-0">
           {children && enabled && (
             <button onClick={() => setOpen(!open)}
-              style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-              {open ? <ChevronDown style={{ width: 13, height: 13, color: "rgba(255,255,255,0.4)" }} /> : <ChevronRight style={{ width: 13, height: 13, color: "rgba(255,255,255,0.4)" }} />}
+              className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-850 flex items-center justify-center text-neutral-400 hover:text-white cursor-pointer transition">
+              {open ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
             </button>
           )}
           <Toggle value={enabled} onChange={v => { onToggle(v); if (v) setOpen(true); }} />
         </div>
       </div>
       {enabled && open && children && (
-        <>
-          <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
-          <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
-            {children}
-          </div>
-        </>
+        <div className="px-6 pb-6 pt-3 border-t border-neutral-900/60 flex flex-col gap-4 animate-in slide-in-from-top-1 duration-150">
+          {children}
+        </div>
       )}
     </div>
   );
@@ -95,12 +107,12 @@ function WidgetCard({
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, minHeight: 36 }}>
-      <div>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", display: "block" }}>{label}</span>
-        {hint && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", display: "block", marginTop: 1 }}>{hint}</span>}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1">
+      <div className="flex flex-col">
+        <span className="text-xs font-bold text-neutral-300">{label}</span>
+        {hint && <span className="text-[10px] text-neutral-500 mt-0.5 max-w-sm leading-normal">{hint}</span>}
       </div>
-      <div style={{ flexShrink: 0 }}>{children}</div>
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }
@@ -168,8 +180,11 @@ export default function WidgetsPage() {
 
   if (!cfg) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: F }}>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Loading…</span>
+      <div className="flex items-center justify-center h-80">
+        <div className="flex gap-2 items-center">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+          <span className="text-xs font-semibold text-neutral-500">Loading widgets…</span>
+        </div>
       </div>
     );
   }
@@ -177,26 +192,29 @@ export default function WidgetsPage() {
   const w = cfg.widgets;
 
   return (
-    <div style={{ fontFamily: F, width: "100%", display: "flex", flexDirection: "column", gap: 28 }}>
-      <style>{`@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none">
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+      <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Widgets</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Embed rich content on your profile page.
-          </p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-red-500" /> Widgets Setup
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">Embed live, interactive cards and integrations onto your public profile.</p>
         </div>
         {saveStatus !== "idle" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12, color: saveStatus === "saved" ? "#22c55e" : saveStatus === "error" ? "#ef4444" : "rgba(255,255,255,0.5)", animation: "slideIn 0.2s ease", fontWeight: 600, flexShrink: 0 }}>
-            {saveStatus === "saved" && <Check style={{ width: 12, height: 12 }} />}
-            {saveStatus === "saving" ? "Auto-saving…" : saveStatus === "saved" ? "Saved!" : "Failed to save"}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold backdrop-blur-md transition-all duration-355 ${
+            saveStatus === "saved" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+            saveStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+            "bg-neutral-900/50 border-neutral-800 text-neutral-400 animate-pulse"
+          }`}>
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5" />}
+            {saveStatus === "saving" ? "Saving updates..." : saveStatus === "saved" ? "Saved!" : "Connection error"}
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="flex flex-col gap-4">
 
         {/* Discord Presence */}
         <WidgetCard
@@ -257,13 +275,13 @@ export default function WidgetsPage() {
             <InputText value={w.github.username} onChange={v => setWidget("github", "username", v)} placeholder="yourusername" />
           </Row>
           {w.github.username && (
-            <div style={{ padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <p style={{ margin: "0 0 6px", fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" }}>Preview</p>
+            <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-850">
+              <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mb-2">Live Preview</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={`https://github-readme-stats.vercel.app/api?username=${w.github.username}&show_icons=true&theme=dark&bg_color=00000000&hide_border=true&text_color=94a3b8&icon_color=dc2626&title_color=fafafa`}
                 alt="GitHub Stats"
-                style={{ maxWidth: "100%", borderRadius: 8 }}
+                className="max-w-full rounded-lg"
               />
             </div>
           )}
@@ -282,8 +300,11 @@ export default function WidgetsPage() {
           onToggle={v => setWidget("time", "enabled", v)}
         >
           <Row label="Timezone">
-            <select value={w.time.timezone} onChange={e => setWidget("time", "timezone", e.target.value)}
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "7px 10px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none" }}>
+            <select 
+              value={w.time.timezone} 
+              onChange={e => setWidget("time", "timezone", e.target.value)}
+              className="bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 text-xs text-white outline-none cursor-pointer focus:border-red-500/40 w-56 font-semibold"
+            >
               {[
                 "UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
                 "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Moscow",
@@ -314,15 +335,15 @@ export default function WidgetsPage() {
             <InputText value={w.spotify.url} onChange={v => setWidget("spotify", "url", v)} placeholder="https://open.spotify.com/track/..." />
           </Row>
           {w.spotify.url && (
-            <div>
-              <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>Preview</p>
+            <div className="p-3.5 rounded-2xl bg-neutral-900 border border-neutral-850">
+              <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mb-2">Embed Preview</p>
               <iframe
                 src={`https://open.spotify.com/embed/${w.spotify.url.split("spotify.com/")[1]?.replace(/\?.*/, "")}`}
                 width="100%"
                 height="80"
                 frameBorder="0"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                style={{ borderRadius: 12 }}
+                className="rounded-xl border-none"
               />
             </div>
           )}

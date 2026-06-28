@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeConfig } from "@/lib/profile/schema";
 import type { ProfileConfig } from "@/lib/profile/schema";
-import { GripVertical, Eye, EyeOff, Check } from "lucide-react";
+import { GripVertical, Eye, EyeOff, Check, Layers } from "lucide-react";
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
 
 const F = "Satoshi, system-ui, sans-serif";
@@ -98,48 +98,50 @@ export default function SectionsPage() {
   const visibleCount = Object.values(visibility).filter(Boolean).length;
 
   return (
-    <div style={{ fontFamily: F, width: "100%", display: "flex", flexDirection: "column", gap: 28 }}>
-      <style>{`@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none">
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+      <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Sections</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Control what appears on your profile and in what order.
-          </p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Layers className="w-6 h-6 text-red-500" /> Sections Layout
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">Control exactly which features display on your profile and their layout order.</p>
         </div>
         {saveStatus !== "idle" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12, color: saveStatus === "saved" ? "#22c55e" : saveStatus === "error" ? "#ef4444" : "rgba(255,255,255,0.5)", animation: "slideIn 0.2s ease", fontWeight: 600, flexShrink: 0 }}>
-            {saveStatus === "saved" && <Check style={{ width: 12, height: 12 }} />}
-            {saveStatus === "saving" ? "Auto-saving…" : saveStatus === "saved" ? "Saved!" : "Failed to save"}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold backdrop-blur-md transition-all duration-350 ${
+            saveStatus === "saved" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+            saveStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+            "bg-neutral-900/50 border-neutral-800 text-neutral-400 animate-pulse"
+          }`}>
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5" />}
+            {saveStatus === "saving" ? "Saving updates..." : saveStatus === "saved" ? "Saved!" : "Connection error"}
           </div>
         )}
       </div>
 
-      {/* Stats row */}
-      <div style={{ display: "flex", gap: 12 }}>
+      {/* Stats Row */}
+      <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Visible sections", value: visibleCount, color: "#22c55e" },
-          { label: "Hidden sections", value: ALL_SECTIONS.length - visibleCount, color: "rgba(255,255,255,0.3)" },
-          { label: "Total", value: ALL_SECTIONS.length, color: "#dc2626" },
+          { label: "Visible sections", value: visibleCount, colorClass: "text-green-400" },
+          { label: "Hidden sections", value: ALL_SECTIONS.length - visibleCount, colorClass: "text-neutral-500" },
+          { label: "Total sections", value: ALL_SECTIONS.length, colorClass: "text-red-500" },
         ].map(s => (
-          <div key={s.label} style={{ flex: 1, borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", padding: "14px 16px" }}>
-            <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: s.color, letterSpacing: "-0.02em" }}>{s.value}</p>
-            <p style={{ margin: "3px 0 0", fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>{s.label}</p>
+          <div key={s.label} className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-4.5">
+            <p className={`text-2xl font-black ${s.colorClass}`}>{s.value}</p>
+            <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Section list */}
-      <div style={{ borderRadius: 20, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
-        <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fafafa" }}>Profile sections</p>
-            <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Drag to reorder. Toggle eye to show/hide.</p>
-          </div>
+      {/* Section List Card */}
+      <div className="bg-neutral-950/60 border border-neutral-900 rounded-2xl overflow-hidden mt-2">
+        <div className="p-5 border-b border-neutral-900">
+          <h3 className="text-sm font-bold text-white">Profile sections</h3>
+          <p className="text-xs text-neutral-500 mt-1">Drag rows using the handle to change layout ordering. Active settings save in real-time.</p>
         </div>
-        <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
+
+        <div className="p-5 flex flex-col gap-2">
           {orderedSections.map((section, idx) => {
             const isDragging = dragIdx === idx;
             const isOver = dragOver === idx;
@@ -151,38 +153,39 @@ export default function SectionsPage() {
                 onDragStart={() => setDragIdx(idx)}
                 onDragOver={e => { e.preventDefault(); setDragOver(idx); }}
                 onDragEnd={handleDragEnd}
-                style={{
-                  display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                  borderRadius: 14,
-                  background: isDragging ? "rgba(220,38,38,0.08)" : isOver ? "rgba(255,255,255,0.06)" : isVisible ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.01)",
-                  border: `1px solid ${isOver ? "rgba(220,38,38,0.3)" : isVisible ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.03)"}`,
-                  opacity: isDragging ? 0.5 : isVisible ? 1 : 0.45,
-                  transition: "all 0.15s",
-                  cursor: "grab",
-                  userSelect: "none",
-                }}
+                className={`flex items-center gap-3.5 p-3 rounded-xl border bg-neutral-950 transition duration-150 cursor-grab active:cursor-grabbing ${
+                  isDragging ? "opacity-40 border-red-500/50 bg-red-950/10" :
+                  isOver ? "border-red-500/30 bg-red-950/5" :
+                  "border-neutral-900/60 hover:border-neutral-800"
+                }`}
               >
-                <GripVertical style={{ width: 14, height: 14, color: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
+                <div className="text-neutral-600 hover:text-neutral-400 p-1 cursor-grab">
+                  <GripVertical className="w-4 h-4" />
+                </div>
 
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                <div className="w-9 h-9 rounded-lg bg-neutral-900 flex items-center justify-center text-base shrink-0 select-none">
                   {section.emoji}
                 </div>
 
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: isVisible ? "#fafafa" : "rgba(255,255,255,0.4)" }}>{section.label}</p>
-                  <p style={{ margin: "1px 0 0", fontSize: 11, color: "rgba(255,255,255,0.25)" }}>{section.desc}</p>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs font-bold ${isVisible ? "text-white" : "text-neutral-500"}`}>{section.label}</p>
+                  <p className="text-[10px] text-neutral-500 mt-0.5">{section.desc}</p>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontWeight: 600 }}>#{idx + 1}</span>
+                <div className="flex items-center gap-3.5 shrink-0 select-none">
+                  <span className="text-[10px] font-mono font-semibold text-neutral-600">#{idx + 1}</span>
                   <button
                     onClick={() => toggleVisibility(section.id)}
-                    style={{ width: 32, height: 32, borderRadius: 9, background: isVisible ? "rgba(34,197,94,0.08)" : "rgba(255,255,255,0.04)", border: `1px solid ${isVisible ? "rgba(34,197,94,0.2)" : "rgba(255,255,255,0.07)"}`, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s" }}
+                    className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all ${
+                      isVisible 
+                        ? "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white" 
+                        : "bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20"
+                    }`}
                     title={isVisible ? "Hide section" : "Show section"}
                   >
                     {isVisible
-                      ? <Eye style={{ width: 13, height: 13, color: "#22c55e" }} />
-                      : <EyeOff style={{ width: 13, height: 13, color: "rgba(255,255,255,0.3)" }} />}
+                      ? <Eye className="w-4 h-4 text-green-400" />
+                      : <EyeOff className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -192,7 +195,7 @@ export default function SectionsPage() {
       </div>
 
       {/* Hint */}
-      <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.2)", textAlign: "center", lineHeight: 1.6 }}>
+      <p className="text-xs text-neutral-500 text-center leading-relaxed">
         Changes are saved automatically. Hidden sections won't appear on your public profile.
       </p>
     </div>

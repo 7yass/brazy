@@ -7,20 +7,26 @@ import { normalizeConfig, ProfileConfig } from "@/lib/profile/schema";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
 
-const F = "Satoshi, system-ui, sans-serif";
+// ─── Shared primitives ──────────────────────────────────────────────
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button role="switch" aria-checked={value} onClick={() => onChange(!value)}
-      style={{ width: 44, height: 24, borderRadius: 99, cursor: "pointer", border: "none", padding: 2, background: value ? "#dc2626" : "rgba(255,255,255,0.1)", transition: "background 0.2s", display: "flex", alignItems: "center", flexShrink: 0 }}>
-      <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", transform: value ? "translateX(20px)" : "translateX(0)", transition: "transform 0.2s cubic-bezier(0.22,1,0.36,1)", display: "block", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
+    <button
+      role="switch"
+      aria-checked={value}
+      onClick={() => onChange(!value)}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${value ? "bg-red-600" : "bg-neutral-800"}`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? "translate-x-5" : "translate-x-0"}`}
+      />
     </button>
   );
 }
 
 function Card({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ borderRadius: 20, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", boxShadow: "0 4px 24px rgba(0,0,0,0.2)", overflow: "hidden" }}>
+    <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl overflow-hidden shadow-2xl">
       {children}
     </div>
   );
@@ -28,17 +34,17 @@ function Card({ children }: { children: React.ReactNode }) {
 
 function CardHeader({ icon: Icon, color, title, description, action }: { icon: React.ElementType; color: string; title: string; description: string; action?: React.ReactNode }) {
   return (
-    <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14 }}>
-      <div style={{ display: "flex", gap: 14 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Icon style={{ width: 16, height: 16, color }} />
+    <div className="p-5 border-b border-neutral-900/60 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3.5">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}15` }}>
+          <Icon className="w-4.5 h-4.5" style={{ color }} />
         </div>
         <div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fafafa" }}>{title}</p>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)", lineHeight: 1.6 }}>{description}</p>
+          <h3 className="text-sm font-bold text-white leading-snug">{title}</h3>
+          <p className="text-[11px] text-neutral-500 mt-0.5 leading-normal max-w-xl">{description}</p>
         </div>
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
@@ -101,77 +107,85 @@ export default function AdvancePage() {
 
   if (!cfg) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: F }}>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Loading…</span>
+      <div className="flex items-center justify-center h-80">
+        <div className="flex gap-2 items-center">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+          <span className="text-xs font-semibold text-neutral-500">Loading settings…</span>
+        </div>
       </div>
     );
   }
 
-  const inputBase: React.CSSProperties = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "12px 14px", fontSize: 13, color: "#fafafa", fontFamily: "var(--font-geist-mono), monospace", outline: "none", width: "100%", boxSizing: "border-box", minHeight: 120, resize: "vertical" };
-
   return (
-    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 24, fontFamily: F }}>
-      <style>{`@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none">
 
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
         <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Advanced</h1>
-          <p style={{ margin: "4px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Power user settings for your profile.</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Globe className="w-6 h-6 text-red-500" /> Advanced Options
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">Configure tracking, custom code injections, and profile account management.</p>
         </div>
         {saveStatus !== "idle" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12, color: saveStatus === "saved" ? "#22c55e" : saveStatus === "error" ? "#ef4444" : "rgba(255,255,255,0.5)", animation: "slideIn 0.2s ease", fontWeight: 600, flexShrink: 0 }}>
-            {saveStatus === "saved" && <Check style={{ width: 12, height: 12 }} />}
-            {saveStatus === "saving" ? "Auto-saving…" : saveStatus === "saved" ? "Saved!" : "Failed to save"}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold backdrop-blur-md transition-all duration-355 ${
+            saveStatus === "saved" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+            saveStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+            "bg-neutral-900/50 border-neutral-800 text-neutral-400 animate-pulse"
+          }`}>
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5" />}
+            {saveStatus === "saving" ? "Saving updates..." : saveStatus === "saved" ? "Saved!" : "Connection error"}
           </div>
         )}
       </div>
 
       <Card>
         <CardHeader 
-          icon={BarChart} color="#3b82f6" 
-          title="Analytics" 
-          description="Track how many people are viewing your profile."
+          icon={BarChart} color="#ef4444" 
+          title="Profile Analytics" 
+          description="Enables tracking of page visit counts and analytics. You can view stats under Overview."
           action={<Toggle value={cfg.analytics.trackViews} onChange={v => updateAnalytics({ trackViews: v })} />}
         />
       </Card>
 
       <Card>
-        <CardHeader icon={Code2} color="#a78bfa" title="Custom CSS" description="Inject your own CSS to fully override the default styles on your profile page. Applies to the entire page." />
-        <div style={{ padding: "20px 24px" }}>
+        <CardHeader icon={Code2} color="#ec4899" title="Custom CSS Styling" description="Write custom CSS rules to fully override the appearance of your public bio card (e.g. targeting .brazy-card)." />
+        <div className="p-5">
           <textarea 
             value={cfg.customCss || ""} 
             onChange={e => updateCfg({ customCss: e.target.value })} 
-            placeholder="/* Add your custom styles here */&#10;.brazy-card {&#10;  border-radius: 0px;&#10;}" 
-            style={inputBase} 
+            placeholder="/* Write custom CSS styles here */&#10;.brazy-card {&#10;  box-shadow: 0 8px 32px rgba(220, 38, 38, 0.25);&#10;}" 
+            className="w-full bg-neutral-900/40 border border-neutral-850 focus:border-red-500/40 rounded-xl p-4 text-xs font-mono text-neutral-300 placeholder-neutral-700 outline-none resize-none leading-relaxed min-h-[140px] transition"
           />
         </div>
       </Card>
 
       <Card>
-        <CardHeader icon={Code} color="#10b981" title="Custom HTML Block" description="Inject arbitrary HTML into the Custom HTML section on your profile. Enable it in the Sections tab." />
-        <div style={{ padding: "20px 24px" }}>
+        <CardHeader icon={Code} color="#10b981" title="Custom HTML Block" description="Inject a custom HTML chunk onto your page layout. Make sure to toggle its visibility on in the Layout/Sections tab." />
+        <div className="p-5">
           <textarea 
             value={cfg.customHtml || ""} 
             onChange={e => updateCfg({ customHtml: e.target.value })} 
-            placeholder='<div class="my-custom-widget">Hello world!</div>' 
-            style={inputBase} 
+            placeholder='<div class="custom-widget-block">&#10;  <h3>Custom block title</h3>&#10;  <p>Hello world!</p>&#10;</div>' 
+            className="w-full bg-neutral-900/40 border border-neutral-850 focus:border-red-500/40 rounded-xl p-4 text-xs font-mono text-neutral-300 placeholder-neutral-700 outline-none resize-none leading-relaxed min-h-[140px] transition"
           />
         </div>
       </Card>
 
-      <div style={{ borderRadius: 20, border: "1px solid rgba(239,68,68,0.2)", background: "rgba(239,68,68,0.03)", overflow: "hidden" }}>
-        <div style={{ padding: "20px 24px 0", display: "flex", alignItems: "flex-start", gap: 14 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(239,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <AlertTriangle style={{ width: 16, height: 16, color: "#ef4444" }} />
+      {/* Danger Zone */}
+      <div className="bg-red-950/5 border border-red-500/25 rounded-2xl overflow-hidden">
+        <div className="p-5 flex items-start gap-4 border-b border-red-500/10">
+          <div className="w-9 h-9 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
           </div>
           <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#ef4444" }}>Danger Zone</p>
-            <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)", lineHeight: 1.6 }}>Permanently delete your account and all associated data. This cannot be undone.</p>
+            <h3 className="text-sm font-bold text-red-500">Danger Zone</h3>
+            <p className="text-xs text-neutral-500 mt-1 leading-normal max-w-xl">Permanently delete your profile page, username reservation, custom layout, and all associated analytics data. This operation is absolute and cannot be undone.</p>
           </div>
         </div>
-        <div style={{ padding: "16px 24px 22px" }}>
-          <button style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: F }}>
-            <Trash2 style={{ width: 14, height: 14 }} /> Delete account
+        <div className="p-5">
+          <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/30 text-xs font-bold transition duration-150 cursor-pointer">
+            <Trash2 className="w-4 h-4" /> Delete Profile & Account
           </button>
         </div>
       </div>

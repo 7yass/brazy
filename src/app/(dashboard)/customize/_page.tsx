@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { normalizeConfig } from "@/lib/profile/schema";
-import type { ProfileConfig } from "@/lib/profile/schema";
 import {
   Image as ImageIcon, Palette, Type, MousePointer2, Sparkles,
   Music, Link2, Layout, Globe, Code, ChevronDown, ChevronRight,
@@ -11,56 +8,60 @@ import {
 } from "lucide-react";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
-
-const F = "Satoshi, system-ui, sans-serif";
+import { normalizeConfig } from "@/lib/profile/schema";
+import type { ProfileConfig } from "@/lib/profile/schema";
 
 // ─── Shared primitives ─────────────────────────────────────────────────────────
 
 function SectionCard({
-  icon: Icon, label, children, defaultOpen = true,
+  icon: Icon, label, children, defaultOpen = false,
 }: {
   icon: React.ElementType; label: string; children: React.ReactNode; defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div style={{ borderRadius: 18, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.018)", overflow: "hidden" }}>
+    <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl overflow-hidden transition duration-150">
       <button
         onClick={() => setOpen(!open)}
-        style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", borderBottom: open ? "1px solid rgba(255,255,255,0.05)" : "none", transition: "border 0.2s" }}
+        className="w-full flex items-center gap-3 px-5 py-4 bg-transparent border-none cursor-pointer text-left focus:outline-none select-none group"
       >
-        <div style={{ width: 28, height: 28, borderRadius: 9, background: "rgba(220,38,38,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Icon style={{ width: 13, height: 13, color: "#dc2626" }} />
+        <div className="w-8 h-8 rounded-lg bg-red-600/10 flex items-center justify-center shrink-0 transition duration-150 group-hover:scale-105">
+          <Icon className="w-4 h-4 text-red-500" />
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.8)", flex: 1, textAlign: "left" }}>{label}</span>
+        <span className="text-xs font-bold text-neutral-300 group-hover:text-white transition-colors flex-1">{label}</span>
         {open
-          ? <ChevronDown style={{ width: 14, height: 14, color: "rgba(255,255,255,0.3)" }} />
-          : <ChevronRight style={{ width: 14, height: 14, color: "rgba(255,255,255,0.3)" }} />}
+          ? <ChevronDown className="w-4 h-4 text-neutral-500 group-hover:text-neutral-300 transition-colors" />
+          : <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-neutral-300 transition-colors" />}
       </button>
-      {open && <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>{children}</div>}
+      {open && (
+        <div className="px-6 pb-6 pt-3 border-t border-neutral-900/60 flex flex-col gap-4.5 animate-in slide-in-from-top-2 duration-200">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
 function Row({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, minHeight: 36 }}>
-      <div style={{ flexShrink: 0 }}>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", display: "block" }}>{label}</span>
-        {hint && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", display: "block", marginTop: 1 }}>{hint}</span>}
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-1">
+      <div className="flex flex-col">
+        <span className="text-xs font-bold text-neutral-300">{label}</span>
+        {hint && <span className="text-[10px] text-neutral-500 mt-0.5 max-w-sm leading-normal">{hint}</span>}
       </div>
-      <div style={{ flexShrink: 0 }}>{children}</div>
+      <div className="shrink-0">{children}</div>
     </div>
   );
 }
 
 function ColorPill({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "5px 10px", cursor: "pointer" }}>
-      <label style={{ cursor: "pointer", position: "relative" }}>
-        <div style={{ width: 18, height: 18, borderRadius: 5, background: value, border: "1px solid rgba(255,255,255,0.15)", flexShrink: 0 }} />
-        <input type="color" value={value} onChange={e => onChange(e.target.value)} style={{ opacity: 0, position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "pointer" }} />
+    <div className="flex items-center gap-2.5 bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 w-fit hover:border-neutral-700 transition duration-150">
+      <label className="cursor-pointer relative">
+        <div className="w-5 h-5 rounded-md border border-white/10 shrink-0" style={{ backgroundColor: value }} />
+        <input type="color" value={value} onChange={e => onChange(e.target.value)} className="opacity-0 absolute inset-0 cursor-pointer w-full h-full" />
       </label>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "monospace" }}>{value.toUpperCase()}</span>
+      <span className="text-[11px] font-mono text-neutral-400 font-semibold">{value.toUpperCase()}</span>
     </div>
   );
 }
@@ -71,9 +72,11 @@ function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) =>
       role="switch"
       aria-checked={value}
       onClick={() => onChange(!value)}
-      style={{ width: 44, height: 24, borderRadius: 99, cursor: "pointer", border: "none", padding: 2, background: value ? "#dc2626" : "rgba(255,255,255,0.1)", transition: "background 0.2s", display: "flex", alignItems: "center", flexShrink: 0 }}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${value ? "bg-red-600" : "bg-neutral-800"}`}
     >
-      <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", transform: value ? "translateX(20px)" : "translateX(0)", transition: "transform 0.2s cubic-bezier(0.22,1,0.36,1)", display: "block", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${value ? "translate-x-5" : "translate-x-0"}`}
+      />
     </button>
   );
 }
@@ -84,28 +87,42 @@ function SliderRow({ value, onChange, min, max, step = 1, format }: {
   const pct = ((value - min) / (max - min)) * 100;
   const display = format ? format(value) : String(value);
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", maxWidth: 260 }}>
-      <div style={{ flex: 1, position: "relative", height: 22, display: "flex", alignItems: "center" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.07)" }}>
-          <div style={{ position: "absolute", left: 0, width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#dc2626,#e11d48)", borderRadius: 99 }} />
+    <div className="flex items-center gap-4 w-60">
+      <div className="relative flex-1 h-5 flex items-center">
+        <div className="absolute left-0 right-0 h-1 rounded-full bg-neutral-850">
+          <div className="absolute left-0 h-full rounded-full bg-gradient-to-r from-red-600 to-rose-500" style={{ width: `${pct}%` }} />
         </div>
-        <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(Number(e.target.value))}
-          style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: "pointer", height: 22, margin: 0 }} />
-        <div style={{ position: "absolute", left: `calc(${pct}% - 9px)`, width: 18, height: 18, borderRadius: "50%", background: "#dc2626", border: "2px solid #fff", boxShadow: "0 1px 6px rgba(220,38,38,0.5)", pointerEvents: "none" }} />
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="absolute inset-0 w-full h-5 opacity-0 cursor-pointer"
+        />
+        <div
+          className="absolute w-3.5 h-3.5 rounded-full bg-red-600 border-2 border-white shadow-md pointer-events-none transition-all duration-75"
+          style={{ left: `calc(${pct}% - 7px)` }}
+        />
       </div>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", minWidth: 38, textAlign: "right", flexShrink: 0 }}>{display}</span>
+      <span className="text-[10px] font-mono text-neutral-500 font-semibold min-w-[32px] text-right">{display}</span>
     </div>
   );
 }
 
 function Chips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[] }) {
   return (
-    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+    <div className="flex gap-2 flex-wrap">
       {options.map(o => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          style={{ padding: "5px 12px", borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: F, cursor: "pointer", border: value === o.value ? "1px solid rgba(220,38,38,0.5)" : "1px solid rgba(255,255,255,0.07)", background: value === o.value ? "rgba(220,38,38,0.12)" : "rgba(255,255,255,0.03)", color: value === o.value ? "#dc2626" : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
+          className={`px-3.5 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
+            value === o.value
+              ? "bg-red-600/10 border-red-600/40 text-red-500"
+              : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-neutral-250 hover:bg-neutral-900/60"
+          }`}
         >
           {o.label}
         </button>
@@ -117,12 +134,11 @@ function Chips<T extends string>({ value, onChange, options }: { value: T; onCha
 function InputText({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <input
+      type="text"
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 12px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none", width: "100%", boxSizing: "border-box", transition: "border-color 0.15s" }}
-      onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.5)"; }}
-      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
+      className="bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 w-56 transition"
     />
   );
 }
@@ -134,24 +150,26 @@ function TextArea({ value, onChange, placeholder, rows = 3 }: { value: string; o
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       rows={rows}
-      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none", width: "100%", boxSizing: "border-box", resize: "vertical", transition: "border-color 0.15s", lineHeight: 1.6 }}
-      onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.5)"; }}
-      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.08)"; }}
+      className="bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 w-full transition resize-none leading-relaxed"
     />
   );
 }
 
 function TileGrid<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: { value: T; label: string; emoji?: string }[] }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))", gap: 6 }}>
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 w-full">
       {options.map(o => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "10px 6px", borderRadius: 12, cursor: "pointer", border: value === o.value ? "1px solid rgba(220,38,38,0.5)" : "1px solid rgba(255,255,255,0.06)", background: value === o.value ? "rgba(220,38,38,0.1)" : "rgba(255,255,255,0.02)", transition: "all 0.15s", fontFamily: F }}
+          className={`flex flex-col items-center justify-center p-3.5 rounded-xl border bg-neutral-950 transition duration-150 cursor-pointer group text-center ${
+            value === o.value
+              ? "border-red-600/30 bg-red-600/5"
+              : "border-neutral-900 hover:border-red-600/30 hover:bg-neutral-900/30"
+          }`}
         >
-          {o.emoji && <span style={{ fontSize: 16 }}>{o.emoji}</span>}
-          <span style={{ fontSize: 10, fontWeight: 600, color: value === o.value ? "#dc2626" : "rgba(255,255,255,0.35)", textAlign: "center", lineHeight: 1.2 }}>{o.label}</span>
+          {o.emoji && <span className="text-base mb-1.5 transition-transform duration-200 group-hover:scale-110">{o.emoji}</span>}
+          <span className={`text-[10px] font-bold tracking-tight truncate w-full ${value === o.value ? "text-red-500" : "text-neutral-400 group-hover:text-white"}`}>{o.label}</span>
         </button>
       ))}
     </div>
@@ -159,7 +177,7 @@ function TileGrid<T extends string>({ value, onChange, options }: { value: T; on
 }
 
 function Divider() {
-  return <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "2px 0" }} />;
+  return <div className="h-px bg-neutral-900/80 my-2" />;
 }
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
@@ -239,37 +257,39 @@ export default function CustomizePage() {
 
   if (!cfg) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: F }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626", animation: "pulse 1.2s ease-in-out infinite" }} />
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Loading your profile…</span>
+      <div className="flex items-center justify-center h-80">
+        <div className="flex gap-2 items-center">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+          <span className="text-xs font-semibold text-neutral-500">Loading your profile…</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ fontFamily: F, width: "100%", display: "flex", flexDirection: "column", gap: 28 }}>
-      <style>{`
-        @keyframes pulse { 0%,100%{opacity:0.3;transform:scale(0.9)} 50%{opacity:1;transform:scale(1.1)} }
-        @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
-      `}</style>
-
+    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none">
+      
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+      <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Customize</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Design every pixel of your brazy page.</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Palette className="w-6 h-6 text-red-500" /> Customize Profile
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">Design every visual component of your custom page card.</p>
         </div>
         {saveStatus !== "idle" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12, color: saveStatus === "saved" ? "#22c55e" : saveStatus === "error" ? "#ef4444" : "rgba(255,255,255,0.5)", animation: "slideIn 0.2s ease", fontWeight: 600 }}>
-            {saveStatus === "saved" && <Check style={{ width: 12, height: 12 }} />}
-            {saveStatus === "saving" ? "Saving…" : saveStatus === "saved" ? "Saved!" : "Failed to save"}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold backdrop-blur-md transition-all duration-350 ${
+            saveStatus === "saved" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+            saveStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+            "bg-neutral-900/50 border-neutral-800 text-neutral-400 animate-pulse"
+          }`}>
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5" />}
+            {saveStatus === "saving" ? "Saving updates..." : saveStatus === "saved" ? "Saved!" : "Connection error"}
           </div>
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="flex flex-col gap-4">
 
         {/* ─── Identity ─────────────────────────────────────────────── */}
         <SectionCard icon={Type} label="Identity">

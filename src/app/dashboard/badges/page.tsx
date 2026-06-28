@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Plus, GripVertical, Trash2, Check, Sparkles } from "lucide-react";
+import { Plus, GripVertical, Trash2, Check, Sparkles, Award } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeConfig, ProfileConfig } from "@/lib/profile/schema";
 
@@ -123,8 +123,11 @@ export default function BadgesPage() {
 
   if (!cfg) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300, fontFamily: F }}>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>Loading…</span>
+      <div className="flex items-center justify-center h-80">
+        <div className="flex gap-2 items-center">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+          <span className="text-xs font-semibold text-neutral-500">Loading badges…</span>
+        </div>
       </div>
     );
   }
@@ -132,58 +135,65 @@ export default function BadgesPage() {
   const { badges } = cfg;
 
   return (
-    <div style={{ fontFamily: F, width: "100%", display: "flex", flexDirection: "column", gap: 28 }}>
-      <style>{`@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
+    <div className="flex flex-col gap-8 w-full max-w-4xl mx-auto pb-12 select-none">
 
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+      <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Custom Badges</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Create and display custom badges on your profile.
-          </p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Award className="w-6 h-6 text-red-500" /> Custom Badges
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">Design and order unique achievement, role, or hobby badges for your profile name row.</p>
         </div>
         {saveStatus !== "idle" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12, color: saveStatus === "saved" ? "#22c55e" : saveStatus === "error" ? "#ef4444" : "rgba(255,255,255,0.5)", animation: "slideIn 0.2s ease", fontWeight: 600, flexShrink: 0 }}>
-            {saveStatus === "saved" && <Check style={{ width: 12, height: 12 }} />}
-            {saveStatus === "saving" ? "Auto-saving…" : saveStatus === "saved" ? "Saved!" : "Failed to save"}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold backdrop-blur-md transition-all duration-350 ${
+            saveStatus === "saved" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+            saveStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+            "bg-neutral-900/50 border-neutral-800 text-neutral-400 animate-pulse"
+          }`}>
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5" />}
+            {saveStatus === "saving" ? "Saving updates..." : saveStatus === "saved" ? "Saved!" : "Connection error"}
           </div>
         )}
       </div>
 
-      <div style={{ borderRadius: 18, border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", overflow: "hidden" }}>
-        <div style={{ padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(220,38,38,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Sparkles style={{ width: 16, height: 16, color: "#dc2626" }} />
+      <div className="bg-neutral-950/60 border border-neutral-900 rounded-2xl overflow-hidden mt-2">
+        <div className="p-5 border-b border-neutral-900 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-red-600/10 flex items-center justify-center shrink-0">
+              <Sparkles className="w-4 h-4 text-red-500" />
             </div>
             <div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fafafa" }}>Enable Custom Badges</p>
-              <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Display badges below your display name</p>
+              <h3 className="text-sm font-bold text-white">Enable Custom Badges</h3>
+              <p className="text-xs text-neutral-500 mt-0.5">Toggle display of badges under your name row.</p>
             </div>
           </div>
           <Toggle value={badges.enabled} onChange={v => updateBadges({ enabled: v })} />
         </div>
         
         {badges.enabled && (
-          <div style={{ padding: "18px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)" }}>Your Badges ({badges.items.length}/10)</span>
+          <div className="p-5 flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-neutral-900 pb-4 mb-1">
+              <span className="text-xs font-bold text-neutral-400">Your Badges ({badges.items.length}/10)</span>
               <button 
                 onClick={addItem} 
                 disabled={badges.items.length >= 10}
-                style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", borderRadius: 8, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.2)", color: "#dc2626", fontSize: 12, fontWeight: 600, cursor: badges.items.length >= 10 ? "not-allowed" : "pointer", opacity: badges.items.length >= 10 ? 0.5 : 1 }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600/10 border border-red-600/25 hover:bg-red-600/20 text-red-500 text-xs font-bold transition duration-150 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
               >
-                <Plus style={{ width: 12, height: 12 }} /> Add Badge
+                <Plus className="w-4.5 h-4.5" /> Add Badge
               </button>
             </div>
 
             {badges.items.length === 0 ? (
-              <div style={{ padding: "32px", textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 12, border: "1px dashed rgba(255,255,255,0.1)" }}>
-                <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.3)" }}>No custom badges created yet.</p>
+              <div className="border border-dashed border-neutral-850 rounded-2xl py-12 px-4 text-center flex flex-col items-center gap-3 bg-neutral-950/20">
+                <div className="w-12 h-12 rounded-xl bg-neutral-900 flex items-center justify-center">
+                  <Award className="w-6 h-6 text-neutral-600" />
+                </div>
+                <p className="text-sm font-semibold text-neutral-450">No custom badges built yet</p>
+                <p className="text-xs text-neutral-600 max-w-[280px]">Enable layout slots and press "Add Badge" above to start custom design rows.</p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 {badges.items.map((item: any, idx) => {
                   const isDragging = dragIdx === idx;
                   const isOver = dragOver === idx;
@@ -195,37 +205,35 @@ export default function BadgesPage() {
                       onDragStart={() => setDragIdx(idx)}
                       onDragOver={e => { e.preventDefault(); setDragOver(idx); }}
                       onDragEnd={handleDragEnd}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 12, padding: "12px 14px",
-                        borderRadius: 14,
-                        background: isDragging ? "rgba(220,38,38,0.08)" : isOver ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
-                        border: `1px solid ${isOver ? "rgba(220,38,38,0.3)" : "rgba(255,255,255,0.07)"}`,
-                        opacity: isDragging ? 0.5 : 1,
-                        transition: "all 0.15s",
-                      }}
+                      className={`flex items-center gap-3 p-3 rounded-xl border bg-neutral-950 transition duration-150 cursor-grab active:cursor-grabbing ${
+                        isDragging ? "opacity-40 border-red-500/50 bg-red-950/10" :
+                        isOver ? "border-red-500/30 bg-red-950/5" :
+                        "border-neutral-900/60 hover:border-neutral-800"
+                      }`}
                     >
-                      <div style={{ cursor: "grab", display: "flex", padding: 4 }}>
-                        <GripVertical style={{ width: 14, height: 14, color: "rgba(255,255,255,0.15)" }} />
+                      <div className="text-neutral-600 hover:text-neutral-400 p-1 cursor-grab">
+                        <GripVertical className="w-4 h-4" />
                       </div>
                       
-                      <div style={{ width: 44 }}>
+                      <div className="w-16 shrink-0">
                         <InputText value={item.emoji} onChange={v => updateItem(idx, { emoji: v })} placeholder="⭐" />
                       </div>
                       
-                      <div style={{ flex: 1, minWidth: 100 }}>
-                        <InputText value={item.label} onChange={v => updateItem(idx, { label: v })} placeholder="Label (e.g. VIP)" />
+                      <div className="flex-1 min-w-[100px]">
+                        <InputText value={item.label} onChange={v => updateItem(idx, { label: v })} placeholder="VIP / Founder" />
                       </div>
                       
-                      <div style={{ flex: 1.5, minWidth: 120 }}>
-                        <InputText value={item.tooltip} onChange={v => updateItem(idx, { tooltip: v })} placeholder="Tooltip (optional)" />
+                      <div className="flex-1.5 min-w-[120px]">
+                        <InputText value={item.tooltip} onChange={v => updateItem(idx, { tooltip: v })} placeholder="Tooltip on hover" />
                       </div>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                      <div className="flex items-center shrink-0">
                         <button
                           onClick={() => removeItem(idx)}
-                          style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s" }}
+                          className="w-9 h-9 rounded-lg bg-red-600/10 border border-red-600/20 hover:bg-red-600 hover:border-red-600 text-red-500 hover:text-white flex items-center justify-center transition duration-150"
+                          title="Delete badge"
                         >
-                          <Trash2 style={{ width: 13, height: 13, color: "#ef4444" }} />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>

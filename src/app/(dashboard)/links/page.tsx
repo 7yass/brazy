@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { normalizeConfig } from "@/lib/profile/schema";
 import {
   Plus, Trash2, GripVertical, Link2, Check,
-  Globe, Eye, EyeOff, LayoutGrid, AlignLeft, X, Save,
+  Globe, Eye, EyeOff, LayoutGrid, AlignLeft, X, Save, Sparkles, HelpCircle,
 } from "lucide-react";
 import {
   FaXTwitter, FaInstagram, FaYoutube, FaGithub,
@@ -16,8 +14,6 @@ import {
 import { SiThreads, SiMastodon, SiKick, SiRoblox } from "react-icons/si";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
-
-const F = "Satoshi, system-ui, sans-serif";
 
 const PLATFORMS = [
   { value: "twitter",     label: "Twitter / X",   Icon: FaXTwitter,   color: "#e7e9ea",  placeholder: "https://x.com/username" },
@@ -61,9 +57,15 @@ function LinkIcon({ platform, custom, size = 15 }: { platform: ReturnType<typeof
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button role="switch" aria-checked={checked} onClick={() => onChange(!checked)}
-      style={{ width: 44, height: 24, borderRadius: 99, cursor: "pointer", border: "none", padding: 2, background: checked ? "#dc2626" : "rgba(255,255,255,0.1)", transition: "background 0.2s", display: "flex", alignItems: "center", flexShrink: 0 }}>
-      <span style={{ width: 20, height: 20, borderRadius: "50%", background: "#fff", transform: checked ? "translateX(20px)" : "translateX(0)", transition: "transform 0.2s cubic-bezier(0.22,1,0.36,1)", display: "block", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${checked ? "bg-red-600" : "bg-neutral-800"}`}
+    >
+      <span
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${checked ? "translate-x-5" : "translate-x-0"}`}
+      />
     </button>
   );
 }
@@ -73,89 +75,25 @@ function Slider({ min, max, value, onChange, format = (v: number) => String(v) }
 }) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div style={{ flex: 1, position: "relative", height: 22, display: "flex", alignItems: "center" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, height: 4, borderRadius: 99, background: "rgba(255,255,255,0.07)" }}>
-          <div style={{ position: "absolute", left: 0, width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#dc2626,#e11d48)", borderRadius: 99 }} />
+    <div className="flex items-center gap-4 w-full">
+      <div className="relative flex-1 h-5 flex items-center">
+        <div className="absolute left-0 right-0 h-1.5 rounded-full bg-neutral-800">
+          <div className="absolute left-0 h-full rounded-full bg-gradient-to-r from-red-600 to-rose-500" style={{ width: `${pct}%` }} />
         </div>
-        <input type="range" min={min} max={max} value={value} onChange={e => onChange(Number(e.target.value))}
-          style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: "pointer", height: 22, margin: 0 }} />
-        <div style={{ position: "absolute", left: `calc(${pct}% - 9px)`, width: 18, height: 18, borderRadius: "50%", background: "#dc2626", border: "2px solid #fff", boxShadow: "0 1px 6px rgba(220,38,38,0.5)", pointerEvents: "none" }} />
-      </div>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", minWidth: 32, textAlign: "right", flexShrink: 0 }}>{format(value)}</span>
-    </div>
-  );
-}
-
-function AddLinkDialog({ open, onClose, onAdd }: {
-  open: boolean; onClose: () => void; onAdd: (link: Omit<SocialLink, "id" | "visible">) => void;
-}) {
-  const [platform, setPlatform] = useState("website");
-  const [url, setUrl] = useState("");
-  const [label, setLabel] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) { setPlatform("website"); setUrl(""); setLabel(""); setTimeout(() => inputRef.current?.focus(), 80); }
-  }, [open]);
-
-  if (!open) return null;
-  const p = getPlatform(platform);
-
-  const handleAdd = () => {
-    if (!url.trim()) return;
-    onAdd({ platform, url: url.trim(), label: label.trim() || p.label, color: p.color });
-    onClose();
-  };
-
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, borderRadius: 24, background: "#0d0d0d", border: "1px solid rgba(255,255,255,0.09)", padding: 28, fontFamily: F, boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
-          <div>
-            <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#fafafa" }}>Add a link</h2>
-            <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.35)" }}>Choose a platform and paste your URL.</p>
-          </div>
-          <button onClick={onClose} style={{ width: 30, height: 30, borderRadius: 9, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <X style={{ width: 13, height: 13, color: "rgba(255,255,255,0.4)" }} />
-          </button>
-        </div>
-        <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Platform</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 6, marginBottom: 18, maxHeight: 240, overflowY: "auto" }}>
-          {PLATFORMS.map(pl => {
-            const { Icon, color } = pl;
-            const active = platform === pl.value;
-            return (
-              <button key={pl.value} onClick={() => setPlatform(pl.value)} title={pl.label}
-                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, padding: "10px 6px", borderRadius: 12, cursor: "pointer", border: active ? `1px solid ${color}55` : "1px solid rgba(255,255,255,0.06)", background: active ? `${color}18` : "rgba(255,255,255,0.02)", transition: "all 0.12s" }}>
-                <Icon style={{ width: 16, height: 16, color: active ? color : "rgba(255,255,255,0.35)" }} />
-                <span style={{ fontSize: 9, color: active ? color : "rgba(255,255,255,0.25)", fontWeight: 600, textAlign: "center", lineHeight: 1.2, fontFamily: F }}>{pl.label.split(" / ")[0]}</span>
-              </button>
-            );
-          })}
-        </div>
-        <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>URL</p>
-        <input ref={inputRef} value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAdd()}
-          placeholder={p.placeholder}
-          style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none", marginBottom: 10 }}
-          onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.5)"; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; }}
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={value}
+          onChange={e => onChange(Number(e.target.value))}
+          className="absolute inset-0 w-full h-5 opacity-0 cursor-pointer"
         />
-        <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Label (optional)</p>
-        <input value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAdd()}
-          placeholder={p.label}
-          style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#fafafa", fontFamily: F, outline: "none", marginBottom: 20 }}
-          onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.5)"; }}
-          onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; }}
+        <div
+          className="absolute w-4.5 h-4.5 rounded-full bg-red-600 border-2 border-white shadow-md pointer-events-none transition-all duration-75"
+          style={{ left: `calc(${pct}% - 9px)` }}
         />
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "11px", borderRadius: 12, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: F }}>Cancel</button>
-          <button onClick={handleAdd} disabled={!url.trim()}
-            style={{ flex: 2, padding: "11px", borderRadius: 12, background: url.trim() ? "linear-gradient(135deg,#dc2626,#e11d48)" : "rgba(255,255,255,0.04)", border: "none", color: url.trim() ? "#fff" : "rgba(255,255,255,0.2)", fontSize: 13, fontWeight: 700, cursor: url.trim() ? "pointer" : "default", fontFamily: F, boxShadow: url.trim() ? "0 4px 16px rgba(220,38,38,0.3)" : "none" }}>
-            Add link
-          </button>
-        </div>
       </div>
+      <span className="text-xs text-neutral-500 font-medium min-w-[32px] text-right">{format(value)}</span>
     </div>
   );
 }
@@ -166,7 +104,12 @@ export default function LinksPage() {
   const [custom, setCustom] = useState<LinkCustom>({ monochrome: false, glow: false, iconColor: "#dc2626", glowStrength: 2, iconSize: 100 });
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [userId, setUserId] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  
+  // Modal State
+  const [activePlatformVal, setActivePlatformVal] = useState<string | null>(null);
+  const [modalUrl, setModalUrl] = useState("");
+  const [modalLabel, setModalLabel] = useState("");
+  
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,7 +130,6 @@ export default function LinksPage() {
             visible: true,
           })));
         }
-        // Legacy: check old format
         const legacy = (profile?.config as Record<string, unknown>)?.social as Record<string, unknown> | undefined;
         if (legacy?.display_mode) setMode(legacy.display_mode as DisplayMode);
         if (legacy?.link_custom) setCustom(prev => ({ ...prev, ...(legacy.link_custom as Partial<LinkCustom>) }));
@@ -225,8 +167,16 @@ export default function LinksPage() {
     }, 600);
   }, [userId]);
 
-  const addLink = (link: Omit<SocialLink, "id" | "visible">) => {
-    const next = [...links, { ...link, id: Math.random().toString(36).slice(2), visible: true }];
+  const addLink = (platformValue: string, url: string, label: string) => {
+    const p = getPlatform(platformValue);
+    const next = [...links, {
+      id: Math.random().toString(36).slice(2),
+      platform: platformValue,
+      url: url.trim(),
+      label: label.trim() || p.label,
+      color: p.color,
+      visible: true
+    }];
     setLinks(next);
     scheduleSave(next, mode, custom);
   };
@@ -254,7 +204,6 @@ export default function LinksPage() {
     scheduleSave(links, m, custom);
   };
 
-  // Drag to reorder
   const handleDragEnd = () => {
     if (dragIdx !== null && dragOver !== null && dragIdx !== dragOver) {
       const next = [...links];
@@ -267,64 +216,100 @@ export default function LinksPage() {
     setDragOver(null);
   };
 
-  const MAX_LINKS = 25;
+  const openAddModal = (platformVal: string) => {
+    setActivePlatformVal(platformVal);
+    setModalUrl("");
+    setModalLabel("");
+  };
+
+  const handleModalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activePlatformVal || !modalUrl.trim()) return;
+    addLink(activePlatformVal, modalUrl, modalLabel);
+    setActivePlatformVal(null);
+  };
+
+  const selectedPlatform = activePlatformVal ? getPlatform(activePlatformVal) : null;
   const count = links.length;
+  const MAX_LINKS = 25;
 
   return (
-    <div style={{ fontFamily: F, width: "100%", display: "flex", flexDirection: "column", gap: 24 }}>
-      <style>{`@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}`}</style>
-
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto pb-12 select-none">
+      
+      {/* Header Info */}
+      <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#fafafa", letterSpacing: "-0.03em" }}>Profile Links</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
-            Add the links that appear on your profile.
-          </p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Link2 className="w-6 h-6 text-red-500" /> Link your social media profiles
+          </h1>
+          <p className="text-neutral-400 text-sm mt-1">Pick a social platform below to add to your custom public page.</p>
         </div>
+        
         {saveStatus !== "idle" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 14px", borderRadius: 99, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", fontSize: 12, color: saveStatus === "saved" ? "#22c55e" : saveStatus === "error" ? "#ef4444" : "rgba(255,255,255,0.5)", animation: "slideIn 0.2s ease", fontWeight: 600, flexShrink: 0 }}>
-            {saveStatus === "saved" && <Check style={{ width: 12, height: 12 }} />}
-            {saveStatus === "saving" ? "Auto-saving…" : saveStatus === "saved" ? "Saved!" : "Failed to save"}
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold backdrop-blur-md transition-all duration-300 ${
+            saveStatus === "saved" ? "bg-green-500/10 border-green-500/30 text-green-400" :
+            saveStatus === "error" ? "bg-red-500/10 border-red-500/30 text-red-400" :
+            "bg-neutral-900/50 border-neutral-800 text-neutral-400 animate-pulse"
+          }`}>
+            {saveStatus === "saved" && <Check className="w-3.5 h-3.5" />}
+            {saveStatus === "saving" ? "Saving updates..." : saveStatus === "saved" ? "Saved!" : "Connection error"}
           </div>
         )}
       </div>
 
-      {/* Links Card */}
-      <div style={{ borderRadius: 20, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden" }}>
-        <div style={{ padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fafafa" }}>Your links <span style={{ color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>({count}/{MAX_LINKS})</span></p>
-            <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Drag to reorder. Toggle visibility without deleting.</p>
-          </div>
-          <button
-            onClick={() => setDialogOpen(true)}
-            disabled={count >= MAX_LINKS}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 10, background: "rgba(220,38,38,0.1)", border: "1px solid rgba(220,38,38,0.3)", color: "#dc2626", fontSize: 12, fontWeight: 700, cursor: count >= MAX_LINKS ? "default" : "pointer", fontFamily: F, flexShrink: 0, opacity: count >= MAX_LINKS ? 0.5 : 1, transition: "all 0.15s" }}
-            onMouseEnter={e => { if (count < MAX_LINKS) (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.18)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.1)"; }}
-          >
-            <Plus style={{ width: 13, height: 13 }} /> Add link
-          </button>
-        </div>
-        <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
-        <div style={{ padding: "16px 24px 20px" }}>
-          {links.length === 0 ? (
-            <div style={{ borderRadius: 16, border: "2px dashed rgba(255,255,255,0.07)", padding: "52px 24px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Link2 style={{ width: 22, height: 22, color: "rgba(255,255,255,0.15)" }} />
-              </div>
-              <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>No links yet.</p>
-              <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.2)" }}>Add your first link so visitors can reach you.</p>
+      {/* Grid of Platforms (Guns.lol Direct layout) */}
+      <div className="flex flex-col gap-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Available Platforms ({PLATFORMS.length})</h2>
+        <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-3">
+          {PLATFORMS.map(pl => {
+            const { Icon, color } = pl;
+            const isAdded = links.some(l => l.platform === pl.value);
+            return (
               <button
-                onClick={() => setDialogOpen(true)}
-                style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 10, background: "linear-gradient(135deg,#dc2626,#e11d48)", border: "none", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: F }}
+                key={pl.value}
+                onClick={() => openAddModal(pl.value)}
+                disabled={count >= MAX_LINKS}
+                className={`flex flex-col items-center justify-center p-4 rounded-xl border bg-neutral-950 transition duration-200 cursor-pointer group text-center select-none ${
+                  isAdded 
+                    ? "border-red-600/30 bg-red-600/5 hover:bg-red-600/10" 
+                    : "border-neutral-900 hover:border-red-600/30 hover:bg-neutral-900/30"
+                }`}
               >
-                <Plus style={{ width: 13, height: 13 }} /> Add your first link
+                <div 
+                  className="w-10 h-10 rounded-lg flex items-center justify-center mb-2.5 transition duration-200"
+                  style={{ backgroundColor: `${color}12` }}
+                >
+                  <Icon className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" style={{ color: color }} />
+                </div>
+                <span className="text-[11px] font-semibold text-neutral-300 group-hover:text-white transition-colors truncate w-full">
+                  {pl.label.split(" / ")[0]}
+                </span>
               </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Active Links Listing */}
+      <div className="bg-neutral-950/60 border border-neutral-900 rounded-2xl overflow-hidden mt-2">
+        <div className="p-5 border-b border-neutral-900 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white">Your Profile Links ({count}/{MAX_LINKS})</h3>
+            <p className="text-xs text-neutral-500 mt-1">Drag rows using the handle to change layout ordering. Active links save in real-time.</p>
+          </div>
+        </div>
+
+        <div className="p-5 flex flex-col gap-3">
+          {links.length === 0 ? (
+            <div className="border border-dashed border-neutral-800 rounded-xl py-12 px-4 text-center flex flex-col items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-neutral-900 flex items-center justify-center">
+                <Link2 className="w-6 h-6 text-neutral-600" />
+              </div>
+              <p className="text-sm font-semibold text-neutral-400">No links added to your page yet</p>
+              <p className="text-xs text-neutral-600 max-w-[280px]">Select any platform from the grid above to insert it onto your live bio page.</p>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div className="flex flex-col gap-2">
               {links.map((link, idx) => {
                 const platform = getPlatform(link.platform);
                 const isDragging = dragIdx === idx;
@@ -336,48 +321,63 @@ export default function LinksPage() {
                     onDragStart={() => setDragIdx(idx)}
                     onDragOver={e => { e.preventDefault(); setDragOver(idx); }}
                     onDragEnd={handleDragEnd}
-                    style={{
-                      display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
-                      borderRadius: 14,
-                      background: isDragging ? "rgba(220,38,38,0.06)" : isOver ? "rgba(255,255,255,0.06)" : link.visible ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.01)",
-                      border: `1px solid ${isOver ? "rgba(220,38,38,0.3)" : link.visible ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)"}`,
-                      opacity: isDragging ? 0.5 : link.visible ? 1 : 0.45,
-                      transition: "all 0.15s",
-                      cursor: "grab",
-                    }}
+                    className={`flex items-center gap-3 p-3 rounded-xl border bg-neutral-950 transition duration-150 cursor-grab active:cursor-grabbing ${
+                      isDragging ? "opacity-40 border-red-500/50 bg-red-950/10" :
+                      isOver ? "border-red-500/30 bg-red-950/5" :
+                      "border-neutral-900/60 hover:border-neutral-800"
+                    }`}
                   >
-                    <GripVertical style={{ width: 13, height: 13, color: "rgba(255,255,255,0.15)", flexShrink: 0 }} />
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: `${custom.monochrome ? custom.iconColor : platform.color}18`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <LinkIcon platform={platform} custom={custom} size={14} />
+                    <div className="text-neutral-600 hover:text-neutral-400 p-1 cursor-grab">
+                      <GripVertical className="w-4 h-4" />
                     </div>
-                    <select value={link.platform} onChange={e => updateLink(link.id, "platform", e.target.value)}
-                      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 8px", fontSize: 11, color: "#fafafa", fontFamily: F, outline: "none", cursor: "pointer", flexShrink: 0 }}>
-                      {PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+
+                    <div 
+                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${custom.monochrome ? custom.iconColor : platform.color}15` }}
+                    >
+                      <LinkIcon platform={platform} custom={custom} size={15} />
+                    </div>
+
+                    <select 
+                      value={link.platform} 
+                      onChange={e => updateLink(link.id, "platform", e.target.value)}
+                      className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-2 text-xs font-semibold text-neutral-200 outline-none cursor-pointer focus:border-red-500/40"
+                    >
+                      {PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label.split(" / ")[0]}</option>)}
                     </select>
-                    <input value={link.url} onChange={e => updateLink(link.id, "url", e.target.value)}
+
+                    <input 
+                      value={link.url} 
+                      onChange={e => updateLink(link.id, "url", e.target.value)}
                       placeholder={platform.placeholder}
-                      style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#fafafa", fontFamily: F, outline: "none", minWidth: 0 }}
-                      onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.4)"; }}
-                      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.07)"; }}
+                      className="flex-1 bg-neutral-900/60 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 min-w-0"
                     />
-                    <input value={link.label} onChange={e => updateLink(link.id, "label", e.target.value)}
-                      placeholder="Label"
-                      style={{ width: 90, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 8, padding: "6px 10px", fontSize: 12, color: "#fafafa", fontFamily: F, outline: "none", flexShrink: 0 }}
-                      onFocus={e => { e.target.style.borderColor = "rgba(220,38,38,0.4)"; }}
-                      onBlur={e => { e.target.style.borderColor = "rgba(255,255,255,0.07)"; }}
+
+                    <input 
+                      value={link.label} 
+                      onChange={e => updateLink(link.id, "label", e.target.value)}
+                      placeholder="Custom Label"
+                      className="w-32 bg-neutral-900/60 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 shrink-0"
                     />
-                    <button onClick={() => updateLink(link.id, "visible", !link.visible)}
-                      style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
-                      title={link.visible ? "Hide" : "Show"}>
-                      {link.visible
-                        ? <Eye style={{ width: 12, height: 12, color: "rgba(255,255,255,0.4)" }} />
-                        : <EyeOff style={{ width: 12, height: 12, color: "rgba(255,255,255,0.2)" }} />}
+
+                    <button 
+                      onClick={() => updateLink(link.id, "visible", !link.visible)}
+                      className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all ${
+                        link.visible 
+                          ? "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white" 
+                          : "bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20"
+                      }`}
+                      title={link.visible ? "Visible on page" : "Hidden on page"}
+                    >
+                      {link.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
-                    <button onClick={() => removeLink(link.id)}
-                      style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.15s" }}
-                      onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.15)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.06)"; }}>
-                      <Trash2 style={{ width: 12, height: 12, color: "#ef4444" }} />
+
+                    <button 
+                      onClick={() => removeLink(link.id)}
+                      className="w-9 h-9 rounded-lg bg-red-600/10 border border-red-600/20 hover:bg-red-600 hover:border-red-600 text-red-500 hover:text-white flex items-center justify-center transition duration-150"
+                      title="Delete link"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 );
@@ -387,71 +387,156 @@ export default function LinksPage() {
         </div>
       </div>
 
-      {/* Customization Card */}
-      <div style={{ borderRadius: 20, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden" }}>
-        <div style={{ padding: "20px 24px 0" }}>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fafafa" }}>Link icon style</p>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Control how link icons look on your public page.</p>
+      {/* Visual Customization Card */}
+      <div className="bg-neutral-950/60 border border-neutral-900 rounded-2xl overflow-hidden mt-2">
+        <div className="p-5 border-b border-neutral-900">
+          <h3 className="text-sm font-bold text-white">Visual Customization</h3>
+          <p className="text-xs text-neutral-500 mt-1">Configure exactly how link buttons and icons render on your public profile card.</p>
         </div>
-        <div style={{ padding: "18px 24px 22px", display: "flex", flexDirection: "column", gap: 18 }}>
 
-          {/* Display mode */}
-          <div>
-            <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.07em" }}>Display mode</p>
-            <div style={{ display: "flex", gap: 8 }}>
+        <div className="p-5 flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-neutral-500">Display Layout</label>
+            <div className="flex gap-2">
               {(["full", "icons"] as DisplayMode[]).map(m => (
-                <button key={m} onClick={() => setMode2(m)}
-                  style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 600, fontFamily: F, cursor: "pointer", border: mode === m ? "1px solid rgba(220,38,38,0.45)" : "1px solid rgba(255,255,255,0.07)", background: mode === m ? "rgba(220,38,38,0.1)" : "rgba(255,255,255,0.03)", color: mode === m ? "#dc2626" : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}>
-                  {m === "full" ? <AlignLeft style={{ width: 13, height: 13 }} /> : <LayoutGrid style={{ width: 13, height: 13 }} />}
-                  {m === "full" ? "Full buttons" : "Icons only"}
+                <button
+                  key={m}
+                  onClick={() => setMode2(m)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition duration-200 border cursor-pointer ${
+                    mode === m 
+                      ? "bg-red-600/10 border-red-600 text-red-500" 
+                      : "bg-neutral-900/50 border-neutral-850 text-neutral-400 hover:text-neutral-200"
+                  }`}
+                >
+                  {m === "full" ? <AlignLeft className="w-4 h-4" /> : <LayoutGrid className="w-4 h-4" />}
+                  {m === "full" ? "Standard Buttons" : "Social Icons Grid"}
                 </button>
               ))}
             </div>
           </div>
 
-          <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
+          <div className="h-px bg-neutral-900" />
 
-          {/* Toggles */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {[
-              { key: "monochrome", label: "Monochrome icons", desc: "Render all icons in one color" },
-              { key: "glow", label: "Icon glow", desc: "Soft glow behind icons" },
-            ].map(item => (
-              <div key={item.key} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#fafafa" }}>{item.label}</p>
-                <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{item.desc}</p>
-                <Toggle checked={custom[item.key as keyof LinkCustom] as boolean} onChange={v => setCustomField(item.key as keyof LinkCustom, v)} />
-              </div>
-            ))}
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#fafafa" }}>Icon color</p>
-              <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Used when monochrome is on</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "5px 10px", width: "fit-content" }}>
-                <label style={{ cursor: "pointer", position: "relative" }}>
-                  <div style={{ width: 18, height: 18, borderRadius: 5, background: custom.iconColor, border: "1px solid rgba(255,255,255,0.15)" }} />
-                  <input type="color" value={custom.iconColor} onChange={e => setCustomField("iconColor", e.target.value)} style={{ opacity: 0, position: "absolute", inset: 0, cursor: "pointer" }} />
+          {/* Settings Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-col gap-2.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Monochrome Theme</h4>
+              <p className="text-xs text-neutral-500">Forces all icons to use a single unified color instead of their original brand color.</p>
+              <Toggle checked={custom.monochrome} onChange={v => setCustomField("monochrome", v)} />
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Glow Effects</h4>
+              <p className="text-xs text-neutral-500">Enables a subtle, high-end neon aura around the icons matching their brand/monochrome color.</p>
+              <Toggle checked={custom.glow} onChange={v => setCustomField("glow", v)} />
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Custom Accent Color</h4>
+              <p className="text-xs text-neutral-500">Specify the color to apply to icons when Monochrome is active.</p>
+              <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-850 rounded-xl px-4 py-2.5 w-fit">
+                <label className="cursor-pointer relative">
+                  <div className="w-6 h-6 rounded-md border border-white/10" style={{ backgroundColor: custom.iconColor }} />
+                  <input 
+                    type="color" 
+                    value={custom.iconColor} 
+                    onChange={e => setCustomField("iconColor", e.target.value)} 
+                    className="opacity-0 absolute inset-0 cursor-pointer" 
+                  />
                 </label>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "monospace" }}>{custom.iconColor.toUpperCase()}</span>
+                <span className="text-xs font-mono text-neutral-400 font-semibold">{custom.iconColor.toUpperCase()}</span>
               </div>
             </div>
           </div>
 
-          <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
+          <div className="h-px bg-neutral-900" />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-            <div>
-              <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "#fafafa" }}>Glow strength</p>
+          {/* Slider Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Icon Glow Strength</h4>
               <Slider min={1} max={3} value={custom.glowStrength} onChange={v => setCustomField("glowStrength", v)} />
             </div>
-            <div>
-              <p style={{ margin: "0 0 8px", fontSize: 13, fontWeight: 600, color: "#fafafa" }}>Icon size</p>
+
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-500">Icon Scaling Size</h4>
               <Slider min={50} max={150} value={custom.iconSize} onChange={v => setCustomField("iconSize", v)} format={v => `${v}%`} />
             </div>
           </div>
         </div>
       </div>
 
-      <AddLinkDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onAdd={addLink} />
+      {/* Add URL Dialog Modal */}
+      {activePlatformVal && selectedPlatform && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <form 
+            onSubmit={handleModalSubmit}
+            className="w-full max-w-md bg-neutral-950 border border-neutral-900 rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          >
+            <div className="flex items-center justify-between border-b border-neutral-900 pb-4 mb-5">
+              <div className="flex items-center gap-2.5">
+                <div 
+                  className="w-8 h-8 rounded-lg flex items-center justify-center" 
+                  style={{ backgroundColor: `${selectedPlatform.color}15` }}
+                >
+                  <selectedPlatform.Icon className="w-4.5 h-4.5" style={{ color: selectedPlatform.color }} />
+                </div>
+                <h3 className="text-sm font-bold text-white">Add {selectedPlatform.label.split(" / ")[0]}</h3>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setActivePlatformVal(null)}
+                className="text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-neutral-400">Profile URL</label>
+                <input 
+                  type="text"
+                  required
+                  value={modalUrl}
+                  onChange={e => setModalUrl(e.target.value)}
+                  placeholder={selectedPlatform.placeholder}
+                  className="bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-neutral-400">Button Label (Optional)</label>
+                <input 
+                  type="text"
+                  value={modalLabel}
+                  onChange={e => setModalLabel(e.target.value)}
+                  placeholder={selectedPlatform.label}
+                  className="bg-neutral-900 border border-neutral-850 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6 pt-4 border-t border-neutral-900">
+              <button 
+                type="button" 
+                onClick={() => setActivePlatformVal(null)}
+                className="flex-1 bg-neutral-900 border border-neutral-850 hover:bg-neutral-850 text-neutral-300 hover:text-white rounded-xl py-2.5 text-xs font-bold transition duration-150 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                disabled={!modalUrl.trim()}
+                className="flex-[2] bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white rounded-xl py-2.5 text-xs font-bold transition duration-150 disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-lg shadow-red-600/10"
+              >
+                Add Link
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
     </div>
   );
 }
