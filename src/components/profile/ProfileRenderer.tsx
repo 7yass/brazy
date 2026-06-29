@@ -531,7 +531,7 @@ export default function ProfileRenderer({
       )}
 
       {/* Audio */}
-      {audioTrackId && (
+      {config.audio?.enabled && (audioTrackId || config.audio.src) && (
         <motion.div
           initial={{ opacity: 0, y: 22 }}
           animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
@@ -540,8 +540,9 @@ export default function ProfileRenderer({
         >
           <AudioPill
             audioTrackId={audioTrackId}
-            title={audioTitle}
-            artist={audioArtist}
+            audioUrl={config.audio.src}
+            title={audioTitle || config.audio.title}
+            artist={audioArtist || config.audio.artist}
             thumb={audioThumb}
             accentColor={accent}
             textColor={theme.textColor}
@@ -700,11 +701,11 @@ function BadgeIcon({ badge }: { badge: Badge }) {
       onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
       {predefined ? (
         <div 
-          style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: predefined.color }} 
+          style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: badge.color || predefined.color }} 
           dangerouslySetInnerHTML={{ __html: predefined.svg }}
         />
       ) : (
-        <span style={{ fontSize: 16, lineHeight: 1 }}>{badge.icon}</span>
+        <span style={{ fontSize: 16, lineHeight: 1, color: badge.color || '#ffffff' }}>{badge.icon}</span>
       )}
       <AnimatePresence>
         {show && (
@@ -732,9 +733,9 @@ function BadgeIcon({ badge }: { badge: Badge }) {
 // ─── Audio Pill ────────────────────────────────────────────────────────────────
 
 function AudioPill({
-  audioTrackId, title, artist, thumb, accentColor, textColor, mutedTextColor, volume, loop, entered,
+  audioTrackId, audioUrl, title, artist, thumb, accentColor, textColor, mutedTextColor, volume, loop, entered,
 }: {
-  audioTrackId?: string; title?: string; artist?: string; thumb?: string;
+  audioTrackId?: string; audioUrl?: string; title?: string; artist?: string; thumb?: string;
   accentColor: string; textColor?: string; mutedTextColor?: string;
   volume: number; loop: boolean; entered: boolean;
 }) {
@@ -743,16 +744,21 @@ function AudioPill({
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!audioTrackId) return;
-    let active = true;
-    (async () => {
-      const url = await getPipedStreamUrl(audioTrackId);
-      if (active) {
-        setStreamUrl(url);
-      }
-    })();
-    return () => { active = false; };
-  }, [audioTrackId]);
+    if (audioTrackId) {
+      let active = true;
+      (async () => {
+        const url = await getPipedStreamUrl(audioTrackId);
+        if (active) {
+          setStreamUrl(url);
+        }
+      })();
+      return () => { active = false; };
+    } else if (audioUrl) {
+      setStreamUrl(audioUrl);
+    } else {
+      setStreamUrl(null);
+    }
+  }, [audioTrackId, audioUrl]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -777,7 +783,7 @@ function AudioPill({
     }
   }, [playing]);
 
-  if (!audioTrackId) return null;
+  if (!audioTrackId && !audioUrl) return null;
 
   return (
     <>

@@ -1,11 +1,81 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import type { Background } from "@/lib/profile/schema";
 import CanvasBackground from "./CanvasBackground";
 
-export default function BackgroundLayer({ background }: { background: Background }) {
-  if (background.type === "particles" || background.type === "matrix" || background.type === "starfield" || background.type === "rain" || background.type === "snow" || background.type === "bubbles") {
+/* ── helpers ─────────────────────────────────────────────────── */
+
+const CANVAS_TYPES = new Set(["particles", "matrix", "starfield", "rain", "snow", "bubbles"]);
+const EFFECT_OVERLAY_TYPES = new Set([...CANVAS_TYPES, "aurora", "gradient", "grid"]);
+const NO_OVERLAY_TYPES = new Set(["none", "color", "image", "video"]);
+
+/* ── Base layer (zIndex 0) ───────────────────────────────────── */
+
+function BaseLayer({ background }: { background: Background }) {
+  // Priority: imageUrl → videoUrl → color1
+  if (background.imageUrl) {
+    return (
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          backgroundImage: `url(${background.imageUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+    );
+  }
+
+  if (background.videoUrl) {
+    return (
+      <video
+        aria-hidden
+        autoPlay
+        muted
+        loop
+        playsInline
+        style={{
+          position: "fixed",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      >
+        <source src={background.videoUrl} />
+      </video>
+    );
+  }
+
+  // Fallback: solid color
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: "none",
+        background: background.color1,
+      }}
+    />
+  );
+}
+
+/* ── Effect overlay (zIndex 1) ───────────────────────────────── */
+
+function EffectOverlay({ background }: { background: Background }) {
+  // No overlay for these types
+  if (NO_OVERLAY_TYPES.has(background.type)) return null;
+
+  // Canvas-based effects
+  if (CANVAS_TYPES.has(background.type)) {
     return <CanvasBackground background={background} />;
   }
 
@@ -16,7 +86,7 @@ export default function BackgroundLayer({ background }: { background: Background
         style={{
           position: "fixed",
           inset: "-20%",
-          zIndex: 0,
+          zIndex: 1,
           pointerEvents: "none",
           filter: "blur(60px)",
           opacity: 0.7,
@@ -41,11 +111,12 @@ export default function BackgroundLayer({ background }: { background: Background
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 0,
+          zIndex: 1,
           pointerEvents: "none",
           background: `linear-gradient(135deg, ${background.color1}, ${background.color2}, ${background.color3})`,
           backgroundSize: "200% 200%",
           animation: "gradientShift 12s ease infinite",
+          opacity: (background.imageUrl || background.videoUrl) ? 0.45 : 1,
         }}
       />
     );
@@ -58,7 +129,7 @@ export default function BackgroundLayer({ background }: { background: Background
         style={{
           position: "fixed",
           inset: 0,
-          zIndex: 0,
+          zIndex: 1,
           pointerEvents: "none",
           backgroundImage: `linear-gradient(${background.color1}22 1px, transparent 1px), linear-gradient(90deg, ${background.color1}22 1px, transparent 1px)`,
           backgroundSize: "40px 40px",
@@ -69,60 +140,16 @@ export default function BackgroundLayer({ background }: { background: Background
     );
   }
 
-  if (background.type === "image") {
-    return (
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-          backgroundImage: `url(${background.imageUrl})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
-    );
-  }
-
-  if (background.type === "video") {
-    return (
-      <video
-        aria-hidden
-        autoPlay
-        muted
-        loop
-        playsInline
-        style={{
-          position: "fixed",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      >
-        <source src={background.videoUrl} />
-      </video>
-    );
-  }
-
-  if (background.type === "color") {
-    return (
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: "none",
-          background: background.color1,
-        }}
-      />
-    );
-  }
-
   return null;
+}
+
+/* ── Composed component ──────────────────────────────────────── */
+
+export default function BackgroundLayer({ background }: { background: Background }) {
+  return (
+    <>
+      <BaseLayer background={background} />
+      <EffectOverlay background={background} />
+    </>
+  );
 }

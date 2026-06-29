@@ -255,6 +255,29 @@ export default function BadgesPage() {
                         </div>
                       </div>
 
+                      <label className="relative shrink-0 cursor-pointer group/color" title="Change badge color">
+                        <div
+                          className="w-7 h-7 rounded-lg border border-white/10 group-hover/color:border-white/30 transition duration-150"
+                          style={{ backgroundColor: item.color || predefined?.color || '#ffffff' }}
+                        />
+                        <input
+                          type="color"
+                          value={item.color || predefined?.color || '#ffffff'}
+                          onChange={(e) => {
+                            const newColor = e.target.value;
+                            setCfg((prev) => {
+                              if (!prev) return prev;
+                              const nextItems = [...prev.badges.items];
+                              nextItems[idx] = { ...nextItems[idx], color: newColor };
+                              const next = { ...prev, badges: { ...prev.badges, items: nextItems } } as ProfileConfig;
+                              scheduleSave(next);
+                              return next;
+                            });
+                          }}
+                          className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
+                        />
+                      </label>
+
                       <button
                         onClick={() => toggleBadge(item.emoji, item.label, item.color, item.tooltip)}
                         className="w-8 h-8 rounded-lg bg-red-600/10 border border-red-600/20 hover:bg-red-600 hover:border-red-600 text-red-500 hover:text-white flex items-center justify-center transition duration-150 cursor-pointer"

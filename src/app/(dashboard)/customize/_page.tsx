@@ -372,7 +372,6 @@ export default function CustomizePage() {
                     ...prev,
                     background: {
                       ...prev.background,
-                      type: url ? (isVideo ? "video" as const : "image" as const) : "none" as const,
                       imageUrl: isVideo ? "" : url,
                       videoUrl: isVideo ? url : "",
                     }
@@ -560,7 +559,7 @@ export default function CustomizePage() {
                 value={cfg.background.type}
                 onChange={v => set("background", "type", v)}
                 options={[
-                  { value: "none", label: "None / Solid" },
+                  { value: "none", label: "None" },
                   { value: "particles", label: "Blurred Particles" },
                   { value: "matrix", label: "Matrix Rain" },
                   { value: "starfield", label: "Moving Starfield" },
@@ -569,8 +568,7 @@ export default function CustomizePage() {
                   { value: "snow", label: "Falling Snow" },
                   { value: "bubbles", label: "Floating Bubbles" },
                   { value: "grid", label: "Retro Grid" },
-                  { value: "image", label: "Static Image" },
-                  { value: "video", label: "Looping Video" },
+                  { value: "gradient", label: "Animated Gradient" },
                 ]}
               />
 
@@ -635,18 +633,32 @@ export default function CustomizePage() {
 
             <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-bold text-neutral-300">Disable Background Gradient</span>
-                <span className="text-[10px] text-neutral-500">Locks background to a solid color type</span>
+                <span className="text-xs font-bold text-neutral-300">Background Base</span>
+                <span className="text-[10px] text-neutral-500">Upload an image/video above, or use a solid color below</span>
               </div>
               <button
-                onClick={() => set("background", "type", cfg.background.type === "color" ? "gradient" : "color")}
+                onClick={() => {
+                  setCfg(prev => {
+                    if (!prev) return prev;
+                    const next = {
+                      ...prev,
+                      background: {
+                        ...prev.background,
+                        imageUrl: "",
+                        videoUrl: "",
+                      }
+                    };
+                    scheduleSave(next);
+                    return next;
+                  });
+                }}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition duration-200 border cursor-pointer text-center ${
-                  cfg.background.type === "color"
+                  !cfg.background.imageUrl && !cfg.background.videoUrl
                     ? "bg-red-600/10 border-red-600/40 text-red-500"
                     : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white"
                 }`}
               >
-                {cfg.background.type === "color" ? "Enable Background Gradient" : "Disable Background Gradient"}
+                {!cfg.background.imageUrl && !cfg.background.videoUrl ? "Using Solid Color" : "Clear Uploaded Background"}
               </button>
             </div>
           </div>
