@@ -1,7 +1,10 @@
+// src/lib/supabase/profile-helper.ts
 "use client";
 
-import { createClient } from "./client";
+import { hasuraRequest } from "@/lib/hasuraClient";
+import { GET_PROFILE, UPDATE_PROFILE } from "@/lib/hasuraQueries";
 import { normalizeConfig, ProfileConfig } from "../profile/schema";
+import { createClient } from "./client";
 
 export async function clientGetProfile() {
   const supabase = createClient();
@@ -10,27 +13,11 @@ export async function clientGetProfile() {
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   if (userError || !user) throw new Error("User not authenticated");
 
-  // Try querying by user_id
-  let { data: profile, error } = await supabase
-    .from("profiles")
-    .select("config, id, username")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  const data = await hasuraRequest<{
+    profiles: { id: string; user_id: string; username: string; config: Record<string, unknown> }[];
+  }>(GET_PROFILE, { user_id: user.id });
 
-  // If that failed or column doesn't exist, try querying by id
-  if (error || !profile) {
-    const { data: profileById, error: errorById } = await supabase
-      .from("profiles")
-      .select("config, id, username")
-      .eq("id", user.id)
-      .maybeSingle();
-    
-    if (!errorById && profileById) {
-      profile = profileById;
-    } else {
-      console.error("Failed to fetch profile by both user_id and id:", error, errorById);
-    }
-  }
+  const profile = data.profiles[0] ?? null;
 
   return {
     userId: user.id,
@@ -46,32 +33,8 @@ export async function clientSaveProfile(config: ProfileConfig) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
 
-  // Try upserting with id first
-  const { error: errorId } = await supabase
-    .from("profiles")
-    .upsert(
-      {
-        id: user.id,
-        config,
-      },
-      { onConflict: "id" }
-    );
-
-  if (!errorId) return;
-
-  // If that fails, try upserting with user_id
-  const { error: errorUserId } = await supabase
-    .from("profiles")
-    .upsert(
-      {
-        user_id: user.id,
-        config,
-      },
-      { onConflict: "user_id" }
-    );
-
-  if (errorUserId) {
-    console.error("Failed to save profile config by both id and user_id:", errorId, errorUserId);
-    throw new Error(errorUserId.message || errorId.message);
-  }
+  await hasuraRequest(UPDATE_PROFILE, {
+    user_id: user.id,
+    changes: { config },
+  });
 }

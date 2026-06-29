@@ -278,7 +278,7 @@ export default function BadgesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(PREDEFINED_BADGES).map(([key, badge]) => {
                 const isActive = badges.items.some(
-                  (b: any) => b.icon?.toLowerCase() === key.toLowerCase()
+                  (b: any) => b.emoji?.toLowerCase() === key.toLowerCase()
                 );
 
                 return (

@@ -318,7 +318,7 @@ export default function CustomizePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto pb-12 select-none font-sans">
+    <div className="flex flex-col gap-6 w-full max-w-full mx-auto pb-12 select-none font-sans">
       
       <style>{`
         .preview-wrapper [style*="position: fixed"],
@@ -355,7 +355,7 @@ export default function CustomizePage() {
         )}
       </div>
 
-      <div className="w-full max-w-4xl mx-auto flex flex-col gap-6 pb-8">
+      <div className="w-full max-w-full mx-auto flex flex-col gap-6 pb-8">
           
           {/* 1. Assets Uploader Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4 font-sans">

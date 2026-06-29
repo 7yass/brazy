@@ -237,17 +237,37 @@ export function AssetsUploader({
       {showAudioModal && (
         <div
           style={{
-            position: "fixed", inset: 0, zIndex: 9999,
-            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0,0,0,0.6)"
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAudioModal(false); }}
         >
-          <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(0,0,0,0.55)" }} />
+          {/* Glassmorphism backdrop */}
+          <div style={{
+            position: "absolute",
+            inset: 0,
+            backdropFilter: "blur(12px) saturate(180%)",
+            background: "rgba(15,15,15,0.75)"
+          }} />
           <div
             style={{
-              position: "relative", background: "#141414", border: "2px solid #181818",
-              borderRadius: 25, padding: 25, width: 480, maxWidth: "90vw",
-              display: "flex", flexDirection: "column", gap: 16, zIndex: 1,
+              position: "relative",
+              background: "rgba(20,20,20,0.85)",
+              borderRadius: 20,
+              padding: 30,
+              width: 500,
+              maxWidth: "90vw",
+              boxShadow: "0 8px 32px 0 rgba(31,38,135,0.37)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              zIndex: 1
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

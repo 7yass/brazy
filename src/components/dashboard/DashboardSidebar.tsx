@@ -171,6 +171,19 @@ export default function DashboardSidebar() {
             <div className="text-xs font-bold text-white truncate leading-none">{copied ? "Copied URL!" : "Share your profile"}</div>
           </div>
         </button>
+        {/* View Your Page Link */}
+        <Link
+          href={username ? `/${username}` : '/'}
+          className="flex h-14 w-full items-center gap-3 rounded-2xl border border-white/5 bg-neutral-900/30 hover:bg-neutral-900/60 px-3 shadow-sm transition duration-150 active:translate-y-px outline-none"
+        >
+          <div className="grid size-8 place-items-center rounded-xl bg-neutral-800/80 text-neutral-300 border border-white/10 shrink-0">
+            <LayoutTemplate className="w-4 h-4" />
+          </div>
+          <div className="min-w-0 flex-1 text-left">
+            <div className="text-[9px] text-neutral-500 font-extrabold uppercase tracking-widest leading-none mb-0.5">Profile</div>
+            <div className="text-xs font-bold text-white truncate leading-none">View your page</div>
+          </div>
+        </Link>
 
         {/* User Account Card */}
         <div className="relative w-full">
