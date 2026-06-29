@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import PageTransition from "@/components/dashboard/PageTransition";
 
 export default async function DashboardLayout({
   children,
@@ -26,7 +27,9 @@ export default async function DashboardLayout({
         className="flex-1 overflow-y-auto overflow-x-hidden"
         style={{ padding: "40px 48px" }}
       >
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </main>
     </div>
   );
