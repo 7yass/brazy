@@ -107,11 +107,9 @@ export default function BadgesPage() {
 
     let nextItems = [...cfg.badges.items];
     if (existsIdx !== -1) {
-      // Remove badge
       nextItems.splice(existsIdx, 1);
     } else {
-      // Add badge
-      if (nextItems.length >= 10) return; // Limit to 10 active badges
+      if (nextItems.length >= 10) return;
       nextItems.push({
         label: badgeName,
         emoji: badgeKey,
@@ -208,6 +206,8 @@ export default function BadgesPage() {
                   const isOver = dragOver === idx;
                   const lowerIcon = item.emoji?.toLowerCase().replace(/ /g, "_");
                   const predefined = PREDEFINED_BADGES[lowerIcon];
+                  // item.color is the source of truth — predefined.color is only the fallback for brand new badges
+                  const activeColor = item.color || predefined?.color || "#ffffff";
 
                   return (
                     <div
@@ -234,8 +234,8 @@ export default function BadgesPage() {
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-white/5"
                         style={{
-                          backgroundColor: `${predefined ? predefined.color : "#ffffff"}15`,
-                          color: predefined ? predefined.color : "#ffffff",
+                          backgroundColor: `${activeColor}20`,
+                          color: activeColor,
                         }}
                       >
                         {predefined ? (
@@ -258,11 +258,11 @@ export default function BadgesPage() {
                       <label className="relative shrink-0 cursor-pointer group/color" title="Change badge color">
                         <div
                           className="w-7 h-7 rounded-lg border border-white/10 group-hover/color:border-white/30 transition duration-150"
-                          style={{ backgroundColor: item.color || predefined?.color || '#ffffff' }}
+                          style={{ backgroundColor: activeColor }}
                         />
                         <input
                           type="color"
-                          value={item.color || predefined?.color || '#ffffff'}
+                          value={activeColor}
                           onChange={(e) => {
                             const newColor = e.target.value;
                             setCfg((prev) => {
@@ -292,7 +292,7 @@ export default function BadgesPage() {
             )}
           </div>
 
-          {/* Available Badges Inventory (Haunt.gg Grid Style) */}
+          {/* Available Badges Inventory */}
           <div className="flex flex-col gap-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400 px-1">
               Available Badges Inventory

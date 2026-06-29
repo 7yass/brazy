@@ -172,6 +172,8 @@ export default function DashboardSidebar() {
 
         <Link
           href={username ? `/${username}` : '/'}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex h-14 w-full items-center gap-3 rounded-2xl border border-white/5 bg-neutral-900/30 hover:bg-neutral-900/60 px-3 shadow-sm transition duration-150 active:translate-y-px outline-none"
         >
           <div className="grid size-8 place-items-center rounded-xl bg-neutral-800/80 text-neutral-300 border border-white/10 shrink-0">
