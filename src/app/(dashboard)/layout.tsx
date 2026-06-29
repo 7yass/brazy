@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+import PageTransition from "@/components/dashboard/PageTransition";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const configured = isSupabaseConfigured();
@@ -15,7 +16,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <div className="flex h-screen overflow-hidden bg-[#08070d]" style={{ fontFamily: "Satoshi, sans-serif" }}>
       <DashboardSidebar />
       <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ padding: "45px" }}>
-        {children}
+        <PageTransition>
+          {children}
+        </PageTransition>
       </main>
     </div>
   );
