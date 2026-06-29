@@ -17,7 +17,7 @@ export const backgroundTypeSchema = z.enum([
 ]);
 export type BackgroundType = z.infer<typeof backgroundTypeSchema>;
 
-export const cardStyleSchema = z.enum(["glass", "solid", "outline", "neon", "minimal"]);
+export const cardStyleSchema = z.enum(["glass", "solid", "outline", "neon", "minimal", "portfolio", "simplistic", "modern", "sleek"]);
 export const themeModeSchema = z.enum(["dark", "light", "midnight", "amoled", "custom"]);
 
 export const themeSchema = z.object({
@@ -62,6 +62,7 @@ export const backgroundSchema = z.object({
   size: z.number().min(1).max(12).default(3),
   direction: z.enum(["up", "down", "left", "right", "random"]).default("down"),
   glow: z.boolean().default(true),
+  blur: z.number().min(0).max(40).default(0),
 });
 export type Background = z.infer<typeof backgroundSchema>;
 
@@ -126,6 +127,12 @@ export const audioSchema = z.object({
   autoplay: z.boolean().default(true),
   showVisualizer: z.boolean().default(true),
   style: z.enum(["pill", "minimal", "full"]).default("pill"),
+  trackId: z.string().default(""),
+  coverUrl: z.string().default(""),
+  lyrics: z.array(z.object({
+    time: z.number().nullable(),
+    text: z.string(),
+  })).default([]),
 });
 export type Audio = z.infer<typeof audioSchema>;
 
@@ -295,7 +302,9 @@ export const profileConfigSchema = z.object({
   analytics: z
     .object({
       trackViews: z.boolean().default(true),
-    }).default(() => ({ trackViews: true })),
+      showViews: z.boolean().default(true),
+      viewsPlacement: z.enum(["inside", "outside", "none"]).default("inside"),
+    }).default(() => ({ trackViews: true, showViews: true, viewsPlacement: "inside" as const })),
 });
 export type ProfileConfig = z.infer<typeof profileConfigSchema>;
 

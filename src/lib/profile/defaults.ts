@@ -50,6 +50,7 @@ export const brazyProfile: ProfileConfig = {
     size: 2,
     direction: "down",
     glow: true,
+    blur: 0,
   },
   effects: {
     cursor: {
@@ -102,6 +103,9 @@ export const brazyProfile: ProfileConfig = {
     autoplay: true,
     showVisualizer: true,
     style: "pill",
+    trackId: "",
+    coverUrl: "",
+    lyrics: [],
   },
   social: {
     links: [
@@ -154,5 +158,7 @@ export const brazyProfile: ProfileConfig = {
   },
   analytics: {
     trackViews: true,
+    showViews: true,
+    viewsPlacement: "inside",
   },
 };

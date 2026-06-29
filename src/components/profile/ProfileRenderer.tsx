@@ -320,24 +320,277 @@ export default function ProfileRenderer({
   const accent3 = theme.accentColor || "#8b5cf6";
 
   const maxWidthMap = { default: theme.maxWidth ?? 480, medium: 560, large: 680 };
-  const cardMaxWidth = maxWidthMap[(theme.profileSize ?? "default") as keyof typeof maxWidthMap];
+  
+  // Card style layout helpers
+  const isPortfolio = theme.cardStyle === "portfolio";
+  const isSimplistic = theme.cardStyle === "simplistic";
+  const isModern = theme.cardStyle === "modern";
+  const isSleek = theme.cardStyle === "sleek";
+
+  const cardMaxWidth = 
+    isPortfolio 
+      ? 780 
+      : isSimplistic 
+        ? 380 
+        : maxWidthMap[(theme.profileSize ?? "default") as keyof typeof maxWidthMap];
 
   const cardBg =
-    theme.cardStyle === "glass"
-      ? `rgba(10, 9, 18, ${theme.cardOpacity ?? 0.72})`
-      : theme.cardStyle === "minimal"
-        ? "transparent"
-        : `rgba(8, 7, 16, ${theme.cardOpacity ?? 0.85})`;
+    isSimplistic
+      ? "transparent"
+      : isSleek
+        ? "rgba(5, 5, 5, 0.95)"
+        : theme.cardStyle === "glass" || isPortfolio || isModern
+          ? `rgba(10, 9, 18, ${theme.cardOpacity ?? 0.72})`
+          : theme.cardStyle === "minimal"
+            ? "transparent"
+            : `rgba(8, 7, 16, ${theme.cardOpacity ?? 0.85})`;
 
-  const cardGlow = theme.glow
-    ? `0 0 ${theme.glowIntensity ?? 40}px ${accent}28, 0 32px 80px rgba(0,0,0,0.6)`
-    : "0 32px 80px rgba(0,0,0,0.5)";
+  const cardGlow = 
+    isSimplistic 
+      ? "none" 
+      : theme.glow || isSleek
+        ? `0 0 ${isSleek ? 50 : (theme.glowIntensity ?? 40)}px ${accent}28, 0 32px 80px rgba(0,0,0,0.6)`
+        : "0 32px 80px rgba(0,0,0,0.5)";
+
+  const cardBorderRadius = isSimplistic ? 0 : isModern ? 32 : isSleek ? 16 : (theme.borderRadius ?? 28);
+  const cardBorderWidth = isSimplistic ? 0 : isModern ? 1.5 : (theme.borderWidth ?? 1);
+  const cardBorderColor = isModern ? "rgba(255,255,255,0.12)" : isSleek ? `${accent}33` : `rgba(255,255,255,${theme.cardStyle === "minimal" ? 0 : 0.07})`;
+
+  const cardAlign = isModern ? "left" : (theme.contentAlign || "center");
+
+  const showViewsInside = config.analytics?.showViews !== false && (config.analytics?.viewsPlacement === "inside" || !config.analytics?.viewsPlacement);
+  const showViewsOutside = config.analytics?.showViews !== false && config.analytics?.viewsPlacement === "outside";
 
   const stagger = (i: number): StaggerProps => ({
     initial: { opacity: 0, y: 22 },
     animate: { opacity: entered ? 1 : 0, y: entered ? 0 : 22 },
     transition: { duration: 0.55, delay: i * 0.07, ease: EASE },
   });
+
+  // Modular layout components
+  const avatarElem = identity.avatarUrl && (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0, ease: EASE }}
+      style={{
+        width: 96, height: 96, borderRadius: "50%", padding: 3,
+        background: `linear-gradient(135deg, ${accent}, ${accent2}, ${accent3})`,
+        boxShadow: `0 0 28px ${accent}44`, flexShrink: 0,
+      }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={identity.avatarUrl}
+        alt={identity.displayName || identity.username}
+        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block", background: "#0d0d0d" }}
+      />
+    </motion.div>
+  );
+
+  const nameElem = (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0.07, ease: EASE }}
+      style={{ 
+        marginTop: identity.avatarUrl ? 14 : 0, 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 7, 
+        flexWrap: "wrap", 
+        justifyContent: cardAlign === "left" ? "flex-start" : "center" 
+      }}
+    >
+      <UsernameText
+        text={identity.displayName || identity.username}
+        effect={effects.usernameEffect}
+        accent={accent}
+        accent2={accent2}
+        accent3={accent3}
+        textColor={theme.textColor || "#fafafa"}
+        textGlow={effects.textGlow}
+      />
+      {profileBadges?.map((badge) => (
+        <BadgeIcon key={badge.id} badge={badge} />
+      ))}
+    </motion.div>
+  );
+
+  const subElem = (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0.14, ease: EASE }}
+      style={{ 
+        marginTop: 5, 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 6, 
+        flexWrap: "wrap", 
+        justifyContent: cardAlign === "left" ? "flex-start" : "center", 
+        fontSize: 13, 
+        color: theme.mutedTextColor || "rgba(255,255,255,0.38)" 
+      }}
+    >
+      <span>@{identity.username}</span>
+      {identity.pronouns && (<><span style={{ opacity: 0.35 }}>·</span><span>{identity.pronouns}</span></>)}
+      {identity.location && (<><span style={{ opacity: 0.35 }}>·</span><span>📍 {identity.location}</span></>)}
+    </motion.div>
+  );
+
+  const bioElem = identity.bio && (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 0.85 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0.21, ease: EASE }}
+      style={{ 
+        margin: "14px 0 0", 
+        fontSize: 14, 
+        lineHeight: 1.65, 
+        color: theme.textColor || "#e4e4e7", 
+        textAlign: cardAlign === "left" ? "left" : "center", 
+        maxWidth: 360 
+      }}
+    >
+      {identity.bioMarkdown
+        ? <MarkdownBio text={identity.bio} />
+        : <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{identity.bio}</p>}
+    </motion.div>
+  );
+
+  const viewsElem = showViewsInside && (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0.28, ease: EASE }}
+      style={{ marginTop: 18 }}
+    >
+      <ViewCounter initial={0} accent={accent} />
+    </motion.div>
+  );
+
+  const timeWidgetElem = widgets?.time?.enabled && widgets.time.placement === "card" && (
+    <motion.div {...stagger(4)} style={{ marginTop: 12 }}>
+      <TimeWidget timezone={widgets.time.timezone} format={widgets.time.format} />
+    </motion.div>
+  );
+
+  const discordPresenceElem = widgets?.discordPresence?.enabled && widgets.discordPresence.placement === "card" && widgets.discordPresence.discordId && (
+    <motion.div {...stagger(4)} style={{ marginTop: 14, width: "100%", maxWidth: 360 }}>
+      <DiscordPresenceWidget discordId={widgets.discordPresence.discordId} />
+    </motion.div>
+  );
+
+  const skillsWidgetElem = config.skills?.enabled && config.skills.items?.length > 0 && (
+    <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360, display: "flex", justifyContent: cardAlign === "left" ? "flex-start" : "center" }}>
+      <SkillsWidget skills={config.skills.items} />
+    </motion.div>
+  );
+
+  const projectsWidgetElem = config.projects?.enabled && config.projects.items?.length > 0 && (
+    <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360 }}>
+      <ProjectsWidget projects={config.projects.items} />
+    </motion.div>
+  );
+
+  const socialLinksElem = social.links.length > 0 && (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0.35, ease: EASE }}
+      style={{
+        padding: isPortfolio ? "0" : "0 20px 20px",
+        display: "grid",
+        gridTemplateColumns: social.links.length === 1 ? "1fr" : "repeat(2, 1fr)",
+        gap: 8,
+        width: "100%",
+      }}
+    >
+      {social.links.map((link, i) => {
+        const Icon = brandIcons[link.platform as keyof typeof brandIcons] || brandIcons.website;
+        const color = link.color || accent;
+        return (
+          <SocialLink key={i} href={link.url} label={link.label || link.platform} color={color} textColor={theme.textColor || "#fafafa"}>
+            <Icon size={16} />
+          </SocialLink>
+        );
+      })}
+    </motion.div>
+  );
+
+  const spotifyWidgetElem = widgets?.spotify?.enabled && widgets.spotify.placement === "card" && widgets.spotify.url && (
+    <motion.div {...stagger(6)} style={{ padding: isPortfolio ? "0" : "0 20px 16px", width: "100%" }}>
+      <iframe
+        src={`https://open.spotify.com/embed/${widgets.spotify.url.split("spotify.com/")[1]?.replace(/\?.*/, "")}`}
+        width="100%" height="80" frameBorder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        style={{ borderRadius: 12 }}
+      />
+    </motion.div>
+  );
+
+  const youtubeWidgetElem = widgets?.youtube?.enabled && widgets.youtube.placement === "card" && widgets.youtube.url && (
+    <motion.div {...stagger(7)} style={{ padding: isPortfolio ? "0" : "0 20px 16px", width: "100%" }}>
+      <div style={{ position: "relative", paddingBottom: "56.25%", borderRadius: 12, overflow: "hidden" }}>
+        <iframe
+          src={widgets.youtube.url.replace("watch?v=", "embed/")}
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    </motion.div>
+  );
+
+  const audioPlayerElem = config.audio?.enabled && (audioTrackId || config.audio.src) && (
+    <motion.div
+      initial={{ opacity: 0, y: 22 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
+      transition={{ duration: 0.55, delay: 0.42, ease: EASE }}
+      style={{ padding: isPortfolio ? "0" : "0 20px 20px", width: "100%" }}
+    >
+      <AudioPill
+        audioTrackId={audioTrackId}
+        audioUrl={config.audio.src}
+        title={audioTitle || config.audio.title}
+        artist={audioArtist || config.audio.artist}
+        thumb={audioThumb}
+        accentColor={accent}
+        textColor={theme.textColor}
+        mutedTextColor={theme.mutedTextColor}
+        volume={config.audio?.volume ?? 0.6}
+        loop={config.audio?.loop ?? true}
+        entered={entered}
+      />
+    </motion.div>
+  );
+
+  const customHtmlElem = config.customHtml && (
+    <div style={{ padding: isPortfolio ? "0" : "0 20px 20px" }} dangerouslySetInnerHTML={{ __html: config.customHtml }} />
+  );
+
+  const watermarkElem = (
+    <div
+      style={{ 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        gap: 6, 
+        padding: isPortfolio ? "16px 0 0" : "12px 20px 18px", 
+        opacity: 0.22, 
+        transition: "opacity 0.2s" 
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.55"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.22"; }}
+    >
+      <a href="https://brazy.it" target="_blank" rel="noopener noreferrer"
+        style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: theme.mutedTextColor || "rgba(255,255,255,0.5)" }}>
+        <SpiderLogo width={13} height={13} />
+        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }}>brazy.it</span>
+      </a>
+    </div>
+  );
 
   const cardElement = (
     <motion.div
@@ -352,10 +605,10 @@ export default function ProfileRenderer({
         width: "100%",
         maxWidth: cardMaxWidth,
         margin: "0 auto",
-        borderRadius: theme.borderRadius ?? 28,
-        border: theme.animatedBorder ? "none" : `${theme.borderWidth ?? 1}px solid rgba(255,255,255,${theme.cardStyle === "minimal" ? 0 : 0.07})`,
-        backdropFilter: theme.cardStyle === "glass" ? `blur(${theme.cardBlur ?? 18}px)` : "none",
-        WebkitBackdropFilter: theme.cardStyle === "glass" ? `blur(${theme.cardBlur ?? 18}px)` : "none",
+        borderRadius: cardBorderRadius,
+        border: theme.animatedBorder ? "none" : `${cardBorderWidth}px solid ${cardBorderColor}`,
+        backdropFilter: theme.cardStyle === "glass" || isPortfolio ? `blur(${theme.cardBlur ?? 18}px)` : "none",
+        WebkitBackdropFilter: theme.cardStyle === "glass" || isPortfolio ? `blur(${theme.cardBlur ?? 18}px)` : "none",
         background: cardBg,
         boxShadow: cardGlow,
         color: theme.textColor || "#f4f4f5",
@@ -367,205 +620,74 @@ export default function ProfileRenderer({
     >
       {/* Neon card outline */}
       {theme.cardStyle === "neon" && (
-        <div style={{ position: "absolute", inset: 0, borderRadius: theme.borderRadius ?? 28, border: `1px solid ${accent}88`, boxShadow: `inset 0 0 20px ${accent}11, 0 0 30px ${accent}22`, pointerEvents: "none", zIndex: 0 }} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: cardBorderRadius, border: `1px solid ${accent}88`, boxShadow: `inset 0 0 20px ${accent}11, 0 0 30px ${accent}22`, pointerEvents: "none", zIndex: 0 }} />
       )}
 
-      {/* Avatar + Identity */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "32px 28px 24px", position: "relative", zIndex: 1 }}>
-
-        {identity.avatarUrl && (
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-            transition={{ duration: 0.55, delay: 0, ease: EASE }}
-            style={{
-              width: 96, height: 96, borderRadius: "50%", padding: 3,
-              background: `linear-gradient(135deg, ${accent}, ${accent2}, ${accent3})`,
-              boxShadow: `0 0 28px ${accent}44`, flexShrink: 0,
-            }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={identity.avatarUrl}
-              alt={identity.displayName || identity.username}
-              style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block", background: "#0d0d0d" }}
-            />
-          </motion.div>
-        )}
-
-        {/* Name + Badges */}
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-          transition={{ duration: 0.55, delay: 0.07, ease: EASE }}
-          style={{ marginTop: identity.avatarUrl ? 14 : 0, display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", justifyContent: "center" }}
-        >
-          <UsernameText
-            text={identity.displayName || identity.username}
-            effect={effects.usernameEffect}
-            accent={accent}
-            accent2={accent2}
-            accent3={accent3}
-            textColor={theme.textColor || "#fafafa"}
-            textGlow={effects.textGlow}
-          />
-          {profileBadges?.map((badge) => (
-            <BadgeIcon key={badge.id} badge={badge} />
-          ))}
-        </motion.div>
-
-        {/* Username / pronouns / location */}
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-          transition={{ duration: 0.55, delay: 0.14, ease: EASE }}
-          style={{ marginTop: 5, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "center", fontSize: 13, color: theme.mutedTextColor || "rgba(255,255,255,0.38)" }}
-        >
-          <span>@{identity.username}</span>
-          {identity.pronouns && (<><span style={{ opacity: 0.35 }}>·</span><span>{identity.pronouns}</span></>)}
-          {identity.location && (<><span style={{ opacity: 0.35 }}>·</span><span>📍 {identity.location}</span></>)}
-        </motion.div>
-
-        {/* Bio */}
-        {identity.bio && (
-          <motion.div
-            initial={{ opacity: 0, y: 22 }}
-            animate={{ opacity: entered ? 0.85 : 0, y: entered ? 0 : 22 }}
-            transition={{ duration: 0.55, delay: 0.21, ease: EASE }}
-            style={{ margin: "14px 0 0", fontSize: 14, lineHeight: 1.65, color: theme.textColor || "#e4e4e7", textAlign: "center", maxWidth: 360 }}
-          >
-            {identity.bioMarkdown
-              ? <MarkdownBio text={identity.bio} />
-              : <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{identity.bio}</p>}
-          </motion.div>
-        )}
-
-        {/* Time widget (card placement) */}
-        {widgets?.time?.enabled && widgets.time.placement === "card" && (
-          <motion.div {...stagger(4)} style={{ marginTop: 12 }}>
-            <TimeWidget timezone={widgets.time.timezone} format={widgets.time.format} />
-          </motion.div>
-        )}
-
-        {/* Discord Presence (card) */}
-        {widgets?.discordPresence?.enabled && widgets.discordPresence.placement === "card" && widgets.discordPresence.discordId && (
-          <motion.div {...stagger(4)} style={{ marginTop: 14, width: "100%", maxWidth: 360 }}>
-            <DiscordPresenceWidget discordId={widgets.discordPresence.discordId} />
-          </motion.div>
-        )}
-
-        {/* Skills */}
-        {config.skills?.enabled && config.skills.items?.length > 0 && (
-          <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360, display: "flex", justifyContent: "center" }}>
-            <SkillsWidget skills={config.skills.items} />
-          </motion.div>
-        )}
-
-        {/* Projects */}
-        {config.projects?.enabled && config.projects.items?.length > 0 && (
-          <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360 }}>
-            <ProjectsWidget projects={config.projects.items} />
-          </motion.div>
-        )}
-
-        {/* View counter */}
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-          transition={{ duration: 0.55, delay: 0.28, ease: EASE }}
-          style={{ marginTop: 18 }}
-        >
-          <ViewCounter initial={0} accent={accent} />
-        </motion.div>
-      </div>
-
-      {/* Social Links */}
-      {social.links.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-          transition={{ duration: 0.55, delay: 0.35, ease: EASE }}
-          style={{
-            padding: "0 20px 20px",
-            display: "grid",
-            gridTemplateColumns: social.links.length === 1 ? "1fr" : "repeat(2, 1fr)",
-            gap: 8,
-          }}
-        >
-          {social.links.map((link, i) => {
-            const Icon = brandIcons[link.platform as keyof typeof brandIcons] || brandIcons.website;
-            const color = link.color || accent;
-            return (
-              <SocialLink key={i} href={link.url} label={link.label || link.platform} color={color} textColor={theme.textColor || "#fafafa"}>
-                <Icon size={16} />
-              </SocialLink>
-            );
-          })}
-        </motion.div>
-      )}
-
-      {/* Spotify widget (card) */}
-      {widgets?.spotify?.enabled && widgets.spotify.placement === "card" && widgets.spotify.url && (
-        <motion.div {...stagger(6)} style={{ padding: "0 20px 16px" }}>
-          <iframe
-            src={`https://open.spotify.com/embed/${widgets.spotify.url.split("spotify.com/")[1]?.replace(/\?.*/, "")}`}
-            width="100%" height="80" frameBorder="0"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            style={{ borderRadius: 12 }}
-          />
-        </motion.div>
-      )}
-
-      {/* YouTube widget (card) */}
-      {widgets?.youtube?.enabled && widgets.youtube.placement === "card" && widgets.youtube.url && (
-        <motion.div {...stagger(7)} style={{ padding: "0 20px 16px" }}>
-          <div style={{ position: "relative", paddingBottom: "56.25%", borderRadius: 12, overflow: "hidden" }}>
-            <iframe
-              src={widgets.youtube.url.replace("watch?v=", "embed/")}
-              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+      {isPortfolio ? (
+        <>
+          <style dangerouslySetInnerHTML={{ __html: `
+            .portfolio-grid-wrap {
+              display: flex;
+              flex-direction: column;
+              gap: 24px;
+              padding: 24px 20px;
+            }
+            @media (min-width: 640px) {
+              .portfolio-grid-wrap {
+                display: grid;
+                grid-template-columns: 1fr 1.2fr;
+                gap: 32px;
+                padding: 32px 28px;
+                align-items: start;
+              }
+            }
+          `}} />
+          <div className="portfolio-grid-wrap" style={{ position: "relative", zIndex: 1 }}>
+            {/* Left Column */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: cardAlign === "left" ? "flex-start" : "center", gap: 14 }}>
+              {avatarElem}
+              {nameElem}
+              {subElem}
+              {bioElem}
+              {viewsElem}
+              {watermarkElem}
+            </div>
+            {/* Right Column */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 16 }}>
+              {timeWidgetElem}
+              {discordPresenceElem}
+              {skillsWidgetElem}
+              {projectsWidgetElem}
+              {socialLinksElem}
+              {spotifyWidgetElem}
+              {youtubeWidgetElem}
+              {audioPlayerElem}
+              {customHtmlElem}
+            </div>
           </div>
-        </motion.div>
+        </>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: cardAlign === "left" ? "flex-start" : "center", padding: "32px 28px 24px", position: "relative", zIndex: 1 }}>
+          {avatarElem}
+          {nameElem}
+          {subElem}
+          {bioElem}
+          {timeWidgetElem}
+          {discordPresenceElem}
+          {skillsWidgetElem}
+          {projectsWidgetElem}
+          {viewsElem}
+          
+          <div style={{ width: "100%", marginTop: 24 }}>
+            {socialLinksElem}
+            {spotifyWidgetElem}
+            {youtubeWidgetElem}
+            {audioPlayerElem}
+            {customHtmlElem}
+          </div>
+          {watermarkElem}
+        </div>
       )}
-
-      {/* Audio */}
-      {config.audio?.enabled && (audioTrackId || config.audio.src) && (
-        <motion.div
-          initial={{ opacity: 0, y: 22 }}
-          animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-          transition={{ duration: 0.55, delay: 0.42, ease: EASE }}
-          style={{ padding: "0 20px 20px" }}
-        >
-          <AudioPill
-            audioTrackId={audioTrackId}
-            audioUrl={config.audio.src}
-            title={audioTitle || config.audio.title}
-            artist={audioArtist || config.audio.artist}
-            thumb={audioThumb}
-            accentColor={accent}
-            textColor={theme.textColor}
-            mutedTextColor={theme.mutedTextColor}
-            volume={config.audio?.volume ?? 0.6}
-            loop={config.audio?.loop ?? true}
-            entered={entered}
-          />
-        </motion.div>
-      )}
-
-      {/* Brazy watermark */}
-      <div
-        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 20px 18px", opacity: 0.22, transition: "opacity 0.2s" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.55"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.22"; }}
-      >
-        <a href="https://brazy.it" target="_blank" rel="noopener noreferrer"
-          style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: theme.mutedTextColor || "rgba(255,255,255,0.5)" }}>
-          <SpiderLogo width={13} height={13} />
-          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }}>brazy.it</span>
-        </a>
-      </div>
     </motion.div>
   );
 
@@ -591,17 +713,21 @@ export default function ProfileRenderer({
         padding: "clamp(20px, 5vw, 60px) clamp(16px, 4vw, 40px)",
       }}>
         {theme.animatedBorder
-          ? <AnimatedBorderWrapper accent={accent} accent2={accent2} borderRadius={theme.borderRadius ?? 28}>{cardElement}</AnimatedBorderWrapper>
+          ? <AnimatedBorderWrapper accent={accent} accent2={accent2} borderRadius={cardBorderRadius}>{cardElement}</AnimatedBorderWrapper>
           : cardElement
         }
       </div>
 
       {/* Bottom widgets */}
-      {(widgets?.time?.enabled && widgets.time.placement === "bottom") ||
+      {showViewsOutside ||
+       (widgets?.time?.enabled && widgets.time.placement === "bottom") ||
        (widgets?.github?.enabled && widgets.github.placement === "bottom") ||
        (widgets?.youtube?.enabled && widgets.youtube.placement === "bottom") ||
        (widgets?.spotify?.enabled && widgets.spotify.placement === "bottom") ? (
         <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "0 clamp(16px,4vw,40px) 60px", maxWidth: 560, margin: "0 auto", width: "100%" }}>
+          {showViewsOutside && (
+            <ViewCounter initial={0} accent={accent} />
+          )}
           {widgets?.time?.enabled && widgets.time.placement === "bottom" && (
             <TimeWidget timezone={widgets.time.timezone} format={widgets.time.format} />
           )}

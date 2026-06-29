@@ -11,7 +11,7 @@ const spaceGrotesk = Space_Grotesk({ variable: '--font-heading', subsets: ['lati
 export const metadata: Metadata = {
   title: {
     default: 'brazy.it — your bio, but unhinged',
-    template: 'brazy | %s',
+    template: '%s',
   },
   description:
     'Create your own fully customizable bio page. Backgrounds, music, cursor effects, custom fonts and more. Claim your brazy.it/username today.',

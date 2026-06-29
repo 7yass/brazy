@@ -25,6 +25,8 @@ function BaseLayer({ background }: { background: Background }) {
           backgroundImage: `url(${background.imageUrl})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
+          filter: background.blur ? `blur(${background.blur}px)` : "none",
+          transform: background.blur ? "scale(1.05)" : "none",
         }}
       />
     );
@@ -46,6 +48,8 @@ function BaseLayer({ background }: { background: Background }) {
           objectFit: "cover",
           zIndex: 0,
           pointerEvents: "none",
+          filter: background.blur ? `blur(${background.blur}px)` : "none",
+          transform: background.blur ? "scale(1.05)" : "none",
         }}
       >
         <source src={background.videoUrl} />

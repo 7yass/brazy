@@ -77,6 +77,7 @@ export function AssetsUploader({
   const [externalUrl, setExternalUrl] = useState("");
   const [coverUploading, setCoverUploading] = useState(false);
   const [audioUploading, setAudioUploading] = useState(false);
+  const [localTrack, setLocalTrack] = useState<{ trackId: string; title: string; artist: string; thumb: string } | null>(null);
 
   const uploadToStorage = async (file: File, folder: string): Promise<string> => {
     const supabase = createClient();
@@ -123,10 +124,33 @@ export function AssetsUploader({
   const openAudioModal = () => {
     setModalUrl(audioUrl);
     setModalVolume(audioVolume);
-    setAudioTab("url");
     setAudioTitle(externalTrack?.title ?? "");
     setAudioArtist(externalTrack?.artist ?? "");
     setCoverUrl(externalTrack?.thumb ?? "");
+    setLocalTrack(externalTrack ? {
+      trackId: externalTrack.trackId || "",
+      title: externalTrack.title || "",
+      artist: externalTrack.artist || "",
+      thumb: externalTrack.thumb || "",
+    } : null);
+
+    if (audioUrl) {
+      if (audioUrl.includes("supabase.co") || audioUrl.includes("/audio/")) {
+        setAudioTab("upload");
+        const filename = audioUrl.split("/").pop() || "audio.mp3";
+        setUploadedAudio({ name: filename, size: "Uploaded File", url: audioUrl });
+      } else if (externalTrack?.trackId) {
+        setAudioTab("youtube");
+      } else {
+        setAudioTab("url");
+        setExternalUrl(audioUrl);
+      }
+    } else {
+      setAudioTab("url");
+      setUploadedAudio(null);
+      setExternalUrl("");
+    }
+
     setLyricsText(
       lyrics?.map((l) => {
         if (l.time == null) return l.text;
@@ -136,37 +160,52 @@ export function AssetsUploader({
         return `[${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(cs).padStart(2, "0")}] ${l.text}`;
       }).join("\n") ?? ""
     );
-    setExternalUrl("");
     setShowAudioModal(true);
   };
 
   const saveAudioModal = () => {
     let finalUrl = modalUrl;
-    if (externalUrl.trim()) {
+    if (audioTab === "url") {
       finalUrl = externalUrl.trim();
+    } else if (audioTab === "youtube") {
+      finalUrl = localTrack?.trackId ? `https://open.spotify.com/embed/track/${localTrack.trackId}` : "";
+    } else if (audioTab === "upload") {
+      finalUrl = uploadedAudio?.url || "";
     }
+
     onAudioChange(finalUrl);
     onAudioVolumeChange(modalVolume);
-    if (audioTitle || audioArtist || coverUrl) {
-      onAudioMetaChange?.({
-        trackId: externalTrack?.trackId ?? "",
-        title: audioTitle,
-        artist: audioArtist,
-        thumb: coverUrl,
-      });
-    }
-    // Parse synced lyrics
-    if (lyricsText.trim() && onLyricsChange) {
-      const parsed = lyricsText.split("\n").map((line) => {
-        const match = line.match(/^\[(\d{1,2}):(\d{2})\.(\d{2})\]\s*(.*)$/);
-        if (match) {
-          const time = parseInt(match[1]) * 60 + parseInt(match[2]) + parseInt(match[3]) / 100;
-          return { time, text: match[4] };
+
+    if (!finalUrl) {
+      onAudioMetaChange?.(null);
+      onLyricsChange?.([]);
+    } else {
+      if (localTrack || audioTitle || audioArtist || coverUrl) {
+        onAudioMetaChange?.({
+          trackId: localTrack?.trackId ?? "",
+          title: audioTitle || localTrack?.title || "",
+          artist: audioArtist || localTrack?.artist || "",
+          thumb: coverUrl || localTrack?.thumb || "",
+        });
+      }
+      
+      if (onLyricsChange) {
+        if (!lyricsText.trim()) {
+          onLyricsChange([]);
+        } else {
+          const parsed = lyricsText.split("\n").map((line) => {
+            const match = line.match(/^\[(\d{1,2}):(\d{2})\.(\d{2})\]\s*(.*)$/);
+            if (match) {
+              const time = parseInt(match[1]) * 60 + parseInt(match[2]) + parseInt(match[3]) / 100;
+              return { time, text: match[4] };
+            }
+            return { time: null, text: line };
+          });
+          onLyricsChange(parsed);
         }
-        return { time: null, text: line };
-      });
-      onLyricsChange(parsed);
+      }
     }
+
     setShowAudioModal(false);
   };
 
@@ -466,17 +505,22 @@ export function AssetsUploader({
                   </div>
                 </div>
 
-                {externalTrack ? (
+                {localTrack ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#0d0d0d", borderRadius: 10, padding: 10 }}>
-                    {externalTrack.thumb && (
-                      <img src={externalTrack.thumb} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }} />
+                    {localTrack.thumb && (
+                      <img src={localTrack.thumb} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }} />
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{ fontSize: 13, color: "#fafafa", fontWeight: 500, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{externalTrack.title}</p>
-                      <p style={{ fontSize: 11, color: "#777", margin: 0 }}>{externalTrack.artist}</p>
+                      <p style={{ fontSize: 13, color: "#fafafa", fontWeight: 500, margin: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{localTrack.title}</p>
+                      <p style={{ fontSize: 11, color: "#777", margin: 0 }}>{localTrack.artist}</p>
                     </div>
                     <button
-                      onClick={() => onAudioMetaChange?.(null)}
+                      onClick={() => {
+                        setLocalTrack(null);
+                        setAudioTitle("");
+                        setAudioArtist("");
+                        setCoverUrl("");
+                      }}
                       style={{ background: "none", border: "none", color: "#555", cursor: "pointer", padding: 4 }}
                     >
                       <X style={{ width: 14, height: 14 }} />
@@ -525,13 +569,13 @@ export function AssetsUploader({
 
                 {searchLoading && <p style={{ fontSize: 12, color: "#666", margin: 0 }}>Searching…</p>}
 
-                {searchResults.length > 0 && !externalTrack && (
+                {searchResults.length > 0 && !localTrack && (
                   <div style={{ maxHeight: 180, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
                     {searchResults.map((r) => (
                       <div
                         key={r.trackId}
                         onClick={() => {
-                          onAudioMetaChange?.({ trackId: r.trackId, title: r.title, artist: r.artist, thumb: r.thumb });
+                          setLocalTrack({ trackId: r.trackId, title: r.title, artist: r.artist, thumb: r.thumb });
                           setAudioTitle(r.title);
                           setAudioArtist(r.artist);
                           if (r.thumb) setCoverUrl(r.thumb);

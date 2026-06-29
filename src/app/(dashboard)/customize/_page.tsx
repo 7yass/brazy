@@ -420,10 +420,10 @@ export default function CustomizePage() {
               audioVolume={cfg.audio.volume}
               onAudioVolumeChange={(v) => set("audio", "volume", v)}
               selectedTrack={cfg.audio.src ? {
-                trackId: "",
-                title: cfg.audio.title,
-                artist: cfg.audio.artist,
-                thumb: "",
+                trackId: cfg.audio.trackId || "",
+                title: cfg.audio.title || "",
+                artist: cfg.audio.artist || "",
+                thumb: cfg.audio.coverUrl || "",
               } : null}
               onAudioMetaChange={(meta) => {
                 setCfg(prev => {
@@ -432,8 +432,25 @@ export default function CustomizePage() {
                     ...prev,
                     audio: {
                       ...prev.audio,
+                      trackId: meta?.trackId || "",
                       title: meta?.title || "",
                       artist: meta?.artist || "",
+                      coverUrl: meta?.thumb || "",
+                    }
+                  };
+                  scheduleSave(next);
+                  return next;
+                });
+              }}
+              lyrics={cfg.audio.lyrics || []}
+              onLyricsChange={(lyrics) => {
+                setCfg(prev => {
+                  if (!prev) return prev;
+                  const next = {
+                    ...prev,
+                    audio: {
+                      ...prev.audio,
+                      lyrics,
                     }
                   };
                   scheduleSave(next);
@@ -553,6 +570,17 @@ export default function CustomizePage() {
                 format={v => `${v}px`}
               />
 
+              {/* Background Blur */}
+              <SliderRow
+                label="Background Blur"
+                value={cfg.background.blur ?? 0}
+                onChange={v => set("background", "blur", v)}
+                min={0}
+                max={40}
+                step={1}
+                format={v => `${v}px`}
+              />
+
               {/* Background Effects */}
               <SelectControl
                 label="Background Effects"
@@ -588,6 +616,32 @@ export default function CustomizePage() {
                 ]}
               />
 
+              {/* Views Placement */}
+              <SelectControl
+                label="Views Placement"
+                value={cfg.analytics?.viewsPlacement ?? "inside"}
+                onChange={v => {
+                  setCfg(prev => {
+                    if (!prev) return prev;
+                    const next = {
+                      ...prev,
+                      analytics: {
+                        ...prev.analytics,
+                        viewsPlacement: v as "none" | "inside" | "outside",
+                        showViews: v !== "none",
+                      }
+                    };
+                    scheduleSave(next);
+                    return next;
+                  });
+                }}
+                options={[
+                  { value: "inside", label: "Inside Card" },
+                  { value: "outside", label: "Outside Card" },
+                  { value: "none", label: "Hidden / Disabled" },
+                ]}
+              />
+
               {/* Glow Settings */}
               <div className="md:col-span-2 flex flex-col gap-2">
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Glow Settings</span>
@@ -606,6 +660,26 @@ export default function CustomizePage() {
                     label="Badges" 
                     active={cfg.badges.enabled} 
                     onClick={() => set("badges", "enabled", !cfg.badges.enabled)} 
+                  />
+                  <GlowPill 
+                    label="Views Counter" 
+                    active={cfg.analytics?.showViews ?? true} 
+                    onClick={() => {
+                      const currentVal = cfg.analytics?.showViews ?? true;
+                      setCfg(prev => {
+                        if (!prev) return prev;
+                        const next = {
+                          ...prev,
+                          analytics: {
+                            ...prev.analytics,
+                            showViews: !currentVal,
+                            viewsPlacement: (!currentVal ? (prev.analytics?.viewsPlacement === "none" ? "inside" : prev.analytics?.viewsPlacement ?? "inside") : "none") as "none" | "inside" | "outside",
+                          }
+                        };
+                        scheduleSave(next);
+                        return next;
+                      });
+                    }} 
                   />
                 </div>
               </div>
@@ -686,6 +760,10 @@ export default function CustomizePage() {
                   { value: "outline", label: "Outline" },
                   { value: "neon", label: "Neon" },
                   { value: "minimal", label: "Minimal" },
+                  { value: "portfolio", label: "Portfolio" },
+                  { value: "simplistic", label: "Simplistic" },
+                  { value: "modern", label: "Modern" },
+                  { value: "sleek", label: "Sleek" },
                 ]}
               />
             </div>

@@ -131,7 +131,7 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMove);
     };
-  }, [effects.cursor, type, isEmojiType]);
+  }, [type, isEmojiType, effects.cursor.enabled, effects.cursor.color, effects.cursor.size, effects.cursor.fade, effects.cursor.followLag, effects.cursor.url]);
 
   if (!effects.cursor.enabled || type === "none") return null;
 

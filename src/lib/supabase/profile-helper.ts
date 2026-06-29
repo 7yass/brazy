@@ -3,6 +3,7 @@
 
 import { normalizeConfig, ProfileConfig } from "../profile/schema";
 import { createClient } from "./client";
+import { revalidateProfile } from "@/lib/profile/actions";
 
 export async function clientGetProfile() {
   const supabase = createClient();
@@ -41,24 +42,38 @@ export async function clientSaveProfile(config: ProfileConfig) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not authenticated");
 
+  const audioMeta = config.audio;
+  const updates = {
+    config,
+    audio_title: audioMeta?.title || null,
+    audio_artist: audioMeta?.artist || null,
+    audio_thumb: audioMeta?.coverUrl || null,
+    audio_track_id: audioMeta?.trackId || null,
+    audio_source: audioMeta?.src || null,
+  };
+
   // Try updating by user_id first
   const { data: updated, error } = await supabase
     .from("profiles")
-    .update({ config })
+    .update(updates)
     .eq("user_id", user.id)
-    .select("id")
+    .select("id, username")
     .maybeSingle();
 
-  if (!error && updated) return;
+  let username = updated?.username;
 
-  // Fall back to updating by id
-  const { error: error2 } = await supabase
-    .from("profiles")
-    .update({ config })
-    .eq("id", user.id);
+  if (error || !updated) {
+    // Fall back to updating by id
+    const { data: updatedById } = await supabase
+      .from("profiles")
+      .update(updates)
+      .eq("id", user.id)
+      .select("username")
+      .maybeSingle();
+    username = updatedById?.username;
+  }
 
-  if (error2) {
-    console.error("clientSaveProfile failed:", error2);
-    throw new Error(error2.message);
+  if (username) {
+    await revalidateProfile(username);
   }
 }

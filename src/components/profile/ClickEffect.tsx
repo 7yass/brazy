@@ -39,7 +39,7 @@ export default function ClickEffect({ effects }: { effects: Effects }) {
 
     window.addEventListener("click", onClick);
     return () => window.removeEventListener("click", onClick);
-  }, [effects.click]);
+  }, [effects.click.enabled, effects.click.count]);
 
   useEffect(() => {
     if (!effects.click.enabled) return;
@@ -81,7 +81,7 @@ export default function ClickEffect({ effects }: { effects: Effects }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [effects.click]);
+  }, [effects.click.enabled, effects.click.type, effects.click.color, effects.click.emoji]);
 
   if (!effects.click.enabled || effects.click.type === "none") return null;
   return <div ref={containerRef} aria-hidden style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 60 }} />;

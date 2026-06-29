@@ -241,7 +241,7 @@ export default function BadgesPage() {
                         {predefined ? (
                           <div
                             className="w-4.5 h-4.5"
-                            dangerouslySetInnerHTML={{ __html: predefined.svg }}
+                            dangerouslySetInnerHTML={{ __html: predefined.svg.replace('<svg ', '<svg fill="currentColor" ') }}
                           />
                         ) : (
                           <span className="text-sm font-semibold">{item.emoji}</span>
@@ -318,7 +318,7 @@ export default function BadgesPage() {
                     >
                       <div
                         className="w-5 h-5"
-                        dangerouslySetInnerHTML={{ __html: badge.svg }}
+                        dangerouslySetInnerHTML={{ __html: badge.svg.replace('<svg ', '<svg fill="currentColor" ') }}
                       />
                     </div>
 
