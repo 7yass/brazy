@@ -88,6 +88,21 @@ const clickEffectSchema = z.object({
   count: z.number().min(2).max(40).default(12),
 });
 
+export const usernameEffectSchema = z.enum([
+  "none",
+  "glow",
+  "glitch",
+  "typewriter",
+  "rainbow",
+  "neon",
+  "shake",
+  "gradient",
+  "bounce",
+  "pulse",
+  "wave",
+]);
+export type UsernameEffect = z.infer<typeof usernameEffectSchema>;
+
 export const effectsSchema = z.object({
   cursor: cursorEffectSchema.default(() => ({} as any)),
   click: clickEffectSchema.default(() => ({} as any)),
@@ -96,7 +111,7 @@ export const effectsSchema = z.object({
   typewriterTitle: z.boolean().default(false),
   glowPulse: z.boolean().default(true),
   textGlow: z.boolean().default(true),
-  usernameEffect: z.enum(["none", "glow", "glitch", "typewriter", "rainbow", "neon", "shake"]).default("none"),
+  usernameEffect: usernameEffectSchema.default("none"),
   animatedTitle: z.boolean().default(false),
   animatedTitleText: z.string().default(""),
 });

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { Upload, Trash2, Copy, Check, Sparkles } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
+import type { UsernameEffect } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
 import { TextInput, TextArea, ColorInput, Slider, Toggle } from "./controls";
 import { SectionCard } from "./SectionCard";
@@ -162,7 +163,7 @@ export default function ProfileEditor({
         current={cfg.effects.usernameEffect || "none"}
         username={cfg.identity.displayName || cfg.identity.username || username || "brazy"}
         accent={accent}
-        onSelect={(v) => updateEffect("usernameEffect", v)}
+        onSelect={(v) => updateEffect("usernameEffect", v as UsernameEffect)}
         onClose={() => setUsernameModalOpen(false)}
       />
 
@@ -295,7 +296,6 @@ export default function ProfileEditor({
                 />
               </Row>
               <Row label="Username Effects">
-                {/* Button that opens the modal */}
                 <button
                   onClick={() => setUsernameModalOpen(true)}
                   style={{
