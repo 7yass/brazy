@@ -2,7 +2,7 @@
 
 export const GET_PROFILE = `
   query GetProfile($user_id: uuid!) {
-    profiles(where: { _or: [{ user_id: { _eq: $user_id } }, { id: { _eq: $user_id } }] }) {
+    profiles(where: { user_id: { _eq: $user_id } }) {
       id
       user_id
       username
@@ -22,8 +22,9 @@ export const GET_PROFILE = `
 export const UPDATE_PROFILE = `
   mutation UpdateProfile($user_id: uuid!, $changes: profiles_set_input!) {
     update_profiles(
-      where: { _or: [{ user_id: { _eq: $user_id } }, { id: { _eq: $user_id } }] }
+      where: { user_id: { _eq: $user_id } }
       _set: $changes
+
     ) {
       returning {
         id
