@@ -25,61 +25,38 @@ interface Badge {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-interface StaggerProps {
-  initial: TargetAndTransition;
-  animate: TargetAndTransition;
-  transition: Transition;
-}
+// ─── Username Effect ───────────────────────────────────────────────────────────
 
-// ─── Username Effect Component ─────────────────────────────────────────────────
-
-function UsernameText({
-  text, effect, accent, accent2, textColor, textGlow, accent3,
-}: {
-  text: string; effect: string; accent: string; accent2: string; textColor: string; textGlow: boolean; accent3: string;
+function UsernameText({ text, effect, accent, accent2, textColor, textGlow }: {
+  text: string; effect: string; accent: string; accent2: string; textColor: string; textGlow: boolean;
 }) {
-  const [displayed, setDisplayed] = useState(effect === "typewriter" ? "" : text);
-  const [cursor, setCursor] = useState(true);
-
-  // Typewriter effect
-  useEffect(() => {
-    if (effect !== "typewriter") { setDisplayed(text); return; }
-    setDisplayed("");
-    let i = 0;
-    const timer = setInterval(() => {
-      setDisplayed(text.slice(0, i + 1));
-      i++;
-      if (i >= text.length) clearInterval(timer);
-    }, 80);
-    return () => clearInterval(timer);
-  }, [text, effect]);
-
-  // Cursor blink
-  useEffect(() => {
-    if (effect !== "typewriter") return;
-    const t = setInterval(() => setCursor(c => !c), 500);
-    return () => clearInterval(t);
-  }, [effect]);
-
-  const baseStyle: React.CSSProperties = {
-    margin: 0,
-    fontSize: 22,
-    fontWeight: 800,
-    letterSpacing: "-0.03em",
+  const base: React.CSSProperties = {
+    margin: 0, fontSize: 26, fontWeight: 800,
+    letterSpacing: "-0.03em", display: "inline-block",
     color: textColor || "#fafafa",
-    display: "inline-block",
   };
+
+  if (effect === "gradient") {
+    return (
+      <>
+        <style>{`@keyframes gradShift{0%{background-position:0% 50%}100%{background-position:200% 50%}}`}</style>
+        <h1 style={{
+          ...base,
+          background: `linear-gradient(90deg,${accent},${accent2},${accent},${accent2})`,
+          backgroundSize: "300% auto",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+          animation: "gradShift 3s linear infinite",
+        }}>{text}</h1>
+      </>
+    );
+  }
 
   if (effect === "glow") {
     return (
       <>
-        <style>{`
-          @keyframes nameGlowPulse {
-            0%, 100% { text-shadow: 0 0 10px ${accent}66, 0 0 30px ${accent}33; }
-            50% { text-shadow: 0 0 20px ${accent}99, 0 0 50px ${accent}55, 0 0 80px ${accent}33; }
-          }
-        `}</style>
-        <h1 style={{ ...baseStyle, animation: "nameGlowPulse 2.5s ease-in-out infinite" }}>{text}</h1>
+        <style>{`@keyframes glowPulse{0%,100%{text-shadow:0 0 12px ${accent}55,0 0 30px ${accent}22}50%{text-shadow:0 0 24px ${accent}99,0 0 60px ${accent}44}}`}</style>
+        <h1 style={{ ...base, animation: "glowPulse 2.5s ease-in-out infinite" }}>{text}</h1>
       </>
     );
   }
@@ -88,129 +65,47 @@ function UsernameText({
     return (
       <>
         <style>{`
-          @keyframes nameGlitchTop {
-            0%, 90%, 100% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
-            92% { clip-path: inset(0 0 60% 0); transform: translateX(-4px); color: #ff0044; }
-            94% { clip-path: inset(30% 0 40% 0); transform: translateX(4px); color: #00ffff; }
-            96% { clip-path: inset(60% 0 20% 0); transform: translateX(-2px); }
-          }
-          @keyframes nameGlitchBot {
-            0%, 90%, 100% { clip-path: inset(100% 0 0 0); transform: translateX(0); }
-            92% { clip-path: inset(60% 0 0 0); transform: translateX(4px); color: #00ffff; }
-            94% { clip-path: inset(40% 0 30% 0); transform: translateX(-4px); color: #ff0044; }
-            96% { clip-path: inset(20% 0 60% 0); transform: translateX(2px); }
-          }
+          @keyframes gt{0%,89%,100%{clip-path:inset(100% 0 0 0);transform:translateX(0)}90%{clip-path:inset(10% 0 60% 0);transform:translateX(-4px);color:#ff0044}93%{clip-path:inset(50% 0 20% 0);transform:translateX(4px);color:#00ffff}96%{clip-path:inset(70% 0 5% 0);transform:translateX(-2px)}}
+          @keyframes gb{0%,89%,100%{clip-path:inset(0 0 100% 0);transform:translateX(0)}90%{clip-path:inset(60% 0 10% 0);transform:translateX(4px);color:#00ffff}93%{clip-path:inset(20% 0 50% 0);transform:translateX(-4px);color:#ff0044}96%{clip-path:inset(5% 0 70% 0);transform:translateX(2px)}}
         `}</style>
         <div style={{ position: "relative", display: "inline-block" }}>
-          <h1 style={{ ...baseStyle, visibility: "visible" }}>{text}</h1>
-          <h1 style={{ ...baseStyle, position: "absolute", top: 0, left: 0, animation: "nameGlitchTop 3s infinite" }}>{text}</h1>
-          <h1 style={{ ...baseStyle, position: "absolute", top: 0, left: 0, animation: "nameGlitchBot 3s infinite 0.05s" }}>{text}</h1>
+          <h1 style={base}>{text}</h1>
+          <h1 style={{ ...base, position: "absolute", top: 0, left: 0, animation: "gt 4s infinite" }}>{text}</h1>
+          <h1 style={{ ...base, position: "absolute", top: 0, left: 0, animation: "gb 4s infinite 0.05s" }}>{text}</h1>
         </div>
       </>
     );
   }
 
-  if (effect === "typewriter") {
-    return (
-      <h1 style={{ ...baseStyle, textShadow: textGlow ? `0 0 28px ${accent3}66` : "none" }}>
-        {displayed}
-        <span style={{ opacity: cursor ? 1 : 0, color: accent, fontWeight: 300, marginLeft: 1 }}>|</span>
-      </h1>
-    );
-  }
-
-  if (effect === "rainbow") {
-    return (
-      <>
-        <style>{`
-          @keyframes nameRainbowShift {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 200% 50%; }
-          }
-        `}</style>
-        <h1 style={{
-          ...baseStyle,
-          background: "linear-gradient(90deg, #ff0080, #ff8c00, #ffe000, #40ff00, #00c0ff, #8000ff, #ff0080)",
-          backgroundSize: "200% auto",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-          animation: "nameRainbowShift 2.5s linear infinite",
-        }}>{text}</h1>
-      </>
-    );
-  }
-
-  if (effect === "neon") {
-    return (
-      <>
-        <style>{`
-          @keyframes nameNeonFlicker {
-            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-              text-shadow: 0 0 4px #fff, 0 0 11px #fff, 0 0 19px #fff, 0 0 40px ${accent}, 0 0 80px ${accent}, 0 0 90px ${accent};
-            }
-            20%, 24%, 55% { text-shadow: none; }
-          }
-        `}</style>
-        <h1 style={{ ...baseStyle, color: "#fff", animation: "nameNeonFlicker 5s infinite alternate" }}>{text}</h1>
-      </>
-    );
-  }
-
-  if (effect === "shake") {
-    return (
-      <>
-        <style>{`
-          @keyframes nameShake {
-            0%, 100% { transform: translateX(0); }
-            10% { transform: translateX(-3px) rotate(-1deg); }
-            20% { transform: translateX(3px) rotate(1deg); }
-            30% { transform: translateX(-2px); }
-            40% { transform: translateX(2px); }
-            50% { transform: translateX(-1px); }
-            60% { transform: translateX(1px); }
-            70% { transform: translateX(-2px) rotate(-0.5deg); }
-            80% { transform: translateX(2px) rotate(0.5deg); }
-            90% { transform: translateX(-1px); }
-          }
-        `}</style>
-        <h1 style={{ ...baseStyle, textShadow: textGlow ? `0 0 28px ${accent3}66` : "none", animation: "nameShake 0.6s ease-in-out infinite", display: "inline-block" }}>{text}</h1>
-      </>
-    );
-  }
-
-  // Default / none
-  return (
-    <h1 style={{ ...baseStyle, textShadow: textGlow ? `0 0 28px ${accent3}66` : "none" }}>{text}</h1>
-  );
+  // none / default
+  return <h1 style={{ ...base, textShadow: textGlow ? `0 0 28px ${accent}55` : "none" }}>{text}</h1>;
 }
 
 // ─── Animated Border ───────────────────────────────────────────────────────────
 
-function AnimatedBorderWrapper({ children, accent, accent2, borderRadius }: { children: React.ReactNode; accent: string; accent2: string; borderRadius: number }) {
+function AnimatedBorderWrapper({ children, accent, accent2, borderRadius }: {
+  children: React.ReactNode; accent: string; accent2: string; borderRadius: number;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const angleRef = useRef(0);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const tick = () => {
+      angleRef.current = (angleRef.current + 1) % 360;
+      el.style.background = `conic-gradient(from ${angleRef.current}deg, ${accent}, ${accent2}, #ff0080, #ffff00, ${accent})`;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [accent, accent2]);
+
   return (
-    <>
-      <style>{`
-        @keyframes rotateBorder {
-          from { --angle: 0deg; }
-          to { --angle: 360deg; }
-        }
-        @property --angle {
-          syntax: '<angle>';
-          initial-value: 0deg;
-          inherits: false;
-        }
-        .animated-border-wrap {
-          background: conic-gradient(from var(--angle), ${accent}, ${accent2}, #ff0080, #ffff00, ${accent}, ${accent2});
-          animation: rotateBorder 3s linear infinite;
-          padding: 2px;
-          border-radius: ${borderRadius + 2}px;
-        }
-      `}</style>
-      <div className="animated-border-wrap">
-        {children}
-      </div>
-    </>
+    <div ref={wrapRef} style={{ padding: 2, borderRadius: borderRadius + 2, display: "inline-flex", width: "100%" }}>
+      {children}
+    </div>
   );
 }
 
@@ -221,26 +116,187 @@ function TimeWidget({ timezone, format }: { timezone: string; format: "12h" | "2
   useEffect(() => {
     const update = () => {
       try {
-        const t = new Intl.DateTimeFormat("en-US", {
-          timeZone: timezone,
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: format === "12h",
-        }).format(new Date());
-        setTime(t);
+        setTime(new Intl.DateTimeFormat("en-US", {
+          timeZone: timezone, hour: "2-digit", minute: "2-digit",
+          second: "2-digit", hour12: format === "12h",
+        }).format(new Date()));
       } catch { setTime("--:--"); }
     };
     update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
   }, [timezone, format]);
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 12 }}>
-      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>🕐</span>
-      <span style={{ fontSize: 14, fontWeight: 700, color: "#a78bfa", fontVariantNumeric: "tabular-nums", letterSpacing: "0.04em" }}>{time}</span>
-      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)" }}>{timezone}</span>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12 }}>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>🕐</span>
+      <span style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", fontVariantNumeric: "tabular-nums" }}>{time}</span>
+      <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>{timezone}</span>
+    </div>
+  );
+}
+
+// ─── Badge Icon ────────────────────────────────────────────────────────────────
+
+function BadgeIcon({ badge }: { badge: Badge }) {
+  const [show, setShow] = useState(false);
+  const key = badge.icon?.toLowerCase().replace(/ /g, "_");
+  const predefined = PREDEFINED_BADGES[key];
+  const color = badge.color || predefined?.color || "#ffffff";
+
+  // Inject color into SVG by replacing fill/stroke/currentColor
+  const coloredSvg = predefined?.svg
+    ? predefined.svg
+        .replace(/fill="(?!none)[^"]*"/g, `fill="${color}"`)
+        .replace(/stroke="(?!none)[^"]*"/g, `stroke="${color}"`)
+        .replace(/currentColor/g, color)
+    : null;
+
+  return (
+    <div
+      style={{ position: "relative", display: "inline-flex", alignItems: "center", cursor: "help" }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {coloredSvg ? (
+        <div
+          style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}
+          dangerouslySetInnerHTML={{ __html: coloredSvg }}
+        />
+      ) : (
+        <span style={{ fontSize: 18, lineHeight: 1 }}>{badge.icon}</span>
+      )}
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.95 }}
+            transition={{ duration: 0.12 }}
+            style={{
+              position: "absolute", bottom: "calc(100% + 8px)", left: "50%",
+              transform: "translateX(-50%)", background: "#111",
+              border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10,
+              padding: "5px 12px", whiteSpace: "nowrap", fontSize: 12,
+              color: "#fafafa", pointerEvents: "none", zIndex: 50,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+            }}
+          >
+            <div style={{ fontWeight: 600 }}>{badge.label}</div>
+            {badge.description && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 1 }}>{badge.description}</div>}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─── Social Icon Button ────────────────────────────────────────────────────────
+
+function SocialIconBtn({ href, label, color, children }: {
+  href: string; label: string; color: string; children: React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <a
+      href={href} target="_blank" rel="noopener noreferrer"
+      title={label}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 44, height: 44,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        borderRadius: "50%",
+        background: hovered ? `${color}20` : "rgba(255,255,255,0.05)",
+        border: `1px solid ${hovered ? color + "60" : "rgba(255,255,255,0.08)"}`,
+        color: hovered ? color : "rgba(255,255,255,0.55)",
+        textDecoration: "none",
+        transition: "all 0.18s cubic-bezier(0.22,1,0.36,1)",
+        transform: hovered ? "translateY(-2px) scale(1.08)" : "none",
+        boxShadow: hovered ? `0 4px 20px ${color}30` : "none",
+        flexShrink: 0,
+      }}
+    >
+      {children}
+    </a>
+  );
+}
+
+// ─── Markdown Bio ──────────────────────────────────────────────────────────────
+
+function MarkdownBio({ text, textColor }: { text: string; textColor: string }) {
+  const html = text
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/__(.+?)__/g, "<u>$1</u>")
+    .replace(/~~(.+?)~~/g, "<s>$1</s>")
+    .replace(/\[(.+?)\]\((.+?)\)/g, `<a href="$2" target="_blank" rel="noopener noreferrer" style="color:${textColor};opacity:0.7;text-decoration:underline">$1</a>`)
+    .replace(/\n/g, "<br>");
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// ─── Audio Pill ────────────────────────────────────────────────────────────────
+
+function AudioPill({ audioTrackId, audioUrl, title, artist, thumb, accent, textColor, mutedColor, volume, loop, entered }: {
+  audioTrackId?: string; audioUrl?: string; title?: string; artist?: string; thumb?: string;
+  accent: string; textColor?: string; mutedColor?: string; volume: number; loop: boolean; entered: boolean;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (audioTrackId) {
+      let alive = true;
+      getPipedStreamUrl(audioTrackId).then(url => { if (alive) setStreamUrl(url); });
+      return () => { alive = false; };
+    }
+    setStreamUrl(audioUrl || null);
+  }, [audioTrackId, audioUrl]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume, streamUrl]);
+
+  useEffect(() => {
+    if (!audioRef.current || !streamUrl || !entered) return;
+    audioRef.current.play().then(() => setPlaying(true)).catch(() => {});
+  }, [entered, streamUrl]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    playing ? audioRef.current.play().catch(() => setPlaying(false)) : audioRef.current.pause();
+  }, [playing]);
+
+  if (!audioTrackId && !audioUrl) return null;
+
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 10,
+      padding: "8px 14px",
+      background: "rgba(255,255,255,0.04)",
+      border: `1px solid ${accent}22`,
+      borderRadius: 16, width: "100%", boxSizing: "border-box",
+    }}>
+      {streamUrl && <audio ref={audioRef} src={streamUrl} loop={loop} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />}
+      {thumb && <img src={thumb} alt="" style={{ width: 32, height: 32, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: textColor ?? "#fafafa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title || "track"}</p>
+        {artist && <p style={{ margin: "1px 0 0", fontSize: 11, color: mutedColor ?? "rgba(255,255,255,0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{artist}</p>}
+      </div>
+      <button
+        onClick={() => setPlaying(p => !p)}
+        style={{
+          width: 30, height: 30, borderRadius: "50%",
+          background: `${accent}22`, border: `1px solid ${accent}44`,
+          color: "#fff", cursor: "pointer", fontSize: 10,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexShrink: 0, transition: "background 0.15s",
+        }}
+        aria-label={playing ? "Pause" : "Play"}
+      >
+        {playing ? "❚❚" : "▶"}
+      </button>
     </div>
   );
 }
@@ -248,457 +304,324 @@ function TimeWidget({ timezone, format }: { timezone: string; format: "12h" | "2
 // ─── Main Renderer ─────────────────────────────────────────────────────────────
 
 export default function ProfileRenderer({
-  config,
-  preview,
-  audioTrackId,
-  audioTitle,
-  audioArtist,
-  audioThumb,
-  profileBadges,
+  config, preview, audioTrackId, audioTitle, audioArtist, audioThumb, profileBadges,
 }: {
-  config: ProfileConfig;
-  preview?: boolean;
-  audioTrackId?: string;
-  audioTitle?: string;
-  audioArtist?: string;
-  audioThumb?: string;
+  config: ProfileConfig; preview?: boolean;
+  audioTrackId?: string; audioTitle?: string; audioArtist?: string; audioThumb?: string;
   profileBadges?: Badge[];
 }) {
   const [entered, setEntered] = useState(preview || !config.splash.enabled);
   const { theme, identity, background, effects, splash, social, widgets } = config;
   const cardRef = useRef<HTMLDivElement>(null);
-  const tiltRef = useRef({ x: 0, y: 0 });
-  const [tiltStyle, setTiltStyle] = useState({});
+  const [tiltStyle, setTiltStyle] = useState<React.CSSProperties>({});
 
   // Animated browser title
   useEffect(() => {
     if (!effects.animatedTitle || !effects.animatedTitleText) return;
-    const base = effects.animatedTitleText || identity.displayName || identity.username || "brazy";
-    const padded = `${base}    `;
+    const base = effects.animatedTitleText;
+    const padded = base + "    ";
     let i = 0;
     const t = setInterval(() => {
-      const shifted = padded.slice(i) + padded.slice(0, i);
-      document.title = shifted;
+      document.title = padded.slice(i) + padded.slice(0, i);
       i = (i + 1) % padded.length;
     }, 180);
     return () => { clearInterval(t); document.title = config.seo.title || base; };
-  }, [effects.animatedTitle, effects.animatedTitleText, identity, config.seo.title]);
+  }, [effects.animatedTitle, effects.animatedTitleText, config.seo.title]);
 
   // 3D Tilt
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!effects.tilt3d || !cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const intensity = effects.tiltIntensity ?? 12;
-    const x = ((e.clientX - cx) / (rect.width / 2)) * intensity;
-    const y = -((e.clientY - cy) / (rect.height / 2)) * intensity;
-    tiltRef.current = { x, y };
-    setTiltStyle({ transform: `perspective(1000px) rotateX(${y}deg) rotateY(${x}deg) scale(1.01)` });
+    const intensity = effects.tiltIntensity ?? 10;
+    const x = ((e.clientX - rect.left - rect.width / 2) / (rect.width / 2)) * intensity;
+    const y = -((e.clientY - rect.top - rect.height / 2) / (rect.height / 2)) * intensity;
+    setTiltStyle({ transform: `perspective(900px) rotateX(${y}deg) rotateY(${x}deg) scale(1.01)`, transition: "transform 0.1s" });
   }, [effects.tilt3d, effects.tiltIntensity]);
 
   const handleMouseLeave = useCallback(() => {
-    setTiltStyle({ transform: "perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)", transition: "transform 0.5s cubic-bezier(0.22,1,0.36,1)" });
-    setTimeout(() => setTiltStyle({}), 500);
+    setTiltStyle({ transform: "perspective(900px) rotateX(0deg) rotateY(0deg) scale(1)", transition: "transform 0.5s cubic-bezier(0.22,1,0.36,1)" });
   }, []);
 
   const fontFamily =
-    theme.fontFamily === "custom" && theme.fontFamilyUrl
-      ? "var(--font-custom)"
-      : theme.fontFamily === "mono"
-        ? "var(--font-geist-mono), monospace"
-        : theme.fontFamily === "inter"
-          ? "Inter, system-ui, sans-serif"
-          : theme.fontFamily === "poppins"
-            ? "Poppins, system-ui, sans-serif"
-            : theme.fontFamily === "serif"
-              ? "Georgia, serif"
-              : "Satoshi, var(--font-geist-sans), system-ui, sans-serif";
+    theme.fontFamily === "mono" ? "var(--font-geist-mono), monospace" :
+    theme.fontFamily === "inter" ? "Inter, system-ui, sans-serif" :
+    theme.fontFamily === "poppins" ? "Poppins, system-ui, sans-serif" :
+    theme.fontFamily === "serif" ? "Georgia, serif" :
+    "Satoshi, var(--font-geist-sans), system-ui, sans-serif";
 
   const accent = theme.primaryColor || "#a855f7";
   const accent2 = theme.secondaryColor || "#ec4899";
-  const accent3 = theme.accentColor || "#8b5cf6";
+  const textColor = theme.textColor || "#fafafa";
+  const mutedColor = theme.mutedTextColor || "rgba(255,255,255,0.38)";
+  const align = theme.contentAlign || "center";
+  const alignItems = align === "left" ? "flex-start" : "center";
+  const textAlign = align === "left" ? "left" : "center";
 
-  const maxWidthMap = { default: theme.maxWidth ?? 480, medium: 560, large: 680 };
-  
-  // Card style layout helpers
-  const isPortfolio = theme.cardStyle === "portfolio";
-  const isSimplistic = theme.cardStyle === "simplistic";
-  const isModern = theme.cardStyle === "modern";
-  const isSleek = theme.cardStyle === "sleek";
+  const cardBorderRadius = theme.borderRadius ?? 24;
+  const cardBorderWidth = theme.borderWidth ?? 1;
 
-  const cardMaxWidth = 
-    isPortfolio 
-      ? 780 
-      : isSimplistic 
-        ? 380 
-        : maxWidthMap[(theme.profileSize ?? "default") as keyof typeof maxWidthMap];
+  const cardBg = theme.cardStyle === "minimal" || theme.cardStyle === "simplistic"
+    ? "transparent"
+    : `rgba(8,7,16,${theme.cardOpacity ?? 0.65})`;
 
-  const cardBg =
-    isSimplistic
-      ? "transparent"
-      : isSleek
-        ? "rgba(5, 5, 5, 0.95)"
-        : theme.cardStyle === "glass" || isPortfolio || isModern
-          ? `rgba(10, 9, 18, ${theme.cardOpacity ?? 0.72})`
-          : theme.cardStyle === "minimal"
-            ? "transparent"
-            : `rgba(8, 7, 16, ${theme.cardOpacity ?? 0.85})`;
+  const cardBorder = theme.cardStyle === "minimal" || theme.cardStyle === "simplistic"
+    ? "none"
+    : `${cardBorderWidth}px solid rgba(255,255,255,${theme.cardStyle === "neon" ? 0 : 0.07})`;
 
-  const cardGlow = 
-    isSimplistic 
-      ? "none" 
-      : theme.glow || isSleek
-        ? `0 0 ${isSleek ? 50 : (theme.glowIntensity ?? 40)}px ${accent}28, 0 32px 80px rgba(0,0,0,0.6)`
-        : "0 32px 80px rgba(0,0,0,0.5)";
+  const cardBlur = theme.cardStyle === "glass" ? `blur(${theme.cardBlur ?? 18}px)` : "none";
 
-  const cardBorderRadius = isSimplistic ? 0 : isModern ? 32 : isSleek ? 16 : (theme.borderRadius ?? 28);
-  const cardBorderWidth = isSimplistic ? 0 : isModern ? 1.5 : (theme.borderWidth ?? 1);
-  const cardBorderColor = isModern ? "rgba(255,255,255,0.12)" : isSleek ? `${accent}33` : `rgba(255,255,255,${theme.cardStyle === "minimal" ? 0 : 0.07})`;
+  const cardShadow = theme.glow
+    ? `0 0 ${theme.glowIntensity ?? 40}px ${accent}22, 0 24px 64px rgba(0,0,0,0.55)`
+    : "0 24px 64px rgba(0,0,0,0.4)";
 
-  const cardAlign = isModern ? "left" : (theme.contentAlign || "center");
+  const showViewsInside = config.analytics?.showViews !== false &&
+    (config.analytics?.viewsPlacement === "inside" || !config.analytics?.viewsPlacement);
+  const showViewsOutside = config.analytics?.showViews !== false &&
+    config.analytics?.viewsPlacement === "outside";
 
-  const showViewsInside = config.analytics?.showViews !== false && (config.analytics?.viewsPlacement === "inside" || !config.analytics?.viewsPlacement);
-  const showViewsOutside = config.analytics?.showViews !== false && config.analytics?.viewsPlacement === "outside";
-
-  const stagger = (i: number): StaggerProps => ({
-    initial: { opacity: 0, y: 22 },
-    animate: { opacity: entered ? 1 : 0, y: entered ? 0 : 22 },
-    transition: { duration: 0.55, delay: i * 0.07, ease: EASE },
+  const stagger = (i: number) => ({
+    initial: { opacity: 0, y: 18 } as TargetAndTransition,
+    animate: { opacity: entered ? 1 : 0, y: entered ? 0 : 18 } as TargetAndTransition,
+    transition: { duration: 0.5, delay: i * 0.07, ease: EASE } as Transition,
   });
 
-  // Modular layout components
-  const avatarElem = identity.avatarUrl && (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0, ease: EASE }}
-      style={{
-        width: 96, height: 96, borderRadius: "50%", padding: 3,
-        background: `linear-gradient(135deg, ${accent}, ${accent2}, ${accent3})`,
-        boxShadow: `0 0 28px ${accent}44`, flexShrink: 0,
-      }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={identity.avatarUrl}
-        alt={identity.displayName || identity.username}
-        style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block", background: "#0d0d0d" }}
-      />
-    </motion.div>
-  );
+  const hasBadges = profileBadges && profileBadges.length > 0;
 
-  const nameElem = (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0.07, ease: EASE }}
-      style={{ 
-        marginTop: identity.avatarUrl ? 14 : 0, 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 7, 
-        flexWrap: "wrap", 
-        justifyContent: cardAlign === "left" ? "flex-start" : "center" 
-      }}
-    >
-      <UsernameText
-        text={identity.displayName || identity.username}
-        effect={effects.usernameEffect}
-        accent={accent}
-        accent2={accent2}
-        accent3={accent3}
-        textColor={theme.textColor || "#fafafa"}
-        textGlow={effects.textGlow}
-      />
-      {profileBadges?.map((badge) => (
-        <BadgeIcon key={badge.id} badge={badge} />
-      ))}
-    </motion.div>
-  );
+  const cardInner = (
+    <div style={{
+      display: "flex", flexDirection: "column",
+      alignItems,
+      padding: "36px 28px 24px",
+      gap: 0,
+      position: "relative", zIndex: 1,
+    }}>
 
-  const subElem = (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0.14, ease: EASE }}
-      style={{ 
-        marginTop: 5, 
-        display: "flex", 
-        alignItems: "center", 
-        gap: 6, 
-        flexWrap: "wrap", 
-        justifyContent: cardAlign === "left" ? "flex-start" : "center", 
-        fontSize: 13, 
-        color: theme.mutedTextColor || "rgba(255,255,255,0.38)" 
-      }}
-    >
-      <span>@{identity.username}</span>
-      {identity.pronouns && (<><span style={{ opacity: 0.35 }}>·</span><span>{identity.pronouns}</span></>)}
-      {identity.location && (<><span style={{ opacity: 0.35 }}>·</span><span>📍 {identity.location}</span></>)}
-    </motion.div>
-  );
+      {/* Avatar */}
+      {identity.avatarUrl && (
+        <motion.div {...stagger(0)} style={{ position: "relative", marginBottom: hasBadges ? 8 : 14 }}>
+          <div style={{
+            width: 88, height: 88, borderRadius: "50%", padding: 3,
+            background: `linear-gradient(135deg,${accent},${accent2})`,
+            boxShadow: `0 0 24px ${accent}44`,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={identity.avatarUrl}
+              alt={identity.displayName || identity.username}
+              style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", display: "block", background: "#0d0d0d" }}
+            />
+          </div>
+        </motion.div>
+      )}
 
-  const bioElem = identity.bio && (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 0.85 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0.21, ease: EASE }}
-      style={{ 
-        margin: "14px 0 0", 
-        fontSize: 14, 
-        lineHeight: 1.65, 
-        color: theme.textColor || "#e4e4e7", 
-        textAlign: cardAlign === "left" ? "left" : "center", 
-        maxWidth: 360 
-      }}
-    >
-      {identity.bioMarkdown
-        ? <MarkdownBio text={identity.bio} />
-        : <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>{identity.bio}</p>}
-    </motion.div>
-  );
+      {/* Badges row — below avatar, above name */}
+      {hasBadges && (
+        <motion.div {...stagger(1)} style={{
+          display: "flex", alignItems: "center", justifyContent: alignItems === "flex-start" ? "flex-start" : "center",
+          gap: 6, flexWrap: "wrap", marginBottom: 10,
+        }}>
+          {profileBadges!.map(b => <BadgeIcon key={b.id} badge={b} />)}
+        </motion.div>
+      )}
 
-  const viewsElem = showViewsInside && (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0.28, ease: EASE }}
-      style={{ marginTop: 18 }}
-    >
-      <ViewCounter initial={0} accent={accent} />
-    </motion.div>
-  );
-
-  const timeWidgetElem = widgets?.time?.enabled && widgets.time.placement === "card" && (
-    <motion.div {...stagger(4)} style={{ marginTop: 12 }}>
-      <TimeWidget timezone={widgets.time.timezone} format={widgets.time.format} />
-    </motion.div>
-  );
-
-  const discordPresenceElem = widgets?.discordPresence?.enabled && widgets.discordPresence.placement === "card" && widgets.discordPresence.discordId && (
-    <motion.div {...stagger(4)} style={{ marginTop: 14, width: "100%", maxWidth: 360 }}>
-      <DiscordPresenceWidget discordId={widgets.discordPresence.discordId} />
-    </motion.div>
-  );
-
-  const skillsWidgetElem = config.skills?.enabled && config.skills.items?.length > 0 && (
-    <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360, display: "flex", justifyContent: cardAlign === "left" ? "flex-start" : "center" }}>
-      <SkillsWidget skills={config.skills.items} />
-    </motion.div>
-  );
-
-  const projectsWidgetElem = config.projects?.enabled && config.projects.items?.length > 0 && (
-    <motion.div {...stagger(5)} style={{ marginTop: 18, width: "100%", maxWidth: 360 }}>
-      <ProjectsWidget projects={config.projects.items} />
-    </motion.div>
-  );
-
-  const socialLinksElem = social.links.length > 0 && (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0.35, ease: EASE }}
-      style={{
-        padding: isPortfolio ? "0" : "0 20px 20px",
-        display: "grid",
-        gridTemplateColumns: social.links.length === 1 ? "1fr" : "repeat(2, 1fr)",
-        gap: 8,
-        width: "100%",
-      }}
-    >
-      {social.links.map((link, i) => {
-        const Icon = brandIcons[link.platform as keyof typeof brandIcons] || brandIcons.website;
-        const color = link.color || accent;
-        return (
-          <SocialLink key={i} href={link.url} label={link.label || link.platform} color={color} textColor={theme.textColor || "#fafafa"}>
-            <Icon size={16} />
-          </SocialLink>
-        );
-      })}
-    </motion.div>
-  );
-
-  const spotifyWidgetElem = widgets?.spotify?.enabled && widgets.spotify.placement === "card" && widgets.spotify.url && (
-    <motion.div {...stagger(6)} style={{ padding: isPortfolio ? "0" : "0 20px 16px", width: "100%" }}>
-      <iframe
-        src={`https://open.spotify.com/embed/${widgets.spotify.url.split("spotify.com/")[1]?.replace(/\?.*/, "")}`}
-        width="100%" height="80" frameBorder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        style={{ borderRadius: 12 }}
-      />
-    </motion.div>
-  );
-
-  const youtubeWidgetElem = widgets?.youtube?.enabled && widgets.youtube.placement === "card" && widgets.youtube.url && (
-    <motion.div {...stagger(7)} style={{ padding: isPortfolio ? "0" : "0 20px 16px", width: "100%" }}>
-      <div style={{ position: "relative", paddingBottom: "56.25%", borderRadius: 12, overflow: "hidden" }}>
-        <iframe
-          src={widgets.youtube.url.replace("watch?v=", "embed/")}
-          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
+      {/* Username */}
+      <motion.div {...stagger(2)} style={{ marginBottom: 4 }}>
+        <UsernameText
+          text={identity.displayName || identity.username}
+          effect={effects.usernameEffect}
+          accent={accent}
+          accent2={accent2}
+          textColor={textColor}
+          textGlow={effects.textGlow}
         />
+      </motion.div>
+
+      {/* Handle + pronouns + location */}
+      <motion.div {...stagger(3)} style={{
+        display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap",
+        justifyContent: alignItems === "flex-start" ? "flex-start" : "center",
+        fontSize: 12, color: mutedColor, marginBottom: identity.bio ? 12 : 16,
+      }}>
+        <span>@{identity.username}</span>
+        {identity.pronouns && (<><span style={{ opacity: 0.3 }}>·</span><span>{identity.pronouns}</span></>)}
+        {identity.location && (<><span style={{ opacity: 0.3 }}>·</span><span>📍 {identity.location}</span></>)}
+      </motion.div>
+
+      {/* Bio — single muted line, clean */}
+      {identity.bio && (
+        <motion.div {...stagger(4)} style={{
+          marginBottom: 18,
+          fontSize: 13,
+          color: mutedColor,
+          textAlign,
+          lineHeight: 1.6,
+          maxWidth: 320,
+          opacity: 0.85,
+        }}>
+          {identity.bioMarkdown
+            ? <MarkdownBio text={identity.bio} textColor={textColor} />
+            : <span>{identity.bio}</span>}
+        </motion.div>
+      )}
+
+      {/* Discord presence */}
+      {widgets?.discordPresence?.enabled && widgets.discordPresence.placement === "card" && widgets.discordPresence.discordId && (
+        <motion.div {...stagger(5)} style={{ marginBottom: 16, width: "100%", maxWidth: 320 }}>
+          <DiscordPresenceWidget discordId={widgets.discordPresence.discordId} />
+        </motion.div>
+      )}
+
+      {/* Time widget */}
+      {widgets?.time?.enabled && widgets.time.placement === "card" && (
+        <motion.div {...stagger(5)} style={{ marginBottom: 12 }}>
+          <TimeWidget timezone={widgets.time.timezone} format={widgets.time.format} />
+        </motion.div>
+      )}
+
+      {/* Skills */}
+      {config.skills?.enabled && config.skills.items?.length > 0 && (
+        <motion.div {...stagger(6)} style={{ marginBottom: 16, width: "100%", maxWidth: 320 }}>
+          <SkillsWidget skills={config.skills.items} />
+        </motion.div>
+      )}
+
+      {/* Projects */}
+      {config.projects?.enabled && config.projects.items?.length > 0 && (
+        <motion.div {...stagger(6)} style={{ marginBottom: 16, width: "100%", maxWidth: 320 }}>
+          <ProjectsWidget projects={config.projects.items} />
+        </motion.div>
+      )}
+
+      {/* Views — inside */}
+      {showViewsInside && (
+        <motion.div {...stagger(7)} style={{ marginBottom: 16 }}>
+          <ViewCounter initial={0} accent={accent} />
+        </motion.div>
+      )}
+
+      {/* Social links — icon strip */}
+      {social.links.length > 0 && (
+        <motion.div {...stagger(8)} style={{
+          display: "flex", alignItems: "center",
+          justifyContent: alignItems === "flex-start" ? "flex-start" : "center",
+          gap: 8, flexWrap: "wrap",
+          marginBottom: 16,
+        }}>
+          {social.links.map((link, i) => {
+            const Icon = brandIcons[link.platform as keyof typeof brandIcons] || brandIcons.website;
+            const color = link.color || accent;
+            return (
+              <SocialIconBtn key={i} href={link.url} label={link.label || link.platform} color={color}>
+                <Icon size={18} />
+              </SocialIconBtn>
+            );
+          })}
+        </motion.div>
+      )}
+
+      {/* Spotify embed */}
+      {widgets?.spotify?.enabled && widgets.spotify.placement === "card" && widgets.spotify.url && (
+        <motion.div {...stagger(9)} style={{ width: "100%", marginBottom: 12 }}>
+          <iframe
+            src={`https://open.spotify.com/embed/${widgets.spotify.url.split("spotify.com/")[1]?.replace(/\?.*/, "")}`}
+            width="100%" height="80" frameBorder="0"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            style={{ borderRadius: 12 }}
+          />
+        </motion.div>
+      )}
+
+      {/* YouTube embed */}
+      {widgets?.youtube?.enabled && widgets.youtube.placement === "card" && widgets.youtube.url && (
+        <motion.div {...stagger(9)} style={{ width: "100%", marginBottom: 12 }}>
+          <div style={{ position: "relative", paddingBottom: "56.25%", borderRadius: 12, overflow: "hidden" }}>
+            <iframe
+              src={widgets.youtube.url.replace("watch?v=", "embed/")}
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </motion.div>
+      )}
+
+      {/* Audio */}
+      {config.audio?.enabled && (audioTrackId || config.audio.src) && (
+        <motion.div {...stagger(10)} style={{ width: "100%", marginBottom: 12 }}>
+          <AudioPill
+            audioTrackId={audioTrackId}
+            audioUrl={config.audio.src}
+            title={audioTitle || config.audio.title}
+            artist={audioArtist || config.audio.artist}
+            thumb={audioThumb}
+            accent={accent}
+            textColor={textColor}
+            mutedColor={mutedColor}
+            volume={config.audio?.volume ?? 0.6}
+            loop={config.audio?.loop ?? true}
+            entered={entered}
+          />
+        </motion.div>
+      )}
+
+      {/* Custom HTML */}
+      {config.customHtml && (
+        <div style={{ width: "100%", marginBottom: 12 }} dangerouslySetInnerHTML={{ __html: config.customHtml }} />
+      )}
+
+      {/* Watermark */}
+      <div
+        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 8, opacity: 0.18, transition: "opacity 0.2s" }}
+        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.5"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.18"; }}
+      >
+        <a href="https://brazy.it" target="_blank" rel="noopener noreferrer"
+          style={{ display: "flex", alignItems: "center", gap: 5, textDecoration: "none", color: mutedColor }}>
+          <SpiderLogo width={12} height={12} />
+          <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.05em" }}>brazy.it</span>
+        </a>
       </div>
-    </motion.div>
-  );
 
-  const audioPlayerElem = config.audio?.enabled && (audioTrackId || config.audio.src) && (
-    <motion.div
-      initial={{ opacity: 0, y: 22 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 22 }}
-      transition={{ duration: 0.55, delay: 0.42, ease: EASE }}
-      style={{ padding: isPortfolio ? "0" : "0 20px 20px", width: "100%" }}
-    >
-      <AudioPill
-        audioTrackId={audioTrackId}
-        audioUrl={config.audio.src}
-        title={audioTitle || config.audio.title}
-        artist={audioArtist || config.audio.artist}
-        thumb={audioThumb}
-        accentColor={accent}
-        textColor={theme.textColor}
-        mutedTextColor={theme.mutedTextColor}
-        volume={config.audio?.volume ?? 0.6}
-        loop={config.audio?.loop ?? true}
-        entered={entered}
-      />
-    </motion.div>
-  );
-
-  const customHtmlElem = config.customHtml && (
-    <div style={{ padding: isPortfolio ? "0" : "0 20px 20px" }} dangerouslySetInnerHTML={{ __html: config.customHtml }} />
-  );
-
-  const watermarkElem = (
-    <div
-      style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        gap: 6, 
-        padding: isPortfolio ? "16px 0 0" : "12px 20px 18px", 
-        opacity: 0.22, 
-        transition: "opacity 0.2s" 
-      }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.55"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.opacity = "0.22"; }}
-    >
-      <a href="https://brazy.it" target="_blank" rel="noopener noreferrer"
-        style={{ display: "flex", alignItems: "center", gap: 6, textDecoration: "none", color: theme.mutedTextColor || "rgba(255,255,255,0.5)" }}>
-        <SpiderLogo width={13} height={13} />
-        <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.04em" }}>brazy.it</span>
-      </a>
     </div>
   );
 
   const cardElement = (
     <motion.div
       ref={cardRef}
-      initial={{ opacity: 0, y: 36, scale: 0.96 }}
-      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 36, scale: entered ? 1 : 0.96 }}
-      transition={{ duration: 0.65, ease: EASE }}
+      initial={{ opacity: 0, y: 32, scale: 0.96 }}
+      animate={{ opacity: entered ? 1 : 0, y: entered ? 0 : 32, scale: entered ? 1 : 0.96 }}
+      transition={{ duration: 0.6, ease: EASE }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       className="brazy-card"
       style={{
         width: "100%",
-        maxWidth: cardMaxWidth,
+        maxWidth: theme.maxWidth ?? 460,
         margin: "0 auto",
         borderRadius: cardBorderRadius,
-        border: theme.animatedBorder ? "none" : `${cardBorderWidth}px solid ${cardBorderColor}`,
-        backdropFilter: theme.cardStyle === "glass" || isPortfolio ? `blur(${theme.cardBlur ?? 18}px)` : "none",
-        WebkitBackdropFilter: theme.cardStyle === "glass" || isPortfolio ? `blur(${theme.cardBlur ?? 18}px)` : "none",
+        border: theme.animatedBorder ? "none" : cardBorder,
+        backdropFilter: cardBlur,
+        WebkitBackdropFilter: cardBlur,
         background: cardBg,
-        boxShadow: cardGlow,
-        color: theme.textColor || "#f4f4f5",
+        boxShadow: cardShadow,
+        color: textColor,
         fontFamily,
         overflow: "hidden",
-        transition: effects.tilt3d ? "box-shadow 0.2s" : undefined,
         ...tiltStyle,
       }}
     >
-      {/* Neon card outline */}
       {theme.cardStyle === "neon" && (
-        <div style={{ position: "absolute", inset: 0, borderRadius: cardBorderRadius, border: `1px solid ${accent}88`, boxShadow: `inset 0 0 20px ${accent}11, 0 0 30px ${accent}22`, pointerEvents: "none", zIndex: 0 }} />
+        <div style={{ position: "absolute", inset: 0, borderRadius: cardBorderRadius, border: `1px solid ${accent}66`, boxShadow: `inset 0 0 20px ${accent}11, 0 0 30px ${accent}22`, pointerEvents: "none", zIndex: 0 }} />
       )}
-
-      {isPortfolio ? (
-        <>
-          <style dangerouslySetInnerHTML={{ __html: `
-            .portfolio-grid-wrap {
-              display: flex;
-              flex-direction: column;
-              gap: 24px;
-              padding: 24px 20px;
-            }
-            @media (min-width: 640px) {
-              .portfolio-grid-wrap {
-                display: grid;
-                grid-template-columns: 1fr 1.2fr;
-                gap: 32px;
-                padding: 32px 28px;
-                align-items: start;
-              }
-            }
-          `}} />
-          <div className="portfolio-grid-wrap" style={{ position: "relative", zIndex: 1 }}>
-            {/* Left Column */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: cardAlign === "left" ? "flex-start" : "center", gap: 14 }}>
-              {avatarElem}
-              {nameElem}
-              {subElem}
-              {bioElem}
-              {viewsElem}
-              {watermarkElem}
-            </div>
-            {/* Right Column */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 16 }}>
-              {timeWidgetElem}
-              {discordPresenceElem}
-              {skillsWidgetElem}
-              {projectsWidgetElem}
-              {socialLinksElem}
-              {spotifyWidgetElem}
-              {youtubeWidgetElem}
-              {audioPlayerElem}
-              {customHtmlElem}
-            </div>
-          </div>
-        </>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: cardAlign === "left" ? "flex-start" : "center", padding: "32px 28px 24px", position: "relative", zIndex: 1 }}>
-          {avatarElem}
-          {nameElem}
-          {subElem}
-          {bioElem}
-          {timeWidgetElem}
-          {discordPresenceElem}
-          {skillsWidgetElem}
-          {projectsWidgetElem}
-          {viewsElem}
-          
-          <div style={{ width: "100%", marginTop: 24 }}>
-            {socialLinksElem}
-            {spotifyWidgetElem}
-            {youtubeWidgetElem}
-            {audioPlayerElem}
-            {customHtmlElem}
-          </div>
-          {watermarkElem}
-        </div>
-      )}
+      {cardInner}
     </motion.div>
   );
 
   return (
     <>
       <style>{`
-        @keyframes glowPulse {
-          0%, 100% { box-shadow: 0 0 20px ${accent}22; }
-          50% { box-shadow: 0 0 40px ${accent}44; }
-        }
-        ${effects.glowPulse ? ".brazy-card { animation: glowPulse 3s ease-in-out infinite; }" : ""}
+        @keyframes glowPulse{0%,100%{box-shadow:0 0 20px ${accent}18}50%{box-shadow:0 0 40px ${accent}38}}
+        ${effects.glowPulse ? ".brazy-card{animation:glowPulse 3s ease-in-out infinite}" : ""}
       `}</style>
 
       <BackgroundLayer background={background} />
@@ -707,27 +630,29 @@ export default function ProfileRenderer({
       <SplashIntro splash={splash} onEnter={() => setEntered(true)} />
 
       <div style={{
-        position: "relative", zIndex: 10,
-        minHeight: "100vh",
+        position: "relative", zIndex: 10, minHeight: "100vh",
         display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "clamp(20px, 5vw, 60px) clamp(16px, 4vw, 40px)",
+        padding: "clamp(20px,5vw,60px) clamp(16px,4vw,40px)",
       }}>
         {theme.animatedBorder
           ? <AnimatedBorderWrapper accent={accent} accent2={accent2} borderRadius={cardBorderRadius}>{cardElement}</AnimatedBorderWrapper>
-          : cardElement
-        }
+          : cardElement}
       </div>
 
       {/* Bottom widgets */}
-      {showViewsOutside ||
-       (widgets?.time?.enabled && widgets.time.placement === "bottom") ||
-       (widgets?.github?.enabled && widgets.github.placement === "bottom") ||
-       (widgets?.youtube?.enabled && widgets.youtube.placement === "bottom") ||
-       (widgets?.spotify?.enabled && widgets.spotify.placement === "bottom") ? (
-        <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", gap: 16, padding: "0 clamp(16px,4vw,40px) 60px", maxWidth: 560, margin: "0 auto", width: "100%" }}>
-          {showViewsOutside && (
-            <ViewCounter initial={0} accent={accent} />
-          )}
+      {(showViewsOutside ||
+        (widgets?.time?.enabled && widgets.time.placement === "bottom") ||
+        (widgets?.github?.enabled && widgets.github.placement === "bottom") ||
+        (widgets?.youtube?.enabled && widgets.youtube.placement === "bottom") ||
+        (widgets?.spotify?.enabled && widgets.spotify.placement === "bottom")
+      ) && (
+        <div style={{
+          position: "relative", zIndex: 10,
+          display: "flex", flexDirection: "column", alignItems: "center",
+          gap: 16, padding: "0 clamp(16px,4vw,40px) 60px",
+          maxWidth: 520, margin: "0 auto", width: "100%",
+        }}>
+          {showViewsOutside && <ViewCounter initial={0} accent={accent} />}
           {widgets?.time?.enabled && widgets.time.placement === "bottom" && (
             <TimeWidget timezone={widgets.time.timezone} format={widgets.time.format} />
           )}
@@ -740,7 +665,7 @@ export default function ProfileRenderer({
             />
           )}
           {widgets?.youtube?.enabled && widgets.youtube.placement === "bottom" && widgets.youtube.url && (
-            <div style={{ width: "100%", position: "relative", paddingBottom: "56.25%", borderRadius: 16, overflow: "hidden", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div style={{ width: "100%", position: "relative", paddingBottom: "56.25%", borderRadius: 16, overflow: "hidden" }}>
               <iframe
                 src={widgets.youtube.url.replace("watch?v=", "embed/")}
                 style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
@@ -754,192 +679,16 @@ export default function ProfileRenderer({
               src={`https://open.spotify.com/embed/${widgets.spotify.url.split("spotify.com/")[1]?.replace(/\?.*/, "")}`}
               width="100%" height="80" frameBorder="0"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-              style={{ borderRadius: 16, border: "1px solid rgba(255,255,255,0.07)" }}
+              style={{ borderRadius: 16 }}
             />
           )}
         </div>
-      ) : null}
+      )}
 
       {config.customCss && <style dangerouslySetInnerHTML={{ __html: config.customCss }} />}
       {effects.cursor.type === "custom" && effects.cursor.url && (
-        <style dangerouslySetInnerHTML={{ __html: `
-          body, html, *, .brazy-card, a, button, input, textarea {
-            cursor: url(${effects.cursor.url}), auto !important;
-          }
-        `}} />
+        <style dangerouslySetInnerHTML={{ __html: `*{cursor:url(${effects.cursor.url}),auto!important}` }} />
       )}
-    </>
-  );
-}
-
-// ─── Markdown Bio ──────────────────────────────────────────────────────────────
-
-function MarkdownBio({ text }: { text: string }) {
-  const rendered = text
-    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.+?)\*/g, "<em>$1</em>")
-    .replace(/__(.+?)__/g, "<u>$1</u>")
-    .replace(/~~(.+?)~~/g, "<s>$1</s>")
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:underline;opacity:0.7">$1</a>')
-    .replace(/\n/g, "<br>");
-  return <p style={{ margin: 0, whiteSpace: "pre-wrap" }} dangerouslySetInnerHTML={{ __html: rendered }} />;
-}
-
-// ─── Social Link Button ────────────────────────────────────────────────────────
-
-function SocialLink({ href, label, color, textColor, children }: {
-  href: string; label: string; color: string; textColor: string; children: React.ReactNode;
-}) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <a
-      href={href} target="_blank" rel="noopener noreferrer"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        height: 42, borderRadius: 14, padding: "0 14px",
-        background: hovered ? `${color}18` : "rgba(255,255,255,0.04)",
-        border: `1px solid ${hovered ? color + "55" : color + "20"}`,
-        boxShadow: hovered ? `0 0 18px ${color}28` : "none",
-        color: textColor, textDecoration: "none",
-        fontSize: 13, fontWeight: 500,
-        transition: "all 0.18s cubic-bezier(0.22,1,0.36,1)",
-        transform: hovered ? "translateY(-1px)" : "none",
-        overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
-      }}
-    >
-      <span style={{ display: "flex", alignItems: "center", flexShrink: 0, color }}>{children}</span>
-      <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{label}</span>
-    </a>
-  );
-}
-
-// ─── Badge Icon ────────────────────────────────────────────────────────────────
-
-function BadgeIcon({ badge }: { badge: Badge }) {
-  const [show, setShow] = useState(false);
-  const lowerIcon = badge.icon?.toLowerCase().replace(/ /g, "_");
-  const predefined = PREDEFINED_BADGES[lowerIcon];
-
-  return (
-    <div style={{ position: "relative", display: "inline-flex", alignItems: "center", cursor: "help" }}
-      onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
-      {predefined ? (
-        <div 
-          style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: badge.color || predefined.color }} 
-          dangerouslySetInnerHTML={{ __html: predefined.svg }}
-        />
-      ) : (
-        <span style={{ fontSize: 16, lineHeight: 1, color: badge.color || '#ffffff' }}>{badge.icon}</span>
-      )}
-      <AnimatePresence>
-        {show && (
-          <motion.div
-            initial={{ opacity: 0, y: 4, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            style={{
-              position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
-              background: "#141414", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
-              padding: "5px 12px", whiteSpace: "nowrap", fontSize: 12, color: "#fafafa",
-              pointerEvents: "none", zIndex: 50, boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-            }}
-          >
-            <div style={{ fontWeight: 600 }}>{badge.label}</div>
-            {badge.description && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, marginTop: 1 }}>{badge.description}</div>}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ─── Audio Pill ────────────────────────────────────────────────────────────────
-
-function AudioPill({
-  audioTrackId, audioUrl, title, artist, thumb, accentColor, textColor, mutedTextColor, volume, loop, entered,
-}: {
-  audioTrackId?: string; audioUrl?: string; title?: string; artist?: string; thumb?: string;
-  accentColor: string; textColor?: string; mutedTextColor?: string;
-  volume: number; loop: boolean; entered: boolean;
-}) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (audioTrackId) {
-      let active = true;
-      (async () => {
-        const url = await getPipedStreamUrl(audioTrackId);
-        if (active) {
-          setStreamUrl(url);
-        }
-      })();
-      return () => { active = false; };
-    } else if (audioUrl) {
-      setStreamUrl(audioUrl);
-    } else {
-      setStreamUrl(null);
-    }
-  }, [audioTrackId, audioUrl]);
-
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.volume = volume;
-  }, [volume, streamUrl]);
-
-  useEffect(() => {
-    if (!audioRef.current || !streamUrl) return;
-    if (entered) {
-      audioRef.current.play()
-        .then(() => setPlaying(true))
-        .catch((e) => console.log("Autoplay blocked by browser policy:", e));
-    }
-  }, [entered, streamUrl]);
-
-  useEffect(() => {
-    if (!audioRef.current) return;
-    if (playing) {
-      audioRef.current.play().catch(() => setPlaying(false));
-    } else {
-      audioRef.current.pause();
-    }
-  }, [playing]);
-
-  if (!audioTrackId && !audioUrl) return null;
-
-  return (
-    <>
-      {streamUrl && (
-        <audio 
-          ref={audioRef} 
-          src={streamUrl} 
-          loop={loop} 
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-        />
-      )}
-      <div style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "9px 14px",
-        background: "rgba(255,255,255,0.04)", border: `1px solid ${accentColor}22`,
-        borderRadius: 16, width: "100%", boxSizing: "border-box",
-      }}>
-        {thumb && <img src={thumb} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} />}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: textColor ?? "#fafafa", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title || "track"}</p>
-          {artist && <p style={{ margin: "1px 0 0", fontSize: 11, color: mutedTextColor ?? "rgba(255,255,255,0.35)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{artist}</p>}
-        </div>
-        <button
-          onClick={() => setPlaying(!playing)}
-          style={{ width: 32, height: 32, borderRadius: "50%", background: `${accentColor}22`, border: `1px solid ${accentColor}44`, color: "#fafafa", cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "background 0.18s" }}
-          aria-label={playing ? "Pause" : "Play"}
-        >
-          {playing ? "❚❚" : "▶"}
-        </button>
-      </div>
     </>
   );
 }
