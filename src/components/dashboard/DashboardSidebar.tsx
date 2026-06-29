@@ -18,7 +18,6 @@ const advanceSubItems = [
 ];
 
 const accountSubItems = [
-  { href: "/account", label: "Overview", icon: LayoutDashboard },
   { href: "/account/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/account/badges", label: "Badges", icon: Award },
   { href: "/account/settings", label: "Settings", icon: Settings },
@@ -122,7 +121,7 @@ export default function DashboardSidebar() {
 
         {/* Nav Link List */}
         <nav className="flex flex-col gap-1 overflow-y-auto no-scrollbar max-h-[calc(100vh-320px)]">
-          <StandaloneLink href="/dashboard" label="Overview" icon={LayoutDashboard} isActive={pathname === "/dashboard"} />
+          <StandaloneLink href="/account" label="Overview" icon={LayoutDashboard} isActive={pathname === "/account" || pathname === "/dashboard"} />
           <StandaloneLink href="/customize" label="Customize" icon={Palette} isActive={pathname === "/customize"} />
           <StandaloneLink href="/links" label="Links" icon={Link2} isActive={pathname === "/links"} />
           <StandaloneLink href="/sections" label="Sections" icon={Layers} isActive={pathname === "/sections"} />

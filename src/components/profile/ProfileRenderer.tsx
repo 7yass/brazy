@@ -74,12 +74,12 @@ function UsernameText({
     return (
       <>
         <style>{`
-          @keyframes glowPulse {
+          @keyframes nameGlowPulse {
             0%, 100% { text-shadow: 0 0 10px ${accent}66, 0 0 30px ${accent}33; }
             50% { text-shadow: 0 0 20px ${accent}99, 0 0 50px ${accent}55, 0 0 80px ${accent}33; }
           }
         `}</style>
-        <h1 style={{ ...baseStyle, animation: "glowPulse 2.5s ease-in-out infinite" }}>{text}</h1>
+        <h1 style={{ ...baseStyle, animation: "nameGlowPulse 2.5s ease-in-out infinite" }}>{text}</h1>
       </>
     );
   }
@@ -88,13 +88,13 @@ function UsernameText({
     return (
       <>
         <style>{`
-          @keyframes glitchTop {
+          @keyframes nameGlitchTop {
             0%, 90%, 100% { clip-path: inset(0 0 100% 0); transform: translateX(0); }
             92% { clip-path: inset(0 0 60% 0); transform: translateX(-4px); color: #ff0044; }
             94% { clip-path: inset(30% 0 40% 0); transform: translateX(4px); color: #00ffff; }
             96% { clip-path: inset(60% 0 20% 0); transform: translateX(-2px); }
           }
-          @keyframes glitchBot {
+          @keyframes nameGlitchBot {
             0%, 90%, 100% { clip-path: inset(100% 0 0 0); transform: translateX(0); }
             92% { clip-path: inset(60% 0 0 0); transform: translateX(4px); color: #00ffff; }
             94% { clip-path: inset(40% 0 30% 0); transform: translateX(-4px); color: #ff0044; }
@@ -103,8 +103,8 @@ function UsernameText({
         `}</style>
         <div style={{ position: "relative", display: "inline-block" }}>
           <h1 style={{ ...baseStyle, visibility: "visible" }}>{text}</h1>
-          <h1 style={{ ...baseStyle, position: "absolute", top: 0, left: 0, animation: "glitchTop 3s infinite" }}>{text}</h1>
-          <h1 style={{ ...baseStyle, position: "absolute", top: 0, left: 0, animation: "glitchBot 3s infinite 0.05s" }}>{text}</h1>
+          <h1 style={{ ...baseStyle, position: "absolute", top: 0, left: 0, animation: "nameGlitchTop 3s infinite" }}>{text}</h1>
+          <h1 style={{ ...baseStyle, position: "absolute", top: 0, left: 0, animation: "nameGlitchBot 3s infinite 0.05s" }}>{text}</h1>
         </div>
       </>
     );
@@ -123,7 +123,7 @@ function UsernameText({
     return (
       <>
         <style>{`
-          @keyframes rainbowShift {
+          @keyframes nameRainbowShift {
             0% { background-position: 0% 50%; }
             100% { background-position: 200% 50%; }
           }
@@ -135,7 +135,7 @@ function UsernameText({
           WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent",
           backgroundClip: "text",
-          animation: "rainbowShift 2.5s linear infinite",
+          animation: "nameRainbowShift 2.5s linear infinite",
         }}>{text}</h1>
       </>
     );
@@ -145,14 +145,14 @@ function UsernameText({
     return (
       <>
         <style>{`
-          @keyframes neonFlicker {
+          @keyframes nameNeonFlicker {
             0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
               text-shadow: 0 0 4px #fff, 0 0 11px #fff, 0 0 19px #fff, 0 0 40px ${accent}, 0 0 80px ${accent}, 0 0 90px ${accent};
             }
             20%, 24%, 55% { text-shadow: none; }
           }
         `}</style>
-        <h1 style={{ ...baseStyle, color: "#fff", animation: "neonFlicker 5s infinite alternate" }}>{text}</h1>
+        <h1 style={{ ...baseStyle, color: "#fff", animation: "nameNeonFlicker 5s infinite alternate" }}>{text}</h1>
       </>
     );
   }
@@ -161,7 +161,7 @@ function UsernameText({
     return (
       <>
         <style>{`
-          @keyframes shake {
+          @keyframes nameShake {
             0%, 100% { transform: translateX(0); }
             10% { transform: translateX(-3px) rotate(-1deg); }
             20% { transform: translateX(3px) rotate(1deg); }
@@ -174,7 +174,7 @@ function UsernameText({
             90% { transform: translateX(-1px); }
           }
         `}</style>
-        <h1 style={{ ...baseStyle, textShadow: textGlow ? `0 0 28px ${accent3}66` : "none", animation: "shake 0.6s ease-in-out infinite", display: "inline-block" }}>{text}</h1>
+        <h1 style={{ ...baseStyle, textShadow: textGlow ? `0 0 28px ${accent3}66` : "none", animation: "nameShake 0.6s ease-in-out infinite", display: "inline-block" }}>{text}</h1>
       </>
     );
   }

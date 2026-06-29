@@ -687,6 +687,83 @@ export default function CustomizePage() {
             </div>
           </div>
 
+          {/* Cursor & Click Effects Section */}
+          <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4 font-sans">
+            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
+              Cursor & Click Effects
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Cursor Effect Card */}
+              <div className="border border-neutral-900 bg-neutral-900/10 rounded-xl p-4 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-300">Cursor Effect</span>
+                  <Toggle value={cfg.effects.cursor.enabled} onChange={v => setCursor("enabled", v)} />
+                </div>
+                {cfg.effects.cursor.enabled && (
+                  <>
+                    <SelectControl
+                      label="Effect Type"
+                      value={cfg.effects.cursor.type}
+                      onChange={v => setCursor("type", v as any)}
+                      options={[
+                        { value: "trail", label: "Line Trail" },
+                        { value: "sparkles", label: "Star Sparkles" },
+                        { value: "dots", label: "Floating Dots" },
+                        { value: "rings", label: "Expanding Rings" },
+                        { value: "glow", label: "Aura Glow" },
+                        { value: "cat", label: "🐱 Cat Follower" },
+                        { value: "bubble", label: "🫧 Bubble Follower" },
+                        { value: "snowflake", label: "❄️ Snowflake Follower" },
+                      ]}
+                    />
+                    <ColorPill label="Effect Color" value={cfg.effects.cursor.color} onChange={v => setCursor("color", v)} />
+                    <SliderRow
+                      label="Cursor Size"
+                      value={cfg.effects.cursor.size}
+                      onChange={v => setCursor("size", v)}
+                      min={2}
+                      max={24}
+                      step={1}
+                      format={v => `${v}px`}
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Click Effect Card */}
+              <div className="border border-neutral-900 bg-neutral-900/10 rounded-xl p-4 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-neutral-300">Click Effect</span>
+                  <Toggle value={cfg.effects.click.enabled} onChange={v => setClick("enabled", v)} />
+                </div>
+                {cfg.effects.click.enabled && (
+                  <>
+                    <SelectControl
+                      label="Effect Type"
+                      value={cfg.effects.click.type}
+                      onChange={v => setClick("type", v as any)}
+                      options={[
+                        { value: "burst", label: "Dot Burst" },
+                        { value: "ripple", label: "Expanding Ripple" },
+                        { value: "hearts", label: "Floating Hearts" },
+                        { value: "confetti", label: "Color Confetti" },
+                        { value: "emojis", label: "Custom Emojis" },
+                      ]}
+                    />
+                    {cfg.effects.click.type === "emojis" ? (
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Custom Emoji</span>
+                        <InputText value={cfg.effects.click.emoji} onChange={v => setClick("emoji", v)} placeholder="✨" />
+                      </div>
+                    ) : (
+                      <ColorPill label="Effect Color" value={cfg.effects.click.color} onChange={v => setClick("color", v)} />
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* 3. Color Customization Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
             <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
