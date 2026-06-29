@@ -44,7 +44,6 @@ export const themeSchema = z.object({
   backgroundImage: z.string().default(""),
   backgroundOverlayColor: z.string().default("#000000"),
   backgroundOverlayOpacity: z.number().min(0).max(1).default(0.45),
-  // New fields
   animatedBorder: z.boolean().default(false),
   profileSize: z.enum(["default", "medium", "large"]).default("default"),
 });
@@ -68,7 +67,12 @@ export type Background = z.infer<typeof backgroundSchema>;
 
 const cursorEffectSchema = z.object({
   enabled: z.boolean().default(true),
-  type: z.enum(["trail", "sparkles", "dots", "rings", "glow", "snowflakes", "cat", "bubble", "snowflake", "custom", "none"]).default("sparkles"),
+  type: z.enum([
+    "trail", "sparkles", "dots", "rings", "glow",
+    "snowflakes", "cat", "bubble", "snowflake",
+    "dot", "ghost", "particles", "shooting",
+    "custom", "none"
+  ]).default("sparkles"),
   color: z.string().default("#22d3ee"),
   size: z.number().min(2).max(24).default(6),
   fade: z.number().min(0).max(1).default(0.12),
@@ -93,7 +97,6 @@ export const effectsSchema = z.object({
   glowPulse: z.boolean().default(true),
   textGlow: z.boolean().default(true),
   usernameEffect: z.enum(["none", "glow", "glitch", "typewriter", "rainbow", "neon", "shake"]).default("none"),
-  // New fields
   animatedTitle: z.boolean().default(false),
   animatedTitleText: z.string().default(""),
 });
@@ -112,7 +115,6 @@ export const splashSchema = z.object({
   imageUrl: z.string().default(""),
   showEnterButton: z.boolean().default(false),
   duration: z.number().min(0).max(6).default(0),
-  // New field
   enterSoundUrl: z.string().default(""),
 });
 export type Splash = z.infer<typeof splashSchema>;
@@ -152,7 +154,6 @@ export const socialPlatformSchema = z.enum([
   "email",
   "website",
   "custom",
-  // New platforms
   "bluesky",
   "mastodon",
   "threads",
@@ -207,7 +208,6 @@ export const identitySchema = z.object({
 });
 export type Identity = z.infer<typeof identitySchema>;
 
-// Skills section
 const skillSchema = z.object({
   name: z.string().default(""),
   level: z.number().min(0).max(100).default(80),
@@ -221,7 +221,6 @@ export const skillsSchema = z.object({
 });
 export type Skills = z.infer<typeof skillsSchema>;
 
-// Projects section
 const projectSchema = z.object({
   title: z.string().default(""),
   description: z.string().default(""),
@@ -236,7 +235,6 @@ export const projectsSchema = z.object({
 });
 export type Projects = z.infer<typeof projectsSchema>;
 
-// Sections order & visibility
 export const sectionsSchema = z.object({
   order: z.array(z.string()).default([
     "avatar", "name", "identity", "bio", "badges",
@@ -246,7 +244,6 @@ export const sectionsSchema = z.object({
 });
 export type Sections = z.infer<typeof sectionsSchema>;
 
-// Widgets
 export const widgetsSchema = z.object({
   discordPresence: z.object({
     enabled: z.boolean().default(false),
