@@ -200,10 +200,7 @@ export async function saveProfile(
   const { error: errorUserId } = await supabase
     .from("profiles")
     .upsert(
-      {
-        user_id: userId,
-        ...payload,
-      },
+      payload,
       { onConflict: "user_id" }
     );
 
