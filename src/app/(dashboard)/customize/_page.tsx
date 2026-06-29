@@ -5,7 +5,7 @@ import {
   Image as ImageIcon, Palette, Type, MousePointer2, Sparkles,
   Music, Link2, Layout, Globe, Code, ChevronDown, ChevronRight,
   Check, Save, RotateCcw, Zap, Eye, EyeOff, Laptop, Smartphone,
-  Settings, Pin, ShieldCheck, Award
+  Settings, Pin, ShieldCheck, Award, Gamepad2
 } from "lucide-react";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
@@ -189,21 +189,43 @@ function TileGrid<T extends string>({ value, onChange, options }: { value: T; on
 }
 
 // Custom Select primitive matching guns.lol layout
-function SelectControl<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label?: string }) {
+function SelectControl<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+  icon: Icon,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string }[];
+  label?: string;
+  icon?: React.ElementType;
+}) {
   return (
     <div className="flex flex-col gap-1.5 font-sans w-full">
       {label && <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{label}</span>}
-      <div className="relative w-full">
+      <div className="relative flex items-center w-full">
+        {Icon && (
+          <Icon className="absolute left-3.5 w-4 h-4 text-neutral-500 pointer-events-none z-10" />
+        )}
         <select
           value={value}
           onChange={e => onChange(e.target.value as T)}
-          className="bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-red-500/40 w-full appearance-none transition cursor-pointer"
+          className={`
+            w-full appearance-none
+            bg-neutral-950 border border-white/[0.06]
+            rounded-xl px-3.5 py-2 text-xs text-neutral-300
+            focus:outline-none focus:border-white/20
+            cursor-pointer transition
+            ${Icon ? "pl-10" : ""}
+          `}
         >
           {options.map(o => (
             <option key={o.value} value={o.value} className="bg-neutral-950 text-neutral-300">{o.label}</option>
           ))}
         </select>
-        <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+        <ChevronDown className="absolute right-3.5 w-4 h-4 text-neutral-500 pointer-events-none" />
       </div>
     </div>
   );
@@ -494,6 +516,7 @@ export default function CustomizePage() {
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Discord Presence</span>
                 <div className="flex gap-2">
                   <SelectControl
+                    icon={Gamepad2}
                     value={cfg.widgets.discordPresence.enabled ? "enabled" : "disabled"}
                     onChange={(v) => setCfg(prev => {
                       if (!prev) return prev;
@@ -583,6 +606,7 @@ export default function CustomizePage() {
 
               {/* Background Effects */}
               <SelectControl
+                icon={Sparkles}
                 label="Background Effects"
                 value={cfg.background.type}
                 onChange={v => set("background", "type", v)}
@@ -602,6 +626,7 @@ export default function CustomizePage() {
 
               {/* Username Effects */}
               <SelectControl
+                icon={Type}
                 label="Username Effects"
                 value={cfg.effects.usernameEffect}
                 onChange={v => set("effects", "usernameEffect", v)}
@@ -618,6 +643,7 @@ export default function CustomizePage() {
 
               {/* Views Placement */}
               <SelectControl
+                icon={Eye}
                 label="Views Placement"
                 value={cfg.analytics?.viewsPlacement ?? "inside"}
                 onChange={v => {
@@ -702,6 +728,7 @@ export default function CustomizePage() {
                 {cfg.effects.cursor.enabled && (
                   <>
                     <SelectControl
+                      icon={MousePointer2}
                       label="Effect Type"
                       value={cfg.effects.cursor.type}
                       onChange={v => setCursor("type", v as any)}
@@ -739,6 +766,7 @@ export default function CustomizePage() {
                 {cfg.effects.click.enabled && (
                   <>
                     <SelectControl
+                      icon={Zap}
                       label="Effect Type"
                       value={cfg.effects.click.type}
                       onChange={v => setClick("type", v as any)}
