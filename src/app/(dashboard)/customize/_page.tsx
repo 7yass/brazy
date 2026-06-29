@@ -231,6 +231,41 @@ function SelectControl<T extends string>({
   );
 }
 
+// Visual chip grid for effect pickers (replaces dropdown)
+function EffectChips<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string; emoji?: string }[];
+  label?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-2 font-sans w-full">
+      {label && <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">{label}</span>}
+      <div className="flex flex-wrap gap-2">
+        {options.map(o => (
+          <button
+            key={o.value}
+            onClick={() => onChange(o.value)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
+              value === o.value
+                ? "bg-red-600/10 border-red-600/40 text-red-500"
+                : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white hover:bg-neutral-900/60"
+            }`}
+          >
+            {o.emoji && <span>{o.emoji}</span>}
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Glow setting toggle pill button
 function GlowPill({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
@@ -624,22 +659,23 @@ export default function CustomizePage() {
                 ]}
               />
 
-              {/* Username Effects */}
-              <SelectControl
-                icon={Type}
-                label="Username Effects"
-                value={cfg.effects.usernameEffect}
-                onChange={v => set("effects", "usernameEffect", v)}
-                options={[
-                  { value: "none", label: "Default" },
-                  { value: "glow", label: "Pulsing Glow" },
-                  { value: "glitch", label: "Glitch Scanlines" },
-                  { value: "typewriter", label: "Typewriter Text" },
-                  { value: "rainbow", label: "Rainbow Flow" },
-                  { value: "neon", label: "Neon Sparkle" },
-                  { value: "shake", label: "Shaking Text" },
-                ]}
-              />
+              {/* Username Effects — visual chips instead of dropdown */}
+              <div className="md:col-span-2">
+                <EffectChips
+                  label="Username Effect"
+                  value={cfg.effects.usernameEffect}
+                  onChange={v => set("effects", "usernameEffect", v)}
+                  options={[
+                    { value: "none", label: "Default" },
+                    { value: "glow", label: "Pulsing Glow", emoji: "✨" },
+                    { value: "glitch", label: "Glitch", emoji: "📺" },
+                    { value: "typewriter", label: "Typewriter", emoji: "⌨️" },
+                    { value: "rainbow", label: "Rainbow", emoji: "🌈" },
+                    { value: "neon", label: "Neon Sparkle", emoji: "💡" },
+                    { value: "shake", label: "Shake", emoji: "📳" },
+                  ]}
+                />
+              </div>
 
               {/* Views Placement */}
               <SelectControl
@@ -727,20 +763,19 @@ export default function CustomizePage() {
                 </div>
                 {cfg.effects.cursor.enabled && (
                   <>
-                    <SelectControl
-                      icon={MousePointer2}
+                    <EffectChips
                       label="Effect Type"
                       value={cfg.effects.cursor.type}
                       onChange={v => setCursor("type", v as any)}
                       options={[
-                        { value: "trail", label: "Line Trail" },
-                        { value: "sparkles", label: "Star Sparkles" },
-                        { value: "dots", label: "Floating Dots" },
-                        { value: "rings", label: "Expanding Rings" },
-                        { value: "glow", label: "Aura Glow" },
-                        { value: "cat", label: "🐱 Cat Follower" },
-                        { value: "bubble", label: "🫧 Bubble Follower" },
-                        { value: "snowflake", label: "❄️ Snowflake Follower" },
+                        { value: "trail", label: "Trail" },
+                        { value: "sparkles", label: "Sparkles", emoji: "✨" },
+                        { value: "dots", label: "Dots" },
+                        { value: "rings", label: "Rings" },
+                        { value: "glow", label: "Glow" },
+                        { value: "cat", label: "Cat", emoji: "🐱" },
+                        { value: "bubble", label: "Bubble", emoji: "🫧" },
+                        { value: "snowflake", label: "Snow", emoji: "❄️" },
                       ]}
                     />
                     <ColorPill label="Effect Color" value={cfg.effects.cursor.color} onChange={v => setCursor("color", v)} />
@@ -765,17 +800,16 @@ export default function CustomizePage() {
                 </div>
                 {cfg.effects.click.enabled && (
                   <>
-                    <SelectControl
-                      icon={Zap}
+                    <EffectChips
                       label="Effect Type"
                       value={cfg.effects.click.type}
                       onChange={v => setClick("type", v as any)}
                       options={[
-                        { value: "burst", label: "Dot Burst" },
-                        { value: "ripple", label: "Expanding Ripple" },
-                        { value: "hearts", label: "Floating Hearts" },
-                        { value: "confetti", label: "Color Confetti" },
-                        { value: "emojis", label: "Custom Emojis" },
+                        { value: "burst", label: "Burst" },
+                        { value: "ripple", label: "Ripple" },
+                        { value: "hearts", label: "Hearts", emoji: "❤️" },
+                        { value: "confetti", label: "Confetti", emoji: "🎉" },
+                        { value: "emojis", label: "Emoji", emoji: "😄" },
                       ]}
                     />
                     {cfg.effects.click.type === "emojis" ? (
