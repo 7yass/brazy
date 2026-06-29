@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Link2, Palette, BarChart3, Settings, Award,
   LayoutTemplate, Gem, Share2, UserCircle2, MoreHorizontal, LogOut,
@@ -10,6 +11,8 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SpiderLogo } from "@/components/spider-logo";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 const advanceSubItems = [
   { href: "/advance", label: "General", icon: Gem },
@@ -85,7 +88,6 @@ export default function DashboardSidebar() {
   const isAdvanceActive = advanceSubItems.some((s) => pathname === s.href);
   const isAccountActive = accountSubItems.some((s) => pathname === s.href);
 
-  // Set initial collapsible state based on pathname
   useEffect(() => {
     if (isAdvanceActive) setAdvanceOpen(true);
     if (isAccountActive) setAccountOpen(true);
@@ -93,7 +95,7 @@ export default function DashboardSidebar() {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-white/5 bg-neutral-950 font-sans select-none p-4 justify-between gap-4">
-      
+
       {/* Upper Container */}
       <div className="flex flex-col gap-4">
         {/* Header Logo */}
@@ -127,7 +129,6 @@ export default function DashboardSidebar() {
           <StandaloneLink href="/sections" label="Sections" icon={Layers} isActive={pathname === "/sections"} />
           <StandaloneLink href="/widgets" label="Widgets" icon={Sparkles} isActive={pathname === "/widgets"} />
 
-          {/* Collapsible Advanced Section */}
           <CollapsibleGroup
             label="Advanced"
             icon={<Gem className="w-4 h-4" />}
@@ -140,7 +141,6 @@ export default function DashboardSidebar() {
             ))}
           </CollapsibleGroup>
 
-          {/* Collapsible Account Section */}
           <CollapsibleGroup
             label="Account"
             icon={<UserCircle2 className="w-4 h-4" />}
@@ -157,7 +157,6 @@ export default function DashboardSidebar() {
 
       {/* Footer Container */}
       <div className="flex flex-col gap-2">
-        {/* Share Button Card */}
         <button
           onClick={handleShare}
           className="flex h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border border-white/5 bg-neutral-900/30 hover:bg-neutral-900/60 px-3 shadow-sm transition duration-150 active:translate-y-px outline-none"
@@ -170,7 +169,7 @@ export default function DashboardSidebar() {
             <div className="text-xs font-bold text-white truncate leading-none">{copied ? "Copied URL!" : "Share your profile"}</div>
           </div>
         </button>
-        {/* View Your Page Link */}
+
         <Link
           href={username ? `/${username}` : '/'}
           className="flex h-14 w-full items-center gap-3 rounded-2xl border border-white/5 bg-neutral-900/30 hover:bg-neutral-900/60 px-3 shadow-sm transition duration-150 active:translate-y-px outline-none"
@@ -202,28 +201,35 @@ export default function DashboardSidebar() {
             <MoreHorizontal className="w-4 h-4 text-neutral-500 shrink-0" />
           </button>
 
-          {showPopover && (
-            <div
-              ref={popoverRef}
-              className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-neutral-950 border border-white/5 rounded-2xl p-1.5 flex flex-col gap-1 shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-100"
-            >
-              <Link
-                href="/account/settings"
-                onClick={() => setShowPopover(false)}
-                className="block text-xs font-bold px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"
+          <AnimatePresence>
+            {showPopover && (
+              <motion.div
+                ref={popoverRef}
+                key="sidebar-popover"
+                initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                transition={{ duration: 0.18, ease: EASE }}
+                className="absolute bottom-full left-0 right-0 mb-2 z-50 bg-neutral-950 border border-white/5 rounded-2xl p-1.5 flex flex-col gap-1 shadow-2xl"
               >
-                Settings
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="block w-full text-left text-xs font-bold px-3.5 py-2.5 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer border-none bg-transparent"
-              >
-                <div className="flex items-center gap-2">
-                  <LogOut className="w-3.5 h-3.5" /> Sign out
-                </div>
-              </button>
-            </div>
-          )}
+                <Link
+                  href="/account/settings"
+                  onClick={() => setShowPopover(false)}
+                  className="block text-xs font-bold px-3.5 py-2.5 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors"
+                >
+                  Settings
+                </Link>
+                <button
+                  onClick={handleSignOut}
+                  className="block w-full text-left text-xs font-bold px-3.5 py-2.5 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors cursor-pointer border-none bg-transparent"
+                >
+                  <div className="flex items-center gap-2">
+                    <LogOut className="w-3.5 h-3.5" /> Sign out
+                  </div>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </aside>
@@ -256,24 +262,35 @@ function CollapsibleGroup({
       <button
         onClick={onToggle}
         className={`flex w-full items-center gap-3 rounded-xl border px-3.5 py-2.5 text-xs font-bold transition duration-150 cursor-pointer text-left border-none bg-transparent ${
-          open || isActive
-            ? "text-white"
-            : "text-neutral-400 hover:bg-neutral-900/40 hover:text-white"
+          open || isActive ? "text-white" : "text-neutral-400 hover:bg-neutral-900/40 hover:text-white"
         }`}
       >
         {icon}
         <span className="flex-1">{label}</span>
-        {open ? (
-          <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
-        ) : (
+        <motion.div
+          animate={{ rotate: open ? 90 : 0 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        >
           <ChevronRight className="w-3.5 h-3.5 text-neutral-500" />
-        )}
+        </motion.div>
       </button>
-      {open && (
-        <div className="pl-6 flex flex-col gap-1 mt-1 border-l border-white/[0.03] ml-[22px] py-0.5 animate-in slide-in-from-top-1 duration-150">
-          {children}
-        </div>
-      )}
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="collapsible-children"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            style={{ overflow: "hidden" }}
+          >
+            <div className="pl-6 flex flex-col gap-1 mt-1 border-l border-white/[0.03] ml-[22px] py-0.5">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
