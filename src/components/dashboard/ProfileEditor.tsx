@@ -5,8 +5,9 @@ import { Upload, Trash2, Copy, Check } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
-import { TextInput, TextArea, SelectInput, ColorInput, Slider, Toggle } from "./controls";
+import { TextInput, TextArea, ColorInput, Slider, Toggle } from "./controls";
 import { SectionCard } from "./SectionCard";
+import CustomSelect from "@/components/ui/CustomSelect";
 import { cn } from "@/lib/utils";
 
 const backgroundOpts = [
@@ -26,19 +27,19 @@ const backgroundOpts = [
 ];
 
 const cursorOpts = [
-  { value: "none" as const, label: "None" },
-  { value: "trail" as const, label: "Trail" },
-  { value: "sparkles" as const, label: "Sparkles" },
-  { value: "dots" as const, label: "Dots" },
-  { value: "rings" as const, label: "Rings" },
-];
-
-const cardStyleOpts = [
-  { value: "glass" as const, label: "Glass" },
-  { value: "solid" as const, label: "Solid" },
-  { value: "outline" as const, label: "Outline" },
-  { value: "neon" as const, label: "Neon" },
-  { value: "minimal" as const, label: "Minimal" },
+  { value: "none",      label: "None" },
+  { value: "trail",     label: "Trail" },
+  { value: "sparkles",  label: "Sparkles" },
+  { value: "dots",      label: "Dots" },
+  { value: "rings",     label: "Rings" },
+  { value: "glow",      label: "Glow" },
+  { value: "dot",       label: "Following Dot" },
+  { value: "ghost",     label: "Ghost Cursor" },
+  { value: "particles", label: "Particles" },
+  { value: "shooting",  label: "Shooting Star" },
+  { value: "cat",       label: "Cursor Cat" },
+  { value: "snowflake", label: "Snowflake" },
+  { value: "bubble",    label: "Bubble" },
 ];
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -243,9 +244,9 @@ export default function ProfileEditor({
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Custom Cursor</p>
                 <div className="mb-3 flex items-center gap-3">
-                  <SelectInput
+                  <CustomSelect
                     value={cfg.effects.cursor.type}
-                    onChange={(v) => updateCursor("type", v)}
+                    onChange={(v) => updateCursor("type", v as ProfileConfig["effects"]["cursor"]["type"])}
                     options={cursorOpts}
                   />
                   <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
@@ -288,14 +289,18 @@ export default function ProfileEditor({
                 <TextArea value={cfg.identity.bio} onChange={(v) => updateNested("identity", "bio", v)} placeholder="Bio" rows={2} />
               </Row>
               <Row label="Discord Presence">
-                <SelectInput
+                <CustomSelect
                   value={cfg.background.type}
-                  onChange={(v) => updateNested("background", "type", v)}
-                  options={[{ value: "none" as const, label: "Disabled" }, { value: "particles" as const, label: "Enabled" }]}
+                  onChange={(v) => updateNested("background", "type", v as ProfileConfig["background"]["type"])}
+                  options={[{ value: "none", label: "Disabled" }, { value: "particles", label: "Enabled" }]}
                 />
               </Row>
               <Row label="Background Effects">
-                <SelectInput value={cfg.background.type} onChange={(v) => updateNested("background", "type", v)} options={backgroundOpts} />
+                <CustomSelect
+                  value={cfg.background.type}
+                  onChange={(v) => updateNested("background", "type", v as ProfileConfig["background"]["type"])}
+                  options={backgroundOpts}
+                />
               </Row>
               <Row label="Username Effects">
                 <Toggle value={cfg.theme.glow} onChange={(v) => updateNested("theme", "glow", v)} label="" />
@@ -348,10 +353,10 @@ export default function ProfileEditor({
                 <Toggle value={cfg.effects.typewriterTitle} onChange={(v) => updateEffect("typewriterTitle", v)} label="" />
               </Row>
               <Row label="Swap Box Colors">
-                <SelectInput
+                <CustomSelect
                   value={cfg.theme.contentAlign}
-                  onChange={(v) => updateNested("theme", "contentAlign", v)}
-                  options={[{ value: "center" as const, label: "Center" }, { value: "left" as const, label: "Left" }]}
+                  onChange={(v) => updateNested("theme", "contentAlign", v as ProfileConfig["theme"]["contentAlign"])}
+                  options={[{ value: "center", label: "Center" }, { value: "left", label: "Left" }]}
                 />
               </Row>
               <Row label="Volume Control">
