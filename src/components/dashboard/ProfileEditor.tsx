@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Upload, Trash2, Copy, Check } from "lucide-react";
+import { Upload, Trash2, Copy, Check, Sparkles } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
 import { TextInput, TextArea, ColorInput, Slider, Toggle } from "./controls";
 import { SectionCard } from "./SectionCard";
 import CustomSelect from "@/components/ui/CustomSelect";
-import { cn } from "@/lib/utils";
+import UsernameEffectsModal from "./UsernameEffectsModal";
 
 const backgroundOpts = [
   { value: "none" as const, label: "None" },
@@ -42,6 +42,12 @@ const cursorOpts = [
   { value: "bubble",    label: "Bubble" },
 ];
 
+const EFFECT_LABELS: Record<string, string> = {
+  none: "None", typewriter: "Typewriter", rainbow: "Rainbow", glitch: "Glitch",
+  glow: "Glow", neon: "Neon", shake: "Shake", gradient: "Gradient",
+  bounce: "Bounce", pulse: "Pulse", wave: "Wave",
+};
+
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
@@ -70,6 +76,7 @@ export default function ProfileEditor({
   ]);
   const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [usernameModalOpen, setUsernameModalOpen] = useState(false);
 
   const cfgRef = useRef(cfg);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -108,11 +115,6 @@ export default function ProfileEditor({
     }, 800);
   }, [doSave]);
 
-  const update = useCallback(<K extends keyof ProfileConfig>(section: K, val: ProfileConfig[K]) => {
-    setCfg((c) => ({ ...c, [section]: val }));
-    scheduleSave();
-  }, [scheduleSave]);
-
   const updateNested = useCallback(<S extends keyof ProfileConfig, K extends keyof ProfileConfig[S]>(
     section: S, key: K, val: ProfileConfig[S][K],
   ) => {
@@ -150,8 +152,20 @@ export default function ProfileEditor({
     setAssets((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  const accent = cfg.theme.primaryColor || "#a855f7";
+
   return (
     <div className="flex h-full flex-col" style={{ background: "#08070d", color: "#e2e8f0" }}>
+      {/* Username Effects Modal */}
+      <UsernameEffectsModal
+        open={usernameModalOpen}
+        current={cfg.effects.usernameEffect || "none"}
+        username={cfg.identity.displayName || cfg.identity.username || username || "brazy"}
+        accent={accent}
+        onSelect={(v) => updateEffect("usernameEffect", v)}
+        onClose={() => setUsernameModalOpen(false)}
+      />
+
       {saveStatus !== "idle" && (
         <div
           style={{
@@ -187,20 +201,11 @@ export default function ProfileEditor({
           <div className="flex flex-col gap-5">
             {/* 1. Assets Uploader */}
             <SectionCard title="Assets Uploader">
-              {/* Background Image & Video */}
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Background Image & Video</p>
                 <div className="mb-3 flex items-center gap-2">
-                  <TextInput
-                    value={cfg.background.imageUrl}
-                    onChange={(v) => updateNested("background", "imageUrl", v)}
-                    placeholder="Image URL"
-                  />
-                  <TextInput
-                    value={cfg.background.videoUrl}
-                    onChange={(v) => updateNested("background", "videoUrl", v)}
-                    placeholder="Video URL"
-                  />
+                  <TextInput value={cfg.background.imageUrl} onChange={(v) => updateNested("background", "imageUrl", v)} placeholder="Image URL" />
+                  <TextInput value={cfg.background.videoUrl} onChange={(v) => updateNested("background", "videoUrl", v)} placeholder="Video URL" />
                 </div>
                 <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
                   <Upload className="h-4 w-4 text-white/30" />
@@ -208,15 +213,10 @@ export default function ProfileEditor({
                 </div>
               </div>
 
-              {/* Profile Avatar */}
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Profile Avatar</p>
                 <div className="mb-3">
-                  <TextInput
-                    value={cfg.identity.avatarUrl}
-                    onChange={(v) => updateNested("identity", "avatarUrl", v)}
-                    placeholder="Avatar URL"
-                  />
+                  <TextInput value={cfg.identity.avatarUrl} onChange={(v) => updateNested("identity", "avatarUrl", v)} placeholder="Avatar URL" />
                 </div>
                 <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
                   <Upload className="h-4 w-4 text-white/30" />
@@ -224,15 +224,10 @@ export default function ProfileEditor({
                 </div>
               </div>
 
-              {/* Audio Manager / Audios */}
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Audio Manager / Audios</p>
                 <div className="mb-3">
-                  <TextInput
-                    value={cfg.audio.src}
-                    onChange={(v) => updateNested("audio", "src", v)}
-                    placeholder="Audio URL (mp3)"
-                  />
+                  <TextInput value={cfg.audio.src} onChange={(v) => updateNested("audio", "src", v)} placeholder="Audio URL (mp3)" />
                 </div>
                 <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
                   <Upload className="h-4 w-4 text-white/30" />
@@ -240,7 +235,6 @@ export default function ProfileEditor({
                 </div>
               </div>
 
-              {/* Custom Cursor */}
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Custom Cursor</p>
                 <div className="mb-3 flex items-center gap-3">
@@ -267,13 +261,11 @@ export default function ProfileEditor({
                         <span className="text-[10px] text-white/20">{asset.size}</span>
                       </div>
                       <div className="mt-2 flex items-center gap-1">
-                        <button onClick={() => copyAssetUrl(asset.url, asset.id)}
-                          className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-white/30 transition hover:bg-white/[0.04] hover:text-white/50">
+                        <button onClick={() => copyAssetUrl(asset.url, asset.id)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-white/30 transition hover:bg-white/[0.04] hover:text-white/50">
                           {copiedAssetId === asset.id ? <Check className="h-2.5 w-2.5 text-emerald-400" /> : <Copy className="h-2.5 w-2.5" />}
                           {copiedAssetId === asset.id ? "Copied" : "Copy URL"}
                         </button>
-                        <button onClick={() => removeAsset(asset.id)}
-                          className="rounded-lg p-1 text-white/20 transition hover:bg-red-500/10 hover:text-red-400">
+                        <button onClick={() => removeAsset(asset.id)} className="rounded-lg p-1 text-white/20 transition hover:bg-red-500/10 hover:text-red-400">
                           <Trash2 className="h-3 w-3" />
                         </button>
                       </div>
@@ -303,7 +295,30 @@ export default function ProfileEditor({
                 />
               </Row>
               <Row label="Username Effects">
-                <Toggle value={cfg.theme.glow} onChange={(v) => updateNested("theme", "glow", v)} label="" />
+                {/* Button that opens the modal */}
+                <button
+                  onClick={() => setUsernameModalOpen(true)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "6px 12px",
+                    borderRadius: 10,
+                    background: `${accent}14`,
+                    border: `1px solid ${accent}33`,
+                    color: accent,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    transition: "background .15s, border-color .15s",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${accent}22`; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = `${accent}14`; }}
+                >
+                  <Sparkles size={13} />
+                  {EFFECT_LABELS[cfg.effects.usernameEffect] ?? "None"}
+                </button>
               </Row>
               <Row label="Profile Opacity">
                 <Slider value={cfg.theme.cardOpacity} onChange={(v) => updateNested("theme", "cardOpacity", v)} min={0} max={1} step={0.05} />
