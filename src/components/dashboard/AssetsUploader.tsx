@@ -72,11 +72,14 @@ export function AssetsUploader({
 
   const uploadToStorage = async (file: File, folder: string): Promise<string> => {
     const supabase = createClient();
+    if (!supabase) throw new Error("Supabase not configured");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
     const ext = file.name.split(".").pop();
-    const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase!.storage.from("assets").upload(path, file, { upsert: true });
+    const path = `${user.id}/${folder}/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("assets").upload(path, file, { upsert: true });
     if (error) throw error;
-    const { data } = supabase!.storage.from("assets").getPublicUrl(path);
+    const { data } = supabase.storage.from("assets").getPublicUrl(path);
     return data.publicUrl;
   };
 
@@ -149,13 +152,17 @@ export function AssetsUploader({
     e.target.value = "";
   }, [onCursorChange]);
 
-  const handleAudioUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
     const size = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(file.size / 1024)} KB`;
-    setUploadedAudio({ name: file.name, size, url });
-    setModalUrl(url);
+    try {
+      const url = await uploadToStorage(file, "audio");
+      setUploadedAudio({ name: file.name, size, url });
+      setModalUrl(url);
+    } catch (err) {
+      console.error("Audio upload failed:", err);
+    }
     e.target.value = "";
   }, []);
 
