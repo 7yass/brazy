@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { Effects } from "@/lib/profile/schema";
 
-type TrailPoint = { x: number; y: number; age: number; rot?: number };
+type TrailPoint = { x: number; y: number; age: number; rot?: number; vx?: number; vy?: number };
 
 export default function CursorEffect({ effects }: { effects: Effects }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const trailRef = useRef<TrailPoint[]>([]);
   const mouseRef = useRef({ x: -999, y: -999 });
+  const prevMouseRef = useRef({ x: -999, y: -999 });
   const smoothRef = useRef({ x: -999, y: -999 });
   const animRef = useRef<number>(0);
 
@@ -18,14 +19,55 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
   const type = effects.cursor.type;
   const isEmojiType = type === "cat" || type === "bubble" || type === "snowflake";
 
+  // Following dot / ghost cursor DOM-based state
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const isDomType = type === "dot" || type === "ghost";
+
   useEffect(() => {
     if (!effects.cursor.enabled || type === "none") return;
+
+    // ── Emoji types ──────────────────────────────────────────────
     if (isEmojiType) {
       const onMove = (e: MouseEvent) => setEmojiPos({ x: e.clientX, y: e.clientY });
       window.addEventListener("mousemove", onMove);
       return () => window.removeEventListener("mousemove", onMove);
     }
 
+    // ── DOM-based: Following Dot & Ghost Cursor ──────────────────
+    if (isDomType) {
+      let raf: number;
+      const pos = { x: -999, y: -999 };
+      const smoothPos = { x: -999, y: -999 };
+
+      const onMove = (e: MouseEvent) => {
+        pos.x = e.clientX;
+        pos.y = e.clientY;
+      };
+      window.addEventListener("mousemove", onMove);
+
+      const tick = () => {
+        const lag = type === "ghost" ? 0.08 : 0.25;
+        smoothPos.x += (pos.x - smoothPos.x) * lag;
+        smoothPos.y += (pos.y - smoothPos.y) * lag;
+
+        if (type === "dot" && dotRef.current) {
+          dotRef.current.style.transform = `translate(${smoothPos.x}px, ${smoothPos.y}px)`;
+        }
+        if (type === "ghost" && ghostRef.current) {
+          ghostRef.current.style.transform = `translate(${smoothPos.x}px, ${smoothPos.y}px)`;
+        }
+        raf = requestAnimationFrame(tick);
+      };
+      tick();
+
+      return () => {
+        cancelAnimationFrame(raf);
+        window.removeEventListener("mousemove", onMove);
+      };
+    }
+
+    // ── Canvas-based effects ──────────────────────────────────────
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -43,7 +85,39 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
     window.addEventListener("resize", resize);
 
     const onMove = (e: MouseEvent) => {
+      prevMouseRef.current = { ...mouseRef.current };
       mouseRef.current = { x: e.clientX, y: e.clientY };
+
+      // For particles: spawn on move
+      if (type === "particles") {
+        for (let i = 0; i < 3; i++) {
+          trailRef.current.push({
+            x: e.clientX + (Math.random() - 0.5) * 10,
+            y: e.clientY + (Math.random() - 0.5) * 10,
+            age: 0,
+            vx: (Math.random() - 0.5) * 2,
+            vy: -(Math.random() * 2 + 0.5),
+            rot: Math.random() * Math.PI * 2,
+          });
+        }
+      }
+
+      // For shooting star: spawn a streak on move
+      if (type === "shooting") {
+        const dx = e.clientX - prevMouseRef.current.x;
+        const dy = e.clientY - prevMouseRef.current.y;
+        const speed = Math.sqrt(dx * dx + dy * dy);
+        if (speed > 3) {
+          trailRef.current.push({
+            x: e.clientX,
+            y: e.clientY,
+            age: 0,
+            rot: Math.atan2(dy, dx),
+            vx: dx,
+            vy: dy,
+          });
+        }
+      }
     };
     window.addEventListener("mousemove", onMove);
 
@@ -57,7 +131,11 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
       sm.x += (mx - sm.x) * lag;
       sm.y += (my - sm.y) * lag;
 
-      trailRef.current.push({ x: sm.x, y: sm.y, age: 0, rot: Math.random() * Math.PI * 2 });
+      // Trail-based types push every frame
+      if (type !== "particles" && type !== "shooting") {
+        trailRef.current.push({ x: sm.x, y: sm.y, age: 0, rot: Math.random() * Math.PI * 2 });
+      }
+
       trailRef.current = trailRef.current.filter((p) => {
         p.age += effects.cursor.fade ?? 0.12;
         return p.age < 1;
@@ -118,6 +196,51 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
         ctx.beginPath();
         ctx.arc(sm.x, sm.y, size * 8, 0, Math.PI * 2);
         ctx.fill();
+
+      // ── NEW: Particles ─────────────────────────────────────────
+      } else if (type === "particles") {
+        for (const p of trailRef.current) {
+          p.x += p.vx ?? 0;
+          p.y += p.vy ?? 0;
+          (p as any).vy = ((p.vy ?? 0)) + 0.05; // gravity
+          const s = size * (1 - p.age) * 0.8;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot ?? 0);
+          ctx.globalAlpha = (1 - p.age) * 0.85;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.arc(0, 0, s, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+      // ── NEW: Shooting Star ─────────────────────────────────────
+      } else if (type === "shooting") {
+        for (const p of trailRef.current) {
+          const len = Math.sqrt((p.vx ?? 0) ** 2 + (p.vy ?? 0) ** 2) * (1 - p.age) * 0.6;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot ?? 0);
+          const grad = ctx.createLinearGradient(-len, 0, size, 0);
+          grad.addColorStop(0, color + "00");
+          grad.addColorStop(1, color);
+          ctx.globalAlpha = (1 - p.age) * 0.9;
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = size * 0.5;
+          ctx.lineCap = "round";
+          ctx.beginPath();
+          ctx.moveTo(-len, 0);
+          ctx.lineTo(size, 0);
+          ctx.stroke();
+          // star at tip
+          ctx.fillStyle = color;
+          ctx.globalAlpha = (1 - p.age);
+          ctx.beginPath();
+          ctx.arc(size, 0, size * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
       }
 
       ctx.globalAlpha = 1;
@@ -131,7 +254,7 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMove);
     };
-  }, [type, isEmojiType, effects.cursor.enabled, effects.cursor.color, effects.cursor.size, effects.cursor.fade, effects.cursor.followLag, effects.cursor.url]);
+  }, [type, isEmojiType, isDomType, effects.cursor.enabled, effects.cursor.color, effects.cursor.size, effects.cursor.fade, effects.cursor.followLag, effects.cursor.url]);
 
   if (!effects.cursor.enabled || type === "none") return null;
 
@@ -156,6 +279,59 @@ export default function CursorEffect({ effects }: { effects: Effects }) {
       >
         {emojiMap[type as keyof typeof emojiMap]}
       </div>
+    );
+  }
+
+  // ── Following Dot ──────────────────────────────────────────────
+  if (type === "dot") {
+    return (
+      <div
+        ref={dotRef}
+        aria-hidden
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: (effects.cursor.size ?? 6) * 2,
+          height: (effects.cursor.size ?? 6) * 2,
+          borderRadius: "50%",
+          background: effects.cursor.color,
+          pointerEvents: "none",
+          zIndex: 9999,
+          transform: "translate(-999px, -999px)",
+          marginLeft: -(effects.cursor.size ?? 6),
+          marginTop: -(effects.cursor.size ?? 6),
+          boxShadow: `0 0 ${(effects.cursor.size ?? 6) * 2}px ${effects.cursor.color}`,
+          willChange: "transform",
+        }}
+      />
+    );
+  }
+
+  // ── Ghost Cursor ───────────────────────────────────────────────
+  if (type === "ghost") {
+    return (
+      <div
+        ref={ghostRef}
+        aria-hidden
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: (effects.cursor.size ?? 6) * 4,
+          height: (effects.cursor.size ?? 6) * 4,
+          borderRadius: "50%",
+          border: `2px solid ${effects.cursor.color}`,
+          background: effects.cursor.color + "18",
+          pointerEvents: "none",
+          zIndex: 9999,
+          transform: "translate(-999px, -999px)",
+          marginLeft: -(effects.cursor.size ?? 6) * 2,
+          marginTop: -(effects.cursor.size ?? 6) * 2,
+          backdropFilter: "blur(1px)",
+          willChange: "transform",
+        }}
+      />
     );
   }
 
