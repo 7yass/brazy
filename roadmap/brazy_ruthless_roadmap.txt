@@ -426,7 +426,7 @@ Allow users to:
 
 This is where brazy.it starts to feel broader than basic bio tools.
 
-### 8.1 First widget wave
+### 8.1 First widget wave [X]
 
 Ship:
 
@@ -436,7 +436,7 @@ Ship:
 - Telegram card.
 - GitHub card.
 
-### 8.2 Widget shell system
+### 8.2 Widget shell system [X]
 
 All widgets should use a shared card shell with:
 
