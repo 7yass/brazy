@@ -96,7 +96,7 @@ Build:
 - Optional tick markers for meaningful ranges.
 - Drag smoothing.
 
-### 1.3 Improve customize page hierarchy
+### 1.3 Improve customize page hierarchy [X]
 
 The page needs to feel like a creative studio, not a long admin form.[conversation_history:1]
 
