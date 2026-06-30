@@ -10,6 +10,7 @@ import { TextInput, TextArea, ColorInput, Slider, Toggle } from "./controls";
 import { SectionCard } from "./SectionCard";
 import CustomSelect from "@/components/ui/CustomSelect";
 import UsernameEffectsModal from "./UsernameEffectsModal";
+import PresetsPanel from "./PresetsPanel";
 
 const backgroundOpts = [
   { value: "none" as const, label: "None" },
@@ -153,6 +154,20 @@ export default function ProfileEditor({
     setAssets((prev) => prev.filter((a) => a.id !== id));
   }, []);
 
+  const applyPreset = useCallback((partial: Partial<ProfileConfig>) => {
+    setCfg((c) => {
+      const next = {
+        ...c,
+        ...(partial.theme ? { theme: { ...c.theme, ...partial.theme } } : {}),
+        ...(partial.background ? { background: { ...c.background, ...partial.background } } : {}),
+        ...(partial.effects ? { effects: { ...c.effects, ...partial.effects } } : {}),
+      };
+      cfgRef.current = next;
+      return next;
+    });
+    scheduleSave();
+  }, [scheduleSave]);
+
   const accent = cfg.theme.primaryColor || "#a855f7";
 
   return (
@@ -200,6 +215,11 @@ export default function ProfileEditor({
           </div>
 
           <div className="flex flex-col gap-5">
+            {/* 0. Style Presets */}
+            <SectionCard title="Style Presets">
+              <PresetsPanel config={cfg} onApply={applyPreset} />
+            </SectionCard>
+
             {/* 1. Assets Uploader */}
             <SectionCard title="Assets Uploader">
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
