@@ -289,7 +289,8 @@ function AudioPlayer({ cfg }: { cfg: ProfileConfig }) {
         const t = el.currentTime;
         let idx = -1;
         for (let i = 0; i < cfg.audio.lyrics.length; i++) {
-          if (cfg.audio.lyrics[i] != null && t >= cfg.audio.lyrics[i]!.time) idx = i;
+          const lyric = cfg.audio.lyrics[i];
+          if (lyric != null && t >= lyric.time) idx = i;
         }
         setLyricsIdx(idx);
       }
