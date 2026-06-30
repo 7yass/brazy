@@ -414,7 +414,7 @@ Examples:
 - Grotesk + serif.
 - Mono accent + clean sans.
 
-### 7.3 Save and clone presets
+### 7.3 Save and clone presets [X]
 
 Allow users to:
 
