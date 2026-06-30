@@ -54,16 +54,16 @@ export default function AccountPage() {
   const numBadges = config?.badges?.items?.length ?? 0;
   const numWidgets = Object.values(config?.widgets || {}).filter((w: any) => w.enabled).length;
 
-  // Calculate completeness
-  let score = 0;
-  if (config) {
-    if (config.identity.avatarUrl) score += 20;
-    if (config.identity.bio) score += 20;
-    if (config.social.links.length > 0) score += 20;
-    if (config.background.type !== "color") score += 20;
-    if (config.theme.primaryColor !== "#a855f7") score += 20;
-  }
-  const completeness = Math.min(100, score || 15);
+  // Calculate completeness & strength checklist
+  const checks = [
+    { label: "Add avatar image", met: !!config?.identity?.avatarUrl, href: "/customize" },
+    { label: "Write a bio description", met: !!config?.identity?.bio, href: "/customize" },
+    { label: "Add at least 3 social links", met: (config?.social?.links?.length ?? 0) >= 3, href: "/links" },
+    { label: "Enable custom background effect", met: config?.background?.type !== "none" && config?.background?.type !== "color", href: "/customize" },
+    { label: "Enable profile widget", met: Object.values(config?.widgets || {}).some((w: any) => w?.enabled), href: "/widgets" },
+  ];
+  const score = checks.filter(c => c.met).length * 20;
+  const completeness = Math.max(15, score);
 
   const copyUserId = () => {
     if (!userId) return;
@@ -145,6 +145,39 @@ export default function AccountPage() {
           </div>
         </div>
       </div>
+
+      {/* Profile Checklist Guidance */}
+      {config && (
+        <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4">
+          <div className="border-b border-neutral-900/60 pb-3">
+            <h3 className="text-xs font-black uppercase tracking-wider text-neutral-400">Profile Strength Checklist</h3>
+            <p className="text-[10px] text-neutral-500 mt-1">Complete these tasks to increase your search discoverability and customization index.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {checks.map((check, idx) => (
+              <Link 
+                key={idx}
+                href={check.href}
+                className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border transition duration-150 select-none ${
+                  check.met 
+                    ? "bg-green-500/5 border-green-500/10 text-green-400 opacity-60 hover:opacity-100" 
+                    : "bg-neutral-900/40 border-neutral-900 text-neutral-400 hover:border-neutral-800 hover:text-white"
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold border ${
+                    check.met ? "bg-green-500/10 border-green-500/30 text-green-400" : "border-neutral-750 bg-neutral-950 text-neutral-500"
+                  }`}>
+                    {check.met ? "✓" : idx + 1}
+                  </div>
+                  <span className="text-xs font-bold truncate">{check.label}</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Quick Access Card Actions Grid */}
       <div className="flex flex-col gap-4">
