@@ -537,7 +537,7 @@ Show suggestions:
 
 This makes the product feel good immediately.
 
-### 12.1 New onboarding flow
+### 12.1 New onboarding flow [X]
 
 Steps:
 
@@ -549,7 +549,7 @@ Steps:
 6. Add first 3 links.
 7. Launch into builder with a seeded page.
 
-### 12.2 Seeded defaults
+### 12.2 Seeded defaults [X]
 
 Every new profile should already include:
 
