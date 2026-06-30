@@ -447,7 +447,7 @@ All widgets should use a shared card shell with:
 - Loading skeleton.
 - Error state.
 
-### 8.3 Widget style controls
+### 8.3 Widget style controls [X]
 
 Allow:
 
