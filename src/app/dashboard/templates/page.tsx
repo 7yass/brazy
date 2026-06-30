@@ -1,27 +1,256 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LayoutTemplate, Heart, Upload, Search, Check } from "lucide-react";
+import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
+import type { ProfileConfig } from "@/lib/profile/schema";
 
 const F = "Satoshi, system-ui, sans-serif";
 
 const TEMPLATES = [
-  { name: "Minimal Dark",  tags: ["dark", "minimal"],  hearts: 214, gradient: "linear-gradient(135deg,#1a1a2e,#16213e)",        accent: "#a78bfa" },
-  { name: "Neon Glow",     tags: ["colorful", "glow"],  hearts: 189, gradient: "linear-gradient(135deg,#0d0d0d,#1a0533)",        accent: "#e879f9" },
-  { name: "Glass Card",    tags: ["glass", "modern"],   hearts: 167, gradient: "linear-gradient(135deg,#0f2027,#203a43,#2c5364)", accent: "#60a5fa" },
-  { name: "Terminal",      tags: ["dark", "tech"],      hearts: 142, gradient: "linear-gradient(135deg,#0a0a0a,#0d1f0d)",        accent: "#34d399" },
-  { name: "Pastel Soft",   tags: ["light", "cute"],     hearts: 138, gradient: "linear-gradient(135deg,#fce4ec,#f8bbd0)",        accent: "#ec4899" },
-  { name: "Crimson",       tags: ["dark", "red"],       hearts: 201, gradient: "linear-gradient(135deg,#1a0000,#2d0000)",        accent: "#dc2626" },
+  {
+    name: "Minimal Dark",
+    tags: ["dark", "minimal"],
+    hearts: 214,
+    gradient: "linear-gradient(135deg,#1a1a2e,#16213e)",
+    accent: "#a78bfa",
+    theme: {
+      cardStyle: "minimal" as const,
+      mode: "dark" as const,
+      primaryColor: "#a78bfa",
+      textColor: "#fafafa",
+      mutedTextColor: "#94a3b8",
+      cardOpacity: 0,
+      borderRadius: 0,
+      borderWidth: 0,
+      animatedBorder: false,
+      glow: false,
+    },
+    background: {
+      type: "none" as const,
+      color1: "#09090b",
+      color2: "#09090b",
+      color3: "#09090b",
+      imageUrl: "",
+      videoUrl: "",
+    },
+    effects: {
+      textGlow: false,
+      usernameEffect: "none" as const,
+    }
+  },
+  {
+    name: "Neon Glow",
+    tags: ["colorful", "glow"],
+    hearts: 189,
+    gradient: "linear-gradient(135deg,#0d0d0d,#1a0533)",
+    accent: "#e879f9",
+    theme: {
+      cardStyle: "glass" as const,
+      mode: "dark" as const,
+      primaryColor: "#e879f9",
+      textColor: "#ffffff",
+      mutedTextColor: "#a21caf",
+      cardOpacity: 0.55,
+      borderRadius: 22,
+      borderWidth: 1,
+      animatedBorder: true,
+      glow: true,
+      glowIntensity: 80,
+    },
+    background: {
+      type: "matrix" as const,
+      color1: "#090514",
+      color2: "#e879f9",
+      color3: "#090514",
+      imageUrl: "",
+      videoUrl: "",
+    },
+    effects: {
+      textGlow: true,
+      usernameEffect: "glow" as const,
+    }
+  },
+  {
+    name: "Glass Card",
+    tags: ["glass", "modern"],
+    hearts: 167,
+    gradient: "linear-gradient(135deg,#0f2027,#203a43,#2c5364)",
+    accent: "#60a5fa",
+    theme: {
+      cardStyle: "sleek" as const,
+      mode: "dark" as const,
+      primaryColor: "#60a5fa",
+      textColor: "#ffffff",
+      mutedTextColor: "#93c5fd",
+      cardOpacity: 0.35,
+      cardBlur: 30,
+      borderRadius: 24,
+      borderWidth: 1,
+      animatedBorder: false,
+      glow: true,
+    },
+    background: {
+      type: "particles" as const,
+      color1: "#0f172a",
+      color2: "#60a5fa",
+      color3: "#0f172a",
+      imageUrl: "",
+      videoUrl: "",
+    },
+    effects: {
+      textGlow: true,
+      usernameEffect: "none" as const,
+    }
+  },
+  {
+    name: "Terminal",
+    tags: ["dark", "tech"],
+    hearts: 142,
+    gradient: "linear-gradient(135deg,#0a0a0a,#0d1f0d)",
+    accent: "#34d399",
+    theme: {
+      cardStyle: "solid" as const,
+      mode: "dark" as const,
+      primaryColor: "#34d399",
+      textColor: "#34d399",
+      mutedTextColor: "#065f46",
+      fontFamily: "mono" as const,
+      cardOpacity: 0.95,
+      borderRadius: 8,
+      borderWidth: 1.5,
+      animatedBorder: false,
+      glow: false,
+    },
+    background: {
+      type: "grid" as const,
+      color1: "#051505",
+      color2: "#34d399",
+      color3: "#051505",
+      imageUrl: "",
+      videoUrl: "",
+    },
+    effects: {
+      textGlow: false,
+      usernameEffect: "none" as const,
+    }
+  },
+  {
+    name: "Pastel Soft",
+    tags: ["light", "cute"],
+    hearts: 138,
+    gradient: "linear-gradient(135deg,#fce4ec,#f8bbd0)",
+    accent: "#ec4899",
+    theme: {
+      cardStyle: "solid" as const,
+      mode: "light" as const,
+      primaryColor: "#ec4899",
+      textColor: "#ec4899",
+      mutedTextColor: "#f472b6",
+      cardOpacity: 0.9,
+      borderRadius: 28,
+      borderWidth: 0,
+      animatedBorder: false,
+      glow: false,
+    },
+    background: {
+      type: "gradient" as const,
+      color1: "#fff1f2",
+      color2: "#ffe4e6",
+      color3: "#fff1f2",
+      imageUrl: "",
+      videoUrl: "",
+    },
+    effects: {
+      textGlow: false,
+      usernameEffect: "none" as const,
+    }
+  },
+  {
+    name: "Crimson",
+    tags: ["dark", "red"],
+    hearts: 201,
+    gradient: "linear-gradient(135deg,#1a0000,#2d0000)",
+    accent: "#dc2626",
+    theme: {
+      cardStyle: "sleek" as const,
+      mode: "dark" as const,
+      primaryColor: "#dc2626",
+      textColor: "#ffffff",
+      mutedTextColor: "#ef4444",
+      cardOpacity: 0.5,
+      cardBlur: 20,
+      borderRadius: 22,
+      borderWidth: 1,
+      animatedBorder: false,
+      glow: true,
+    },
+    background: {
+      type: "starfield" as const,
+      color1: "#1a0000",
+      color2: "#dc2626",
+      color3: "#1a0000",
+      imageUrl: "",
+      videoUrl: "",
+    },
+    effects: {
+      textGlow: true,
+      usernameEffect: "glow" as const,
+    }
+  },
 ];
 
 export default function TemplatesPage() {
   const [search, setSearch] = useState("");
   const [applied, setApplied] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [profileConfig, setProfileConfig] = useState<ProfileConfig | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { config } = await clientGetProfile();
+        setProfileConfig(config);
+      } catch (err) {
+        console.error("Load config error in templates:", err);
+      }
+    })();
+  }, []);
+
   const filtered = TEMPLATES.filter(t => t.name.toLowerCase().includes(search.toLowerCase()));
 
-  const apply = (name: string) => {
-    setApplied(name);
-    setTimeout(() => setApplied(null), 2000);
+  const apply = async (template: typeof TEMPLATES[number]) => {
+    if (!profileConfig || loading) return;
+    setLoading(true);
+    setApplied(template.name);
+    try {
+      const updatedConfig: ProfileConfig = {
+        ...profileConfig,
+        theme: {
+          ...profileConfig.theme,
+          ...template.theme,
+        },
+        background: {
+          ...profileConfig.background,
+          ...template.background,
+        },
+        effects: {
+          ...profileConfig.effects,
+          ...template.effects,
+        }
+      };
+      
+      await clientSaveProfile(updatedConfig);
+      setProfileConfig(updatedConfig);
+      
+      // Flash "Applied!" text
+      setTimeout(() => setApplied(null), 2500);
+    } catch (err) {
+      console.error("Apply template error:", err);
+      setApplied(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -68,8 +297,9 @@ export default function TemplatesPage() {
                   ))}
                 </div>
                 <button
-                  onClick={() => apply(t.name)}
-                  style={{ width: "100%", padding: "8px", borderRadius: 10, background: isApplied ? `${t.accent}20` : `${t.accent}12`, border: `1px solid ${isApplied ? t.accent + "55" : t.accent + "28"}`, color: t.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: F, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.15s" }}
+                  disabled={loading && !isApplied}
+                  onClick={() => apply(t)}
+                  style={{ width: "100%", padding: "8px", borderRadius: 10, background: isApplied ? `${t.accent}20` : `${t.accent}12`, border: `1px solid ${isApplied ? t.accent + "55" : t.accent + "28"}`, color: t.accent, fontSize: 12, fontWeight: 600, cursor: loading ? "default" : "pointer", fontFamily: F, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, transition: "all 0.15s" }}
                 >
                   {isApplied ? <><Check style={{ width: 12, height: 12 }} /> Applied!</> : "Use template"}
                 </button>
