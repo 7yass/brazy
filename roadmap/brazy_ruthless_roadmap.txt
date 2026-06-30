@@ -481,7 +481,7 @@ Later add:
 - Browse by vibe and use case.
 - Apply style only or full template.
 
-### 9.3 Template preview page
+### 9.3 Template preview page [X]
 
 A strong preview page can become organic marketing content.
 
