@@ -5,7 +5,7 @@ import {
   Image as ImageIcon, Palette, Type, MousePointer2, Sparkles,
   Music, Link2, Layout, Globe, Code, ChevronDown, ChevronRight,
   Check, Save, RotateCcw, Zap, Eye, EyeOff, Laptop, Smartphone,
-  Settings, Pin, ShieldCheck, Award, Gamepad2
+  Settings, Pin, ShieldCheck, Award, Gamepad2, X, Type as TypeIcon
 } from "lucide-react";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
@@ -231,7 +231,7 @@ function SelectControl<T extends string>({
   );
 }
 
-// Visual chip grid for effect pickers (replaces dropdown)
+// Visual chip grid for effect pickers
 function EffectChips<T extends string>({
   value,
   onChange,
@@ -287,6 +287,278 @@ function Divider() {
   return <div className="h-px bg-neutral-900/80 my-2" />;
 }
 
+// ─── Username Effect Live Preview Tile ────────────────────────────────────────
+
+type UsernameEffectValue = "none" | "glow" | "glitch" | "typewriter" | "rainbow" | "neon" | "shake" | "gradient" | "bounce" | "pulse" | "wave";
+
+const USERNAME_EFFECTS: { value: UsernameEffectValue; label: string }[] = [
+  { value: "none",       label: "None" },
+  { value: "typewriter", label: "Typewriter" },
+  { value: "rainbow",    label: "Rainbow" },
+  { value: "glow",       label: "Pulsing Glow" },
+  { value: "glitch",     label: "Glitch" },
+  { value: "neon",       label: "Neon Sparkle" },
+  { value: "shake",      label: "Shake" },
+  { value: "gradient",   label: "Gradient" },
+  { value: "bounce",     label: "Bounce" },
+  { value: "pulse",      label: "Pulse" },
+  { value: "wave",       label: "Wave" },
+];
+
+function EffectPreviewText({ effect, name }: { effect: UsernameEffectValue; name: string }) {
+  const [tick, setTick] = useState(0);
+  const [typewriterIdx, setTypewriterIdx] = useState(0);
+  const [typewriterForward, setTypewriterForward] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 80);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Typewriter logic
+  useEffect(() => {
+    if (effect !== "typewriter") return;
+    const interval = setInterval(() => {
+      setTypewriterIdx(prev => {
+        if (typewriterForward) {
+          if (prev >= name.length) { setTypewriterForward(false); return prev; }
+          return prev + 1;
+        } else {
+          if (prev <= 0) { setTypewriterForward(true); return prev; }
+          return prev - 1;
+        }
+      });
+    }, 120);
+    return () => clearInterval(interval);
+  }, [effect, name, typewriterForward]);
+
+  const baseClass = "text-sm font-extrabold tracking-tight select-none";
+
+  if (effect === "none") {
+    return <span className={`${baseClass} text-white`}>{name}</span>;
+  }
+
+  if (effect === "typewriter") {
+    return (
+      <span className={`${baseClass} text-white font-mono`}>
+        {name.slice(0, typewriterIdx)}
+        <span className="animate-pulse">|</span>
+      </span>
+    );
+  }
+
+  if (effect === "rainbow") {
+    const colors = ["#ff0000","#ff7700","#ffff00","#00ff00","#0099ff","#9900ff"];
+    return (
+      <span className={baseClass}>
+        {name.split("").map((ch, i) => (
+          <span key={i} style={{ color: colors[(i + tick) % colors.length], transition: "color 0.1s" }}>{ch}</span>
+        ))}
+      </span>
+    );
+  }
+
+  if (effect === "glow") {
+    const glowOpacity = 0.5 + 0.5 * Math.sin(tick * 0.15);
+    return (
+      <span
+        className={`${baseClass} text-white`}
+        style={{ textShadow: `0 0 ${8 + glowOpacity * 14}px rgba(255,255,255,${0.4 + glowOpacity * 0.6})` }}
+      >
+        {name}
+      </span>
+    );
+  }
+
+  if (effect === "glitch") {
+    const glitching = tick % 20 < 3;
+    return (
+      <span
+        className={`${baseClass} text-white`}
+        style={{
+          textShadow: glitching ? "2px 0 #ff0040, -2px 0 #00ffff" : "none",
+          transform: glitching ? `translate(${(Math.random() - 0.5) * 3}px, 0)` : "none",
+          display: "inline-block",
+        }}
+      >
+        {name}
+      </span>
+    );
+  }
+
+  if (effect === "neon") {
+    const pulse = 0.6 + 0.4 * Math.sin(tick * 0.12);
+    return (
+      <span
+        className={`${baseClass}`}
+        style={{
+          color: `rgba(200,180,255,${0.8 + pulse * 0.2})`,
+          textShadow: `0 0 8px rgba(160,100,255,${pulse}), 0 0 20px rgba(160,100,255,${pulse * 0.5})`,
+        }}
+      >
+        {name}
+      </span>
+    );
+  }
+
+  if (effect === "shake") {
+    const shaking = tick % 30 < 5;
+    return (
+      <span
+        className={`${baseClass} text-white`}
+        style={{
+          display: "inline-block",
+          transform: shaking ? `translate(${(Math.random()-0.5)*4}px, ${(Math.random()-0.5)*3}px)` : "none",
+        }}
+      >
+        {name}
+      </span>
+    );
+  }
+
+  if (effect === "gradient") {
+    const offset = (tick * 2) % 360;
+    return (
+      <span
+        className={baseClass}
+        style={{
+          background: `linear-gradient(${offset}deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff, #c77dff)`,
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+        }}
+      >
+        {name}
+      </span>
+    );
+  }
+
+  if (effect === "bounce") {
+    return (
+      <span className={baseClass}>
+        {name.split("").map((ch, i) => (
+          <span
+            key={i}
+            className="inline-block text-white"
+            style={{ transform: `translateY(${Math.sin((tick * 0.2) + i * 0.6) * 4}px)` }}
+          >
+            {ch}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  if (effect === "pulse") {
+    const scale = 1 + 0.06 * Math.sin(tick * 0.12);
+    return (
+      <span
+        className={`${baseClass} text-white inline-block`}
+        style={{ transform: `scale(${scale})` }}
+      >
+        {name}
+      </span>
+    );
+  }
+
+  if (effect === "wave") {
+    return (
+      <span className={baseClass}>
+        {name.split("").map((ch, i) => (
+          <span
+            key={i}
+            className="inline-block text-white"
+            style={{ transform: `translateY(${Math.sin((tick * 0.15) + i * 0.8) * 5}px)` }}
+          >
+            {ch}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return <span className={`${baseClass} text-white`}>{name}</span>;
+}
+
+// ─── Username Effect Modal ─────────────────────────────────────────────────────
+
+function UsernameEffectModal({
+  current,
+  onClose,
+  onSave,
+  previewName,
+}: {
+  current: UsernameEffectValue;
+  onClose: () => void;
+  onSave: (v: UsernameEffectValue) => void;
+  previewName: string;
+}) {
+  const [selected, setSelected] = useState<UsernameEffectValue>(current);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative z-10 w-full max-w-lg bg-neutral-950 border border-neutral-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-900">
+          <span className="text-sm font-extrabold text-white tracking-tight">Username Effects</span>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-lg bg-neutral-900 hover:bg-neutral-800 flex items-center justify-center transition cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5 text-neutral-400" />
+          </button>
+        </div>
+
+        {/* Grid */}
+        <div className="p-4 grid grid-cols-3 gap-2.5 max-h-[400px] overflow-y-auto">
+          {USERNAME_EFFECTS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setSelected(opt.value)}
+              className={`relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition duration-150 cursor-pointer h-[80px] overflow-hidden ${
+                selected === opt.value
+                  ? "border-red-500/50 bg-red-600/5"
+                  : "border-neutral-800 bg-neutral-900/40 hover:border-neutral-700 hover:bg-neutral-900/60"
+              }`}
+            >
+              {selected === opt.value && (
+                <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-red-600 flex items-center justify-center">
+                  <Check className="w-2 h-2 text-white" />
+                </div>
+              )}
+              <EffectPreviewText effect={opt.value} name={previewName || "brazy"} />
+              <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">{opt.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-2 px-4 py-3 border-t border-neutral-900">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-xs font-bold text-neutral-400 hover:text-white hover:bg-neutral-800 transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => { onSave(selected); onClose(); }}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white transition cursor-pointer"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CustomizePage() {
@@ -294,6 +566,7 @@ export default function CustomizePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
+  const [showEffectModal, setShowEffectModal] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
   const cfgRef = useRef<ProfileConfig | null>(null);
@@ -374,6 +647,8 @@ export default function CustomizePage() {
     );
   }
 
+  const currentEffectLabel = USERNAME_EFFECTS.find(e => e.value === cfg.effects.usernameEffect)?.label ?? "None";
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-full mx-auto pb-12 select-none font-sans">
       
@@ -391,6 +666,16 @@ export default function CustomizePage() {
           perspective: 1000px;
         }
       `}</style>
+
+      {/* Username Effect Modal */}
+      {showEffectModal && (
+        <UsernameEffectModal
+          current={cfg.effects.usernameEffect as UsernameEffectValue}
+          previewName={cfg.identity.displayName || cfg.identity.username || "brazy"}
+          onClose={() => setShowEffectModal(false)}
+          onSave={(v) => set("effects", "usernameEffect", v)}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.04] pb-5">
@@ -659,22 +944,19 @@ export default function CustomizePage() {
                 ]}
               />
 
-              {/* Username Effects — visual chips instead of dropdown */}
-              <div className="md:col-span-2">
-                <EffectChips
-                  label="Username Effect"
-                  value={cfg.effects.usernameEffect}
-                  onChange={v => set("effects", "usernameEffect", v)}
-                  options={[
-                    { value: "none", label: "Default" },
-                    { value: "glow", label: "Pulsing Glow", emoji: "✨" },
-                    { value: "glitch", label: "Glitch", emoji: "📺" },
-                    { value: "typewriter", label: "Typewriter", emoji: "⌨️" },
-                    { value: "rainbow", label: "Rainbow", emoji: "🌈" },
-                    { value: "neon", label: "Neon Sparkle", emoji: "💡" },
-                    { value: "shake", label: "Shake", emoji: "📳" },
-                  ]}
-                />
+              {/* Username Effects — opens modal picker */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Username Effects</span>
+                <button
+                  onClick={() => setShowEffectModal(true)}
+                  className="flex items-center justify-between gap-2 w-full bg-neutral-950 border border-white/[0.06] rounded-xl px-3.5 py-2 text-xs text-neutral-300 hover:border-white/20 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>{currentEffectLabel}</span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-neutral-500" />
+                </button>
               </div>
 
               {/* Views Placement */}
