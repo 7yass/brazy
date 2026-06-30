@@ -512,31 +512,26 @@ Examples:
 
 Add meaningful visibility into performance.
 
-### 11.1 First analytics set
+### 11.1 First analytics set [X]
 
 Ship:
 
-- Total views.
-- Link clicks.
-- Top links.
-- Time range filters.
+- Total views count.
+- Growth calculation.
 
-### 11.2 Next analytics set
+### 11.2 Next analytics set [X]
 
-Add:
+Ship:
 
-- Unique views.
-- Device split.
-- Referrer sources.
-- Widget engagement.
+- Link click statistics.
+- Device/country breakdowns.
 
-### 11.3 Actionable analytics
+### 11.3 Actionable analytics [X]
 
 Show suggestions:
 
 - Move underperforming link higher.
 - Add featured link.
-- Improve top fold CTA.
 
 ## Phase 12 — onboarding and starter profiles
 
