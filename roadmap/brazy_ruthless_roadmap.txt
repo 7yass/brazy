@@ -489,7 +489,7 @@ A strong preview page can become organic marketing content.
 
 The dashboard overview should help users improve pages, not just show stats.
 
-### 10.1 Add profile strength guidance
+### 10.1 Add profile strength guidance [X]
 
 Examples:
 
