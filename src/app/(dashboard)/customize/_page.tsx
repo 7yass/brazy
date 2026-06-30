@@ -569,6 +569,7 @@ export default function CustomizePage() {
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
   const [showEffectModal, setShowEffectModal] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [showLegacyStyles, setShowLegacyStyles] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
   const cfgRef = useRef<ProfileConfig | null>(null);
@@ -1242,22 +1243,128 @@ export default function CustomizePage() {
             </Row>
             <Divider />
             <div className="mb-4">
-              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2">Card style</span>
-              <Chips
-                value={cfg.theme.cardStyle}
-                onChange={v => set("theme", "cardStyle", v)}
-                options={[
-                  { value: "glass", label: "Glass" },
-                  { value: "solid", label: "Solid" },
-                  { value: "outline", label: "Outline" },
-                  { value: "neon", label: "Neon" },
-                  { value: "minimal", label: "Minimal" },
-                  { value: "portfolio", label: "Portfolio" },
-                  { value: "simplistic", label: "Simplistic" },
-                  { value: "modern", label: "Modern" },
-                  { value: "sleek", label: "Sleek" },
-                ]}
-              />
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2.5">Layout Family</span>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  {
+                    value: "modern",
+                    label: "Modern Layout",
+                    desc: "Versatile modular card rows.",
+                    preview: "linear-gradient(135deg, #111, #18181b)",
+                    mockup: (
+                      <div className="flex flex-col gap-1.5 items-center w-full max-w-[64px]">
+                        <div className="w-6 h-6 rounded-full bg-red-500/10 border border-red-500/20" />
+                        <div className="w-10 h-1.5 rounded-full bg-neutral-800" />
+                        <div className="w-12 h-1.5 rounded-full bg-neutral-850" />
+                        <div className="flex gap-1">
+                          <div className="w-4 h-3 rounded bg-neutral-900 border border-neutral-850" />
+                          <div className="w-4 h-3 rounded bg-neutral-900 border border-neutral-850" />
+                        </div>
+                      </div>
+                    )
+                  },
+                  {
+                    value: "sleek",
+                    label: "Sleek Layout",
+                    desc: "Rounded glass pill styles.",
+                    preview: "linear-gradient(135deg, #0d0d0d, #1a0533)",
+                    mockup: (
+                      <div className="flex flex-col gap-1.5 items-center w-full max-w-[64px]">
+                        <div className="w-6 h-6 rounded-3xl bg-red-500/20 border border-red-500/30" />
+                        <div className="w-10 h-1.5 rounded-full bg-neutral-800" />
+                        <div className="w-12 h-3 rounded-full bg-neutral-900 border border-red-500/10 shadow-[0_0_8px_rgba(239,68,68,0.06)]" />
+                      </div>
+                    )
+                  },
+                  {
+                    value: "minimal",
+                    label: "Minimal Layout",
+                    desc: "Borderless clean typography.",
+                    preview: "linear-gradient(135deg, #09090b, #0c0c0e)",
+                    mockup: (
+                      <div className="flex flex-col gap-1.5 items-center w-full max-w-[64px]">
+                        <div className="w-6 h-6 rounded-full bg-neutral-850" />
+                        <div className="w-10 h-1.5 rounded-full bg-neutral-800" />
+                        <div className="w-8 h-1 rounded-full bg-neutral-850" />
+                        <div className="w-12 h-1 rounded-full bg-neutral-850" />
+                      </div>
+                    )
+                  },
+                  {
+                    value: "portfolio",
+                    label: "Portfolio Layout",
+                    desc: "Editorial split column details.",
+                    preview: "linear-gradient(135deg, #050505, #121212)",
+                    mockup: (
+                      <div className="flex items-start gap-1.5 w-full max-w-[72px] text-left">
+                        <div className="w-5 h-5 rounded-lg bg-red-500/10 border border-red-500/20 shrink-0" />
+                        <div className="flex-1 flex flex-col gap-1">
+                          <div className="w-8 h-1.5 rounded bg-neutral-800" />
+                          <div className="w-10 h-1 rounded bg-neutral-850" />
+                          <div className="w-6 h-1 rounded bg-neutral-850" />
+                        </div>
+                      </div>
+                    )
+                  }
+                ].map(item => {
+                  const isSelected = cfg.theme.cardStyle === item.value;
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() => set("theme", "cardStyle", item.value as any)}
+                      className={`group relative flex flex-col rounded-2xl border text-left overflow-hidden transition-all duration-200 cursor-pointer select-none ${
+                        isSelected 
+                          ? "border-red-500/40 bg-red-950/[0.03]" 
+                          : "border-neutral-900 bg-neutral-950/20 hover:border-neutral-850"
+                      }`}
+                    >
+                      <div 
+                        className="h-20 flex items-center justify-center border-b border-neutral-900/60 transition-opacity duration-300 relative"
+                        style={{ background: item.preview }}
+                      >
+                        {item.mockup}
+                        {isSelected && (
+                          <div className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-0.5 shadow-md">
+                            <Check className="w-2 h-2" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="p-3 select-none">
+                        <span className="text-[11px] font-black text-white block">{item.label}</span>
+                        <span className="text-[9px] text-neutral-500 leading-snug mt-0.5 block">{item.desc}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Show legacy styles toggle */}
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLegacyStyles(!showLegacyStyles)}
+                  className="text-[9px] font-bold text-neutral-500 hover:text-neutral-350 transition flex items-center gap-1 cursor-pointer"
+                >
+                  {showLegacyStyles ? "Hide legacy styles" : "Show all legacy styles..."}
+                </button>
+                {showLegacyStyles && (
+                  <div className="mt-2.5 p-3 rounded-xl bg-neutral-950/60 border border-neutral-900 animate-fadeIn">
+                    <Chips
+                      value={cfg.theme.cardStyle}
+                      onChange={v => set("theme", "cardStyle", v as any)}
+                      options={[
+                        { value: "glass", label: "Glass" },
+                        { value: "solid", label: "Solid" },
+                        { value: "outline", label: "Outline" },
+                        { value: "neon", label: "Neon" },
+                        { value: "simplistic", label: "Simplistic" },
+                      ]}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="mb-4">
               <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-2">Font family</span>
