@@ -335,7 +335,7 @@ Rules:
 
 This is the “free premium” layer that gets attention, but it should only ship after the core visual system is strong.
 
-### 6.1 Username effects
+### 6.1 Username effects [X]
 
 Expand your picker and polish existing effects.
 
@@ -346,7 +346,7 @@ Add:
 - Intensity controls.
 - Readability safety.
 
-### 6.2 Background effects gallery
+### 6.2 Background effects gallery [X]
 
 Build categories:
 
@@ -363,7 +363,7 @@ Add per-effect controls:
 - Opacity.
 - Mobile tone-down.
 
-### 6.3 Cursor and click effects
+### 6.3 Cursor and click effects [X]
 
 Ship tasteful sets first, novelty later.
 
