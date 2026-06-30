@@ -500,7 +500,7 @@ Examples:
 - Add one widget.
 - Add a featured link.
 
-### 10.2 Add quick actions
+### 10.2 Add quick actions [X]
 
 - Edit identity.
 - Customize style.
