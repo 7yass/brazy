@@ -23,7 +23,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   if (!profile) {
     if (username.toLowerCase() === brazyProfile.identity.username.toLowerCase()) {
-      return <ProfileRenderer config={brazyProfile} />;
+      return <ProfileRenderer config={brazyProfile} username={username} />;
     }
     return notFound();
   }
@@ -48,6 +48,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   return (
     <ProfileRenderer
       config={config}
+      username={username}
       audioTrackId={profile.audio_track_id}
       audioTitle={profile.audio_title}
       audioArtist={profile.audio_artist}
