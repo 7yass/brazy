@@ -259,7 +259,7 @@ Needed decisions:
 - More whitespace.
 - Less gamer-style ornamentation.
 
-### 3.3 Add layout previews to builder
+### 3.3 Add layout previews to builder [X]
 
 Each layout must show a real miniature screenshot-like preview inside the picker, not just a name.
 
