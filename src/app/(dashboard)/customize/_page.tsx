@@ -1128,6 +1128,57 @@ export default function CustomizePage() {
               <p className="text-[10px] text-neutral-500 mt-1">Design theme color tokens for text, icons, cards, and solid background bases.</p>
             </div>
 
+            <div className="flex flex-col gap-2 border-b border-neutral-900/60 pb-4">
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Curated Color Themes</span>
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                {[
+                  { name: "Obsidian", primaryColor: "#a78bfa", textColor: "#fafafa", mutedTextColor: "#71717a", color1: "#09090b", color2: "#18181b", color3: "#27272a" },
+                  { name: "Graphite", primaryColor: "#f4f4f5", textColor: "#f4f4f5", mutedTextColor: "#71717a", color1: "#18181b", color2: "#27272a", color3: "#3f3f46" },
+                  { name: "Smoke", primaryColor: "#e4e4e7", textColor: "#f4f4f5", mutedTextColor: "#a1a1aa", color1: "#27272a", color2: "#3f3f46", color3: "#52525b" },
+                  { name: "Frost", primaryColor: "#38bdf8", textColor: "#f0f9ff", mutedTextColor: "#7dd3fc", color1: "#082f49", color2: "#0c4a6e", color3: "#0369a1" },
+                  { name: "Crimson", primaryColor: "#ef4444", textColor: "#fef2f2", mutedTextColor: "#fca5a5", color1: "#450a0a", color2: "#7f1d1d", color3: "#991b1b" },
+                  { name: "Sapphire", primaryColor: "#3b82f6", textColor: "#eff6ff", mutedTextColor: "#bfdbfe", color1: "#172554", color2: "#1e3a8a", color3: "#1e40af" },
+                  { name: "Emerald", primaryColor: "#10b981", textColor: "#ecfdf5", mutedTextColor: "#a7f3d0", color1: "#064e3b", color2: "#065f46", color3: "#047857" },
+                  { name: "Mono Light", primaryColor: "#09090b", textColor: "#09090b", mutedTextColor: "#71717a", color1: "#ffffff", color2: "#f4f4f5", color3: "#e4e4e7" },
+                ].map(p => (
+                  <button
+                    key={p.name}
+                    type="button"
+                    onClick={() => {
+                      setCfg(prev => {
+                        if (!prev) return prev;
+                        const next = {
+                          ...prev,
+                          theme: {
+                            ...prev.theme,
+                            primaryColor: p.primaryColor,
+                            textColor: p.textColor,
+                            mutedTextColor: p.mutedTextColor,
+                          },
+                          background: {
+                            ...prev.background,
+                            color1: p.color1,
+                            color2: p.color2,
+                            color3: p.color3,
+                          }
+                        };
+                        scheduleSave(next);
+                        return next;
+                      });
+                    }}
+                    className="flex flex-col items-center justify-center p-2 rounded-lg border border-neutral-900 bg-neutral-950/80 hover:border-neutral-700 transition cursor-pointer select-none text-center"
+                  >
+                    <div className="flex gap-1 mb-1">
+                      <div className="w-2 h-2 rounded-full border border-white/5" style={{ backgroundColor: p.primaryColor }} />
+                      <div className="w-2 h-2 rounded-full border border-white/5" style={{ backgroundColor: p.textColor }} />
+                      <div className="w-2 h-2 rounded-full border border-white/5" style={{ backgroundColor: p.color1 }} />
+                    </div>
+                    <span className="text-[8px] font-bold text-neutral-400 hover:text-white truncate w-full">{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <ColorPill label="Accent Color" value={cfg.theme.primaryColor} onChange={v => set("theme", "primaryColor", v)} />
               <ColorPill label="Text Color" value={cfg.theme.textColor} onChange={v => set("theme", "textColor", v)} />
@@ -1219,6 +1270,9 @@ export default function CustomizePage() {
                   { value: "poppins", label: "Poppins" },
                   { value: "mono", label: "Monospace" },
                   { value: "serif", label: "Serif" },
+                  { value: "grotesk-serif", label: "Grotesk + Serif" },
+                  { value: "mono-sans", label: "Mono + Sans" },
+                  { value: "sharp-sans", label: "Display + Sans" },
                 ]}
               />
             </div>

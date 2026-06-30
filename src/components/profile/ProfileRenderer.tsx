@@ -505,11 +505,23 @@ export default function ProfileRenderer({
 
   const fontClass = (() => {
     switch (theme.fontFamily) {
+      case "grotesk-serif": return "font-serif";
+      case "mono-sans": return "font-sans";
+      case "sharp-sans": return "font-sans";
       case "inter": return "font-sans";
       case "poppins": return "font-[Poppins,sans-serif]";
       case "mono": return "font-mono";
       case "serif": return "font-serif";
       default: return "font-sans";
+    }
+  })();
+
+  const fontHeadingClass = (() => {
+    switch (theme.fontFamily) {
+      case "grotesk-serif": return "font-[Poppins,sans-serif] font-bold";
+      case "mono-sans": return "font-mono font-bold";
+      case "sharp-sans": return "font-[Poppins,sans-serif] font-black";
+      default: return "";
     }
   })();
 
@@ -597,7 +609,7 @@ export default function ProfileRenderer({
 
             <div className="flex-1 flex flex-col items-center md:items-start gap-2 min-w-0">
               <div className="flex flex-col items-center md:items-start gap-1 w-full">
-                <h1 className="text-2xl font-black tracking-tight">
+                <h1 className={`text-2xl font-black tracking-tight ${fontHeadingClass}`}>
                   <UsernameText
                     text={identity.displayName || username}
                     effect={effects.usernameEffect ?? "none"}
@@ -677,7 +689,7 @@ export default function ProfileRenderer({
             )}
 
             <div className={`flex flex-col ${alignClass} gap-1`}>
-              <h1 className="text-xl">
+              <h1 className={`text-xl ${fontHeadingClass}`}>
                 <UsernameText
                   text={identity.displayName || username}
                   effect={effects.usernameEffect ?? "none"}

@@ -29,7 +29,7 @@ export const themeSchema = z.object({
   mutedTextColor: z.string().default("#94a3b8"),
   backgroundColor: z.string().default("#08070d"),
   fontFamily: z
-    .enum(["geist", "inter", "poppins", "mono", "serif", "comic", "custom"])
+    .enum(["geist", "inter", "poppins", "mono", "serif", "comic", "custom", "grotesk-serif", "mono-sans", "sharp-sans"])
     .default("geist"),
   fontFamilyUrl: z.string().default(""),
   cardStyle: cardStyleSchema.default("glass"),
