@@ -228,11 +228,37 @@ function UsernameText({ text, effect, accent, accent2, textColor, textGlow }: {
 
 // ─── Social Link Button ──────────────────────────────────────────────────────
 
-function SocialButton({ href, platform, label, color, glow, cardStyle }: {
-  href: string; platform: string; label: string; color: string; glow: boolean; cardStyle: string;
+function SocialButton({
+  href,
+  platform,
+  label,
+  color,
+  glow,
+  cardStyle,
+  subtitle,
+  thumbnail,
+  badgeText,
+  badgeColor,
+  featured,
+}: {
+  href: string;
+  platform: string;
+  label: string;
+  color: string;
+  glow: boolean;
+  cardStyle: string;
+  subtitle?: string;
+  thumbnail?: string;
+  badgeText?: string;
+  badgeColor?: string;
+  featured?: boolean;
 }) {
   const Icon = brandIcons[platform as keyof typeof brandIcons];
-  const glowStyle = glow ? { boxShadow: `0 0 12px ${color}25` } : {};
+  
+  const baseGlowColor = color || "#ffffff";
+  const glowStyle = (glow || featured) 
+    ? { boxShadow: `0 0 15px ${baseGlowColor}${featured ? "44" : "20"}` } 
+    : {};
 
   let borderClass = "rounded-xl";
   let justifyClass = "justify-start text-left";
@@ -241,31 +267,64 @@ function SocialButton({ href, platform, label, color, glow, cardStyle }: {
     justifyClass = "justify-center text-center";
   }
 
+  const featuredBorderColor = featured ? baseGlowColor : cardStyle === "minimal" ? "rgba(255,255,255,0.06)" : `${color}25`;
+  const featuredBg = featured 
+    ? `linear-gradient(135deg, ${baseGlowColor}1a, ${baseGlowColor}08)` 
+    : cardStyle === "minimal" ? "transparent" : `${color}0d`;
+
   return (
     <motion.a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      whileHover={{ scale: 1.025, y: -1 }}
+      whileHover={{ scale: featured ? 1.04 : 1.025, y: -1 }}
       whileTap={{ scale: 0.975 }}
-      className={`flex items-center gap-3 w-full px-4 py-3 ${borderClass} ${justifyClass} transition-all duration-200 cursor-pointer border`}
+      className={`relative flex items-center gap-3.5 w-full px-4 py-3 ${borderClass} ${justifyClass} transition-all duration-250 cursor-pointer border ${
+        featured ? "animate-pulse border-2" : ""
+      }`}
       style={{
-        borderColor: cardStyle === "minimal" ? "rgba(255,255,255,0.06)" : `${color}25`,
-        background: cardStyle === "minimal" ? "transparent" : `${color}0d`,
+        borderColor: featuredBorderColor,
+        background: featuredBg,
         ...glowStyle,
       }}
     >
-      {Icon && (
-        <span className="shrink-0" style={{ color, display: "flex", alignItems: "center" }}>
-          <Icon size={16} />
+      {thumbnail ? (
+        <img src={thumbnail} alt="" className="w-5.5 h-5.5 rounded-lg object-cover shrink-0 border border-white/10" />
+      ) : (
+        Icon && (
+          <span className="shrink-0" style={{ color, display: "flex", alignItems: "center" }}>
+            <Icon size={16} />
+          </span>
+        )
+      )}
+
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className="text-xs font-bold truncate text-white" style={{ textShadow: glow ? `0 0 8px ${color}33` : "none" }}>
+          {label}
+        </span>
+        {subtitle && (
+          <span className="text-[10px] truncate opacity-50 font-semibold mt-0.5 animate-fadeIn" style={{ color: "rgba(255,255,255,0.7)" }}>
+            {subtitle}
+          </span>
+        )}
+      </div>
+
+      {badgeText && (
+        <span
+          className="absolute -top-1.5 -right-1 text-[8px] font-black uppercase px-2 py-0.5 rounded-full border shadow-lg scale-90 select-none"
+          style={{
+            borderColor: `${badgeColor || '#ff0050'}40`,
+            backgroundColor: badgeColor || '#ff0050',
+            color: '#ffffff',
+          }}
+        >
+          {badgeText}
         </span>
       )}
-      <span className="text-xs font-bold truncate" style={{ color: "rgba(255,255,255,0.9)" }}>
-        {label}
-      </span>
     </motion.a>
   );
 }
+
 
 // ─── Audio Player ────────────────────────────────────────────────────────────
 

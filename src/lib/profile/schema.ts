@@ -185,6 +185,12 @@ const socialLinkSchema = z.object({
   url: z.string().default(""),
   label: z.string().default(""),
   color: z.string().default(""),
+  subtitle: z.string().optional(),
+  thumbnail: z.string().optional(),
+  badgeText: z.string().optional(),
+  badgeColor: z.string().optional(),
+  visible: z.boolean().optional(),
+  featured: z.boolean().optional(),
 });
 
 export const socialSchema = z.object({

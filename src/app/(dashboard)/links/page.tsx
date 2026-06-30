@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Plus, Trash2, GripVertical, Link2, Check,
   Globe, Eye, EyeOff, LayoutGrid, AlignLeft, X, Save, Sparkles, HelpCircle,
+  Copy, ChevronDown, ChevronUp, Settings
 } from "lucide-react";
 import {
   FaXTwitter, FaInstagram, FaYoutube, FaGithub,
@@ -39,7 +40,19 @@ const PLATFORMS = [
   { value: "website",     label: "Website",        Icon: Globe,        color: "#dc2626",  placeholder: "https://yourwebsite.com" },
 ];
 
-type SocialLink = { id: string; platform: string; url: string; label: string; visible: boolean; color: string };
+type SocialLink = {
+  id: string;
+  platform: string;
+  url: string;
+  label: string;
+  visible: boolean;
+  color: string;
+  subtitle?: string;
+  thumbnail?: string;
+  badgeText?: string;
+  badgeColor?: string;
+  featured?: boolean;
+};
 type DisplayMode = "full" | "icons";
 type LinkCustom = { monochrome: boolean; glow: boolean; iconColor: string; glowStrength: number; iconSize: number };
 
@@ -112,6 +125,16 @@ export default function LinksPage() {
   
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
   const fullConfigRef = useRef<any | null>(null);
@@ -129,7 +152,12 @@ export default function LinksPage() {
             url: l.url,
             label: l.label,
             color: l.color || getPlatform(l.platform).color,
-            visible: true,
+            visible: l.visible !== false,
+            subtitle: l.subtitle || "",
+            thumbnail: l.thumbnail || "",
+            badgeText: l.badgeText || "",
+            badgeColor: l.badgeColor || "#ff0050",
+            featured: !!l.featured,
           })));
         }
         const legacy = (profile?.config as Record<string, unknown>)?.social as Record<string, unknown> | undefined;
@@ -153,7 +181,18 @@ export default function LinksPage() {
           ...cfg,
           social: {
             ...cfg.social,
-            links: nextLinks.map(l => ({ platform: l.platform as any, url: l.url, label: l.label, color: l.color })),
+            links: nextLinks.map(l => ({
+              platform: l.platform as any,
+              url: l.url,
+              label: l.label,
+              color: l.color,
+              visible: l.visible !== false,
+              subtitle: l.subtitle || "",
+              thumbnail: l.thumbnail || "",
+              badgeText: l.badgeText || "",
+              badgeColor: l.badgeColor || "#ff0050",
+              featured: !!l.featured,
+            })),
             layout: nextMode === "icons" ? ("grid" as const) : ("wrap" as const),
           },
         };
@@ -324,64 +363,163 @@ export default function LinksPage() {
                     onDragStart={() => setDragIdx(idx)}
                     onDragOver={e => { e.preventDefault(); setDragOver(idx); }}
                     onDragEnd={handleDragEnd}
-                    className={`flex items-center gap-3 p-3 rounded-xl border bg-neutral-950 transition duration-150 cursor-grab active:cursor-grabbing ${
+                    className={`flex flex-col p-3 rounded-xl border bg-neutral-950 transition duration-150 cursor-grab active:cursor-grabbing ${
                       isDragging ? "opacity-40 border-red-500/50 bg-red-950/10" :
                       isOver ? "border-red-500/30 bg-red-950/5" :
                       "border-neutral-900/60 hover:border-neutral-800"
                     }`}
                   >
-                    <div className="text-neutral-600 hover:text-neutral-400 p-1 cursor-grab">
-                      <GripVertical className="w-4 h-4" />
+                    {/* Top Row: Core Link Settings */}
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="text-neutral-600 hover:text-neutral-400 p-1 cursor-grab">
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+
+                      <div 
+                        className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${custom.monochrome ? custom.iconColor : platform.color}15` }}
+                      >
+                        <LinkIcon platform={platform} custom={custom} size={15} />
+                      </div>
+
+                      <select 
+                        value={link.platform} 
+                        onChange={e => updateLink(link.id, "platform", e.target.value)}
+                        className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-2 text-xs font-semibold text-neutral-200 outline-none cursor-pointer focus:border-red-500/40"
+                      >
+                        {PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label.split(" / ")[0]}</option>)}
+                      </select>
+
+                      <input 
+                        value={link.url} 
+                        onChange={e => updateLink(link.id, "url", e.target.value)}
+                        placeholder={platform.placeholder}
+                        className="flex-1 bg-neutral-900/60 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 min-w-0"
+                      />
+
+                      <input 
+                        value={link.label} 
+                        onChange={e => updateLink(link.id, "label", e.target.value)}
+                        placeholder="Custom Label"
+                        className="w-32 bg-neutral-900/60 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 shrink-0"
+                      />
+
+                      {/* Customize Button */}
+                      <button 
+                        type="button"
+                        onClick={() => toggleExpand(link.id)}
+                        className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
+                          expandedIds.has(link.id) 
+                            ? "bg-red-500/10 border-red-500/20 text-red-500" 
+                            : "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white"
+                        }`}
+                        title="Customize link details"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+
+                      {/* Duplicate Button */}
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const next = [...links];
+                          const duplicated = {
+                            ...link,
+                            id: Math.random().toString(36).slice(2),
+                            label: `${link.label} (Copy)`
+                          };
+                          next.splice(idx + 1, 0, duplicated);
+                          setLinks(next);
+                          scheduleSave(next, mode, custom);
+                        }}
+                        className="w-9 h-9 rounded-lg bg-neutral-900 border border-neutral-850 text-neutral-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+                        title="Duplicate link"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+
+                      {/* Visibility Toggle */}
+                      <button 
+                        type="button"
+                        onClick={() => updateLink(link.id, "visible", link.visible === false)}
+                        className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all cursor-pointer ${
+                          link.visible !== false 
+                            ? "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white" 
+                            : "bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20"
+                        }`}
+                        title={link.visible !== false ? "Visible on page" : "Hidden on page"}
+                      >
+                        {link.visible !== false ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                      </button>
+
+                      {/* Delete Button */}
+                      <button 
+                        type="button"
+                        onClick={() => removeLink(link.id)}
+                        className="w-9 h-9 rounded-lg bg-red-650/10 border border-red-650/20 hover:bg-red-600 hover:border-red-600 text-red-500 hover:text-white flex items-center justify-center transition duration-150 cursor-pointer"
+                        title="Delete link"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
 
-                    <div 
-                      className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${custom.monochrome ? custom.iconColor : platform.color}15` }}
-                    >
-                      <LinkIcon platform={platform} custom={custom} size={15} />
-                    </div>
+                    {/* Advanced customization panel */}
+                    {expandedIds.has(link.id) && (
+                      <div className="w-full border-t border-neutral-900/60 mt-3 pt-3 grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn select-none">
+                        {/* Subtitle */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Subtitle / Description</span>
+                          <input 
+                            value={link.subtitle || ""} 
+                            onChange={e => updateLink(link.id, "subtitle", e.target.value)}
+                            placeholder="e.g. Check out my new single!"
+                            className="bg-neutral-900/80 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700"
+                          />
+                        </div>
 
-                    <select 
-                      value={link.platform} 
-                      onChange={e => updateLink(link.id, "platform", e.target.value)}
-                      className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-2 text-xs font-semibold text-neutral-200 outline-none cursor-pointer focus:border-red-500/40"
-                    >
-                      {PLATFORMS.map(p => <option key={p.value} value={p.value}>{p.label.split(" / ")[0]}</option>)}
-                    </select>
+                        {/* Thumbnail */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Thumbnail Image URL</span>
+                          <input 
+                            value={link.thumbnail || ""} 
+                            onChange={e => updateLink(link.id, "thumbnail", e.target.value)}
+                            placeholder="https://..."
+                            className="bg-neutral-900/80 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700"
+                          />
+                        </div>
 
-                    <input 
-                      value={link.url} 
-                      onChange={e => updateLink(link.id, "url", e.target.value)}
-                      placeholder={platform.placeholder}
-                      className="flex-1 bg-neutral-900/60 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 min-w-0"
-                    />
+                        {/* Badge Text & Color */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Badge Label & Accent</span>
+                          <div className="flex gap-2">
+                            <input 
+                              value={link.badgeText || ""} 
+                              onChange={e => updateLink(link.id, "badgeText", e.target.value)}
+                              placeholder="e.g. NEW or HOT"
+                              className="flex-1 bg-neutral-900/80 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700"
+                            />
+                            <label className="cursor-pointer relative shrink-0">
+                              <div className="w-9 h-9 rounded-lg border border-white/10" style={{ backgroundColor: link.badgeColor || "#ff0050" }} />
+                              <input 
+                                type="color" 
+                                value={link.badgeColor || "#ff0050"} 
+                                onChange={e => updateLink(link.id, "badgeColor", e.target.value)} 
+                                className="opacity-0 absolute inset-0 cursor-pointer w-full h-full" 
+                              />
+                            </label>
+                          </div>
+                        </div>
 
-                    <input 
-                      value={link.label} 
-                      onChange={e => updateLink(link.id, "label", e.target.value)}
-                      placeholder="Custom Label"
-                      className="w-32 bg-neutral-900/60 border border-neutral-850 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-red-500/40 placeholder-neutral-700 shrink-0"
-                    />
-
-                    <button 
-                      onClick={() => updateLink(link.id, "visible", !link.visible)}
-                      className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-all ${
-                        link.visible 
-                          ? "bg-neutral-900 border-neutral-850 text-neutral-400 hover:text-white" 
-                          : "bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20"
-                      }`}
-                      title={link.visible ? "Visible on page" : "Hidden on page"}
-                    >
-                      {link.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-
-                    <button 
-                      onClick={() => removeLink(link.id)}
-                      className="w-9 h-9 rounded-lg bg-red-600/10 border border-red-600/20 hover:bg-red-600 hover:border-red-600 text-red-500 hover:text-white flex items-center justify-center transition duration-150"
-                      title="Delete link"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                        {/* Featured Toggle */}
+                        <div className="flex items-center justify-between border border-neutral-900 bg-neutral-900/10 rounded-xl p-2.5">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs font-bold text-neutral-300">Featured Highlight</span>
+                            <span className="text-[9px] text-neutral-500">Glow pulsing attention-grabber</span>
+                          </div>
+                          <Toggle checked={!!link.featured} onChange={v => updateLink(link.id, "featured", v)} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
