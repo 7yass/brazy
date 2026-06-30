@@ -303,7 +303,7 @@ Add:
 
 Make the profile feel personal and status-rich without looking childish.
 
-### 5.1 Identity blocks
+### 5.1 Identity blocks [X]
 
 Ship:
 
@@ -316,7 +316,7 @@ Ship:
 - Availability state optional.
 - Badge row.
 
-### 5.2 Badge system
+### 5.2 Badge system [X]
 
 Start with:
 
