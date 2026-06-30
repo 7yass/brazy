@@ -379,7 +379,53 @@ export default function ProfileEditor({
               </Row>
             </SectionCard>
 
-            {/* 4. Other Customization */}
+            {/* 4. Widget Style Controls */}
+            <SectionCard title="Widget Style Controls">
+              {(["discordPresence", "youtube", "github", "time", "spotify", "telegram"] as const).map((key) => {
+                const w = cfg.widgets[key];
+                const labels: Record<string, string> = {
+                  discordPresence: "Discord Presence",
+                  youtube: "YouTube",
+                  github: "GitHub",
+                  time: "Time",
+                  spotify: "Spotify",
+                  telegram: "Telegram",
+                };
+                return (
+                  <div key={key} className="mb-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-medium text-white/80">{labels[key]}</p>
+                      <Toggle value={w.enabled} onChange={(v) => updateNested("widgets", key, { ...w, enabled: v })} label="" />
+                    </div>
+                    {w.enabled && (
+                      <div className="flex flex-col gap-3">
+                        <Row label="Placement">
+                          <CustomSelect
+                            value={w.placement}
+                            onChange={(v) => updateNested("widgets", key, { ...w, placement: v as "card" | "bottom" })}
+                            options={[
+                              { value: "card", label: "Inside Card" },
+                              { value: "bottom", label: "Bottom" },
+                            ]}
+                          />
+                        </Row>
+                        <Row label="Compact Mode">
+                          <Toggle value={w.compact} onChange={(v) => updateNested("widgets", key, { ...w, compact: v })} label="" />
+                        </Row>
+                        <Row label="Show Background">
+                          <Toggle value={w.showBackground} onChange={(v) => updateNested("widgets", key, { ...w, showBackground: v })} label="" />
+                        </Row>
+                        <Row label="Theme Sync">
+                          <Toggle value={w.themeSync} onChange={(v) => updateNested("widgets", key, { ...w, themeSync: v })} label="" />
+                        </Row>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </SectionCard>
+
+            {/* 5. Other Customization */}
             <SectionCard title="Other Customization">
               <Row label="Monochrome Icons">
                 <Toggle value={!cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="" />

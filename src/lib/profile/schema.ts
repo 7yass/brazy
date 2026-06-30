@@ -266,39 +266,35 @@ export const sectionsSchema = z.object({
 });
 export type Sections = z.infer<typeof sectionsSchema>;
 
+const widgetBaseSchema = z.object({
+  enabled: z.boolean().default(false),
+  placement: z.enum(["card", "bottom"]).default("card"),
+  compact: z.boolean().default(false),
+  showBackground: z.boolean().default(true),
+  themeSync: z.boolean().default(true),
+});
+
 export const widgetsSchema = z.object({
-  discordPresence: z.object({
-    enabled: z.boolean().default(false),
+  discordPresence: widgetBaseSchema.extend({
     discordId: z.string().default(""),
-    placement: z.enum(["card", "bottom"]).default("card"),
-  }).default(() => ({ enabled: false, discordId: "", placement: "card" as const })),
-  youtube: z.object({
-    enabled: z.boolean().default(false),
+  }).default(() => ({ enabled: false, discordId: "", placement: "card" as const, compact: false, showBackground: true, themeSync: true })),
+  youtube: widgetBaseSchema.extend({
     url: z.string().default(""),
-    placement: z.enum(["card", "bottom"]).default("bottom"),
-  }).default(() => ({ enabled: false, url: "", placement: "bottom" as const })),
-  github: z.object({
-    enabled: z.boolean().default(false),
+  }).default(() => ({ enabled: false, url: "", placement: "bottom" as const, compact: false, showBackground: true, themeSync: true })),
+  github: widgetBaseSchema.extend({
     username: z.string().default(""),
-    placement: z.enum(["card", "bottom"]).default("bottom"),
-  }).default(() => ({ enabled: false, username: "", placement: "bottom" as const })),
-  time: z.object({
-    enabled: z.boolean().default(false),
+  }).default(() => ({ enabled: false, username: "", placement: "bottom" as const, compact: false, showBackground: true, themeSync: true })),
+  time: widgetBaseSchema.extend({
     timezone: z.string().default("UTC"),
     format: z.enum(["12h", "24h"]).default("12h"),
-    placement: z.enum(["card", "bottom"]).default("card"),
-  }).default(() => ({ enabled: false, timezone: "UTC", format: "12h" as const, placement: "card" as const })),
-  spotify: z.object({
-    enabled: z.boolean().default(false),
+  }).default(() => ({ enabled: false, timezone: "UTC", format: "12h" as const, placement: "card" as const, compact: false, showBackground: true, themeSync: true })),
+  spotify: widgetBaseSchema.extend({
     url: z.string().default(""),
-    placement: z.enum(["card", "bottom"]).default("card"),
-  }).default(() => ({ enabled: false, url: "", placement: "card" as const })),
-  telegram: z.object({
-    enabled: z.boolean().default(false),
+  }).default(() => ({ enabled: false, url: "", placement: "card" as const, compact: false, showBackground: true, themeSync: true })),
+  telegram: widgetBaseSchema.extend({
     username: z.string().default(""),
     text: z.string().default("Join my Telegram channel!"),
-    placement: z.enum(["card", "bottom"]).default("card"),
-  }).default(() => ({ enabled: false, username: "", text: "Join my Telegram channel!", placement: "card" as const })),
+  }).default(() => ({ enabled: false, username: "", text: "Join my Telegram channel!", placement: "card" as const, compact: false, showBackground: true, themeSync: true })),
 });
 export type Widgets = z.infer<typeof widgetsSchema>;
 
