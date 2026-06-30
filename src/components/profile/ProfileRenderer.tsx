@@ -25,7 +25,7 @@ interface Badge {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-// ─── Username Effect ───────────────────────────────────────────────────────────
+// ─── Username Effect ────────────────────────────────────────────────────────
 
 function UsernameText({ text, effect, accent, accent2, textColor, textGlow }: {
   text: string; effect: string; accent: string; accent2: string; textColor: string; textGlow: boolean;
@@ -228,7 +228,7 @@ function UsernameText({ text, effect, accent, accent2, textColor, textGlow }: {
   );
 }
 
-// ─── Social Link Button ────────────────────────────────────────────────────────
+// ─── Social Link Button ──────────────────────────────────────────────────────
 
 function SocialButton({ href, platform, label, color, glow, cardStyle }: {
   href: string; platform: string; label: string; color: string; glow: boolean; cardStyle: string;
@@ -262,7 +262,7 @@ function SocialButton({ href, platform, label, color, glow, cardStyle }: {
   );
 }
 
-// ─── Audio Player ──────────────────────────────────────────────────────────────
+// ─── Audio Player ────────────────────────────────────────────────────────────
 
 function AudioPlayer({ cfg }: { cfg: ProfileConfig }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -351,7 +351,7 @@ function AudioPlayer({ cfg }: { cfg: ProfileConfig }) {
   );
 }
 
-// ─── Main Renderer ─────────────────────────────────────────────────────────────
+// ─── Main Renderer ───────────────────────────────────────────────────────────
 
 export default function ProfileRenderer({ config, username, isOwner = false }: {
   config: ProfileConfig;
@@ -363,7 +363,8 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
   const bg = cfg.background;
   const identity = cfg.identity;
   const effects = cfg.effects;
-  const [splashDone, setSplashDone] = useState(!cfg.splashIntro?.enabled);
+  // Schema field is `splash`, not `splashIntro`
+  const [splashDone, setSplashDone] = useState(!cfg.splash?.enabled);
 
   const cardStyle = (() => {
     switch (theme.cardStyle) {
@@ -443,12 +444,20 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
     }
   })();
 
-  const earnedBadges: Badge[] = (cfg.badges.list ?? []).map((id: string) => {
-    const found = PREDEFINED_BADGES.find((b) => b.id === id);
+  // badges.items (not badges.list)
+  const earnedBadges: Badge[] = (cfg.badges.items ?? []).map((item: any) => {
+    const found = PREDEFINED_BADGES.find((b) => b.id === item?.id);
     return found ?? null;
   }).filter(Boolean) as Badge[];
 
   const viewsPlacement = cfg.analytics?.viewsPlacement ?? (cfg.analytics?.showViews ? "inside" : "none");
+
+  // social links live at cfg.social.links
+  const socialLinks = cfg.social?.links ?? [];
+
+  // skills and projects are top-level, not under widgets
+  const skillsEnabled = cfg.skills?.enabled && (cfg.skills?.items?.length ?? 0) > 0;
+  const projectsEnabled = cfg.projects?.enabled && (cfg.projects?.items?.length ?? 0) > 0;
 
   return (
     <div
@@ -464,8 +473,8 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
 
       {/* Splash */}
       <AnimatePresence>
-        {!splashDone && cfg.splashIntro?.enabled && (
-          <SplashIntro config={cfg.splashIntro} onDone={() => setSplashDone(true)} />
+        {!splashDone && cfg.splash?.enabled && (
+          <SplashIntro config={cfg.splash} onDone={() => setSplashDone(true)} />
         )}
       </AnimatePresence>
 
@@ -580,11 +589,11 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
         )}
 
         {/* Social Links */}
-        {cfg.links.length > 0 && (
+        {socialLinks.length > 0 && (
           <div className="flex flex-col gap-2">
-            {cfg.links.filter(l => l.enabled !== false).map((link, i) => (
+            {socialLinks.filter((l: any) => l.url).map((link: any, i: number) => (
               <motion.div
-                key={link.id}
+                key={i}
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.15 + i * 0.06, duration: 0.4, ease: EASE }}
@@ -603,9 +612,9 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
         )}
 
         {/* Skills Widget */}
-        {cfg.widgets?.skills?.enabled && cfg.widgets.skills.list?.length > 0 && (
+        {skillsEnabled && (
           <SkillsWidget
-            skills={cfg.widgets.skills.list}
+            skills={cfg.skills.items}
             accentColor={theme.primaryColor}
             textColor={theme.textColor}
             mutedColor={theme.mutedTextColor}
@@ -613,9 +622,9 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
         )}
 
         {/* Projects Widget */}
-        {cfg.widgets?.projects?.enabled && cfg.widgets.projects.list?.length > 0 && (
+        {projectsEnabled && (
           <ProjectsWidget
-            projects={cfg.widgets.projects.list}
+            projects={cfg.projects.items}
             accentColor={theme.primaryColor}
             textColor={theme.textColor}
             mutedColor={theme.mutedTextColor}
@@ -642,7 +651,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
   );
 }
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function hexToRgb(hex: string): string {
   const clean = hex.replace("#", "");
