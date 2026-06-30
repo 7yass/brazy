@@ -809,9 +809,12 @@ export default function CustomizePage() {
 
           {/* 2. General Customization Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
-            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
-              General Customization
-            </h2>
+            <div>
+              <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-[10px] tracking-widest pb-1 border-b border-neutral-900">
+                General Customization
+              </h2>
+              <p className="text-[10px] text-neutral-500 mt-1">Configure your bio, pronouns, tagline, location, and Discord presence.</p>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
@@ -1038,9 +1041,12 @@ export default function CustomizePage() {
 
           {/* Cursor & Click Effects Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4 font-sans">
-            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
-              Cursor & Click Effects
-            </h2>
+            <div>
+              <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-[10px] tracking-widest pb-1 border-b border-neutral-900">
+                Cursor & Click Effects
+              </h2>
+              <p className="text-[10px] text-neutral-500 mt-1">Customize animated cursor trails, click particles, and custom emoji bursts.</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Cursor Effect Card */}
               <div className="border border-neutral-900 bg-neutral-900/10 rounded-xl p-4 flex flex-col gap-4">
@@ -1115,9 +1121,12 @@ export default function CustomizePage() {
 
           {/* 3. Color Customization Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
-            <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-neutral-500 text-[10px] tracking-widest border-b border-neutral-900 pb-2">
-              Color Customization
-            </h2>
+            <div>
+              <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-[10px] tracking-widest pb-1 border-b border-neutral-900">
+                Color Customization
+              </h2>
+              <p className="text-[10px] text-neutral-500 mt-1">Design theme color tokens for text, icons, cards, and solid background bases.</p>
+            </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <ColorPill label="Accent Color" value={cfg.theme.primaryColor} onChange={v => set("theme", "primaryColor", v)} />
@@ -1164,7 +1173,13 @@ export default function CustomizePage() {
           </div>
 
           {/* 4. Layout & Details Section */}
-          <SectionCard icon={Layout} label="Card Border & Typography">
+          <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
+            <div>
+              <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-[10px] tracking-widest pb-1 border-b border-neutral-900">
+                Card Border & Typography
+              </h2>
+              <p className="text-[10px] text-neutral-500 mt-1">Configure card border widths, rotating border animations, border-radius, and font families.</p>
+            </div>
             <Row label="Border radius">
               <SliderRow value={cfg.theme.borderRadius} onChange={v => set("theme", "borderRadius", v)} min={0} max={48} step={1} format={v => `${v}px`} />
             </Row>
@@ -1207,10 +1222,16 @@ export default function CustomizePage() {
                 ]}
               />
             </div>
-          </SectionCard>
+          </div>
 
-          {/* 5. SEO & Custom Injections Accordion */}
-          <SectionCard icon={Globe} label="SEO & Custom Code Injection">
+          {/* 5. SEO & Custom Injections Section */}
+          <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-5 font-sans">
+            <div>
+              <h2 className="text-sm font-extrabold text-neutral-300 tracking-tight flex items-center gap-2 uppercase text-[10px] tracking-widest pb-1 border-b border-neutral-900">
+                SEO & Custom Code Injection
+              </h2>
+              <p className="text-[10px] text-neutral-500 mt-1">Configure search engine titles, preview graphics, metadata, and custom CSS overrides.</p>
+            </div>
             <Row label="Page title">
               <InputText value={cfg.seo.title} onChange={v => setCfg(prev => {
                 if (!prev) return prev;
@@ -1254,7 +1275,7 @@ export default function CustomizePage() {
                 className="w-full bg-neutral-900 border border-neutral-850 rounded-xl p-4 text-xs font-mono text-neutral-300 placeholder-neutral-700 outline-none resize-none leading-relaxed transition"
               />
             </div>
-          </SectionCard>
+          </div>
 
         </div>
 
