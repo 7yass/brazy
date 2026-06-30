@@ -108,7 +108,7 @@ Changes:
 - Clearer separation between core controls and advanced controls.
 - More emphasis on high-value controls like layout, theme, effects, and card style.
 
-### 1.4 Add sticky live preview
+### 1.4 Add sticky live preview [X]
 
 The builder must show visual payoff instantly.
 
