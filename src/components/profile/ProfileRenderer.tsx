@@ -444,11 +444,20 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
     }
   })();
 
-  // badges.items (not badges.list)
-  const earnedBadges: Badge[] = (cfg.badges.items ?? []).map((item: any) => {
-    const found = PREDEFINED_BADGES.find((b) => b.id === item?.id);
-    return found ?? null;
-  }).filter(Boolean) as Badge[];
+  // PREDEFINED_BADGES is a Record<string, PredefinedBadge> — access by key, not .find()
+  const earnedBadges: Badge[] = (cfg.badges.items ?? []).flatMap((item: any) => {
+    const key = item?.id as string | undefined;
+    if (!key) return [];
+    const found = PREDEFINED_BADGES[key];
+    if (!found) return [];
+    return [{
+      id: key,
+      label: found.name,
+      description: found.description,
+      icon: found.svg,
+      color: found.color,
+    }];
+  });
 
   const viewsPlacement = cfg.analytics?.viewsPlacement ?? (cfg.analytics?.showViews ? "inside" : "none");
 
@@ -562,7 +571,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
                     boxShadow: `0 0 8px ${badge.color}30`,
                   }}
                 >
-                  <span>{badge.icon}</span>
+                  <span dangerouslySetInnerHTML={{ __html: badge.icon }} style={{ width: 12, height: 12, display: "inline-flex", fill: badge.color }} />
                   <span>{badge.label}</span>
                 </span>
               ))}
