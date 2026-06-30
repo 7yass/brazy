@@ -192,17 +192,23 @@ Build:
 
 This is the first big differentiator. Without this, everything feels like one layout with cosmetic changes.
 
-### 3.1 Build a layout registry
+### 3.1 Build the layout engine [X]
 
-Architecture:
+Create a layout engine in `ProfileRenderer.tsx`.
 
-- One shared profile schema.
-- Layout renderers read the same schema.
-- Shared slots render through layout-specific arrangement.
+### 3.2 Modern layout [X]
 
-### 3.2 Ship four serious layout families first
+The default, clean, card-based layout.
 
-#### Minimal
+### 3.3 Sleek layout [X]
+
+Premium glassmorphism with high blur, rounded elements.
+
+### 3.4 Minimal layout [X]
+
+Typography-led, low-glow, transparent borderless.
+
+### 3.5 Portfolio layout [X]
 
 Goal:
 
