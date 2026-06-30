@@ -363,7 +363,6 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
   const bg = cfg.background;
   const identity = cfg.identity;
   const effects = cfg.effects;
-  // Schema field is `splash`, not `splashIntro`
   const [splashDone, setSplashDone] = useState(!cfg.splash?.enabled);
 
   const cardStyle = (() => {
@@ -444,7 +443,6 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
     }
   })();
 
-  // PREDEFINED_BADGES is a Record<string, PredefinedBadge> — access by key, not .find()
   const earnedBadges: Badge[] = (cfg.badges.items ?? []).flatMap((item: any) => {
     const key = item?.id as string | undefined;
     if (!key) return [];
@@ -460,11 +458,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
   });
 
   const viewsPlacement = cfg.analytics?.viewsPlacement ?? (cfg.analytics?.showViews ? "inside" : "none");
-
-  // social links live at cfg.social.links
   const socialLinks = cfg.social?.links ?? [];
-
-  // skills and projects are top-level, not under widgets
   const skillsEnabled = cfg.skills?.enabled && (cfg.skills?.items?.length ?? 0) > 0;
   const projectsEnabled = cfg.projects?.enabled && (cfg.projects?.items?.length ?? 0) > 0;
 
@@ -477,13 +471,13 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
       <BackgroundLayer background={bg} />
 
       {/* Cursor / Click effects */}
-      {effects.cursor.enabled && <CursorEffect config={effects.cursor} />}
-      {effects.click.enabled && <ClickEffect config={effects.click} />}
+      {effects.cursor.enabled && <CursorEffect effects={effects} />}
+      {effects.click.enabled && <ClickEffect effects={effects} />}
 
       {/* Splash */}
       <AnimatePresence>
         {!splashDone && cfg.splash?.enabled && (
-          <SplashIntro config={cfg.splash} onDone={() => setSplashDone(true)} />
+          <SplashIntro splash={cfg.splash} onEnter={() => setSplashDone(true)} />
         )}
       </AnimatePresence>
 
