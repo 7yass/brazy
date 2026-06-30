@@ -87,7 +87,7 @@ function UsernameText({ text, effect, accent, accent2, textColor, textGlow }: {
         className={baseClass}
         style={{
           color: textColor,
-          textShadow: `0 0 ${8 + glowOpacity * 14}px ${accent}${Math.round((0.4 + glowOpacity * 0.6) * 255).toString(16).padStart(2,"0")}`,
+          textShadow: `0 0 ${8 + glowOpacity * 14}px ${accent}${Math.round((0.4 + glowOpacity * 0.6) * 255).toString(16).padStart(2,"00")}`,
         }}
       >
         {text}
@@ -456,6 +456,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
   });
 
   const viewsPlacement = cfg.analytics?.viewsPlacement ?? (cfg.analytics?.showViews ? "inside" : "none");
+  const viewsInitial = cfg.analytics?.viewCount ?? 0;
   const socialLinks = cfg.social?.links ?? [];
   const skillsEnabled = cfg.skills?.enabled && (cfg.skills?.items?.length ?? 0) > 0;
   const projectsEnabled = cfg.projects?.enabled && (cfg.projects?.items?.length ?? 0) > 0;
@@ -482,7 +483,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
       {/* View counter outside card */}
       {viewsPlacement === "outside" && (
         <div className="absolute top-4 right-4 z-20">
-          <ViewCounter username={username} textColor={theme.textColor} />
+          <ViewCounter initial={viewsInitial} accent={theme.primaryColor} />
         </div>
       )}
 
@@ -572,7 +573,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
 
           {/* Views inside card */}
           {viewsPlacement === "inside" && (
-            <ViewCounter username={username} textColor={theme.mutedTextColor} />
+            <ViewCounter initial={viewsInitial} accent={theme.primaryColor} />
           )}
         </div>
 

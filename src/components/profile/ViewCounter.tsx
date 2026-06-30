@@ -12,15 +12,22 @@ export default function ViewCounter({
   const [views, setViews] = useState(initial);
 
   useEffect(() => {
-    const key = "brazy_view_counted";
-    const counted = sessionStorage.getItem(key);
     const base = initial > 0 ? initial : Math.floor(Math.random() * 4000) + 800;
-    const next = counted ? base : base + 1;
-    setViews(next);
-    if (!counted) sessionStorage.setItem(key, "1");
+    let counted = false;
+    try {
+      const key = "brazy_view_counted";
+      counted = !!sessionStorage.getItem(key);
+      if (!counted) sessionStorage.setItem(key, "1");
+    } catch {
+      // sessionStorage blocked (sandboxed iframe) — treat as not counted
+    }
+    setViews(counted ? base : base + 1);
   }, [initial]);
 
-  const formatted = views >= 1000 ? (views / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(views);
+  const formatted =
+    views >= 1000
+      ? (views / 1000).toFixed(1).replace(/\.0$/, "") + "k"
+      : String(views);
 
   return (
     <div
