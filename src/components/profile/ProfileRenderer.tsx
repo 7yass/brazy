@@ -10,7 +10,7 @@ import SplashIntro from "./SplashIntro";
 import ViewCounter from "./ViewCounter";
 import { brandIcons } from "./icons";
 import { SpiderLogo } from "@/components/spider-logo";
-import { DiscordPresenceWidget, SkillsWidget, ProjectsWidget } from "./Widgets";
+import { DiscordPresenceWidget, SkillsWidget, ProjectsWidget, TimeWidget, SpotifyEmbedWidget, GithubStatsWidget, YoutubeEmbedWidget, TelegramWidget } from "./Widgets";
 import { PREDEFINED_BADGES } from "@/lib/profile/badges-data";
 import { getPipedStreamUrl } from "@/lib/profile/audio-resolver";
 
@@ -766,6 +766,56 @@ export default function ProfileRenderer({
         {cfg.widgets?.discordPresence?.enabled && cfg.widgets.discordPresence.discordId && (
           <DiscordPresenceWidget
             discordId={cfg.widgets.discordPresence.discordId}
+            accentColor={theme.primaryColor}
+            textColor={theme.textColor}
+            mutedColor={theme.mutedTextColor}
+          />
+        )}
+
+        {/* Time Widget */}
+        {cfg.widgets?.time?.enabled && cfg.widgets.time.timezone && (
+          <TimeWidget
+            timezone={cfg.widgets.time.timezone}
+            format={cfg.widgets.time.format}
+            accentColor={theme.primaryColor}
+            textColor={theme.textColor}
+            mutedColor={theme.mutedTextColor}
+          />
+        )}
+
+        {/* Spotify Embed */}
+        {cfg.widgets?.spotify?.enabled && cfg.widgets.spotify.url && (
+          <SpotifyEmbedWidget
+            url={cfg.widgets.spotify.url}
+            accentColor={theme.primaryColor}
+            textColor={theme.textColor}
+          />
+        )}
+
+        {/* GitHub Stats */}
+        {cfg.widgets?.github?.enabled && cfg.widgets.github.username && (
+          <GithubStatsWidget
+            username={cfg.widgets.github.username}
+            accentColor={theme.primaryColor}
+            textColor={theme.textColor}
+            mutedColor={theme.mutedTextColor}
+          />
+        )}
+
+        {/* YouTube Embed */}
+        {cfg.widgets?.youtube?.enabled && cfg.widgets.youtube.url && (
+          <YoutubeEmbedWidget
+            url={cfg.widgets.youtube.url}
+            accentColor={theme.primaryColor}
+            textColor={theme.textColor}
+          />
+        )}
+
+        {/* Telegram Card */}
+        {cfg.widgets?.telegram?.enabled && cfg.widgets.telegram.username && (
+          <TelegramWidget
+            username={cfg.widgets.telegram.username}
+            text={cfg.widgets.telegram.text}
             accentColor={theme.primaryColor}
             textColor={theme.textColor}
             mutedColor={theme.mutedTextColor}

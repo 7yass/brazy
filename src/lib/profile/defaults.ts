@@ -148,6 +148,7 @@ export const brazyProfile: ProfileConfig = {
     github: { enabled: false, username: "", placement: "bottom" },
     time: { enabled: false, timezone: "UTC", format: "12h", placement: "card" },
     spotify: { enabled: false, url: "", placement: "card" },
+    telegram: { enabled: false, username: "", text: "Join my Telegram channel!", placement: "card" },
   },
   customCss: "",
   customHtml: "",

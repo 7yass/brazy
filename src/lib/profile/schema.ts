@@ -292,6 +292,12 @@ export const widgetsSchema = z.object({
     url: z.string().default(""),
     placement: z.enum(["card", "bottom"]).default("card"),
   }).default(() => ({ enabled: false, url: "", placement: "card" as const })),
+  telegram: z.object({
+    enabled: z.boolean().default(false),
+    username: z.string().default(""),
+    text: z.string().default("Join my Telegram channel!"),
+    placement: z.enum(["card", "bottom"]).default("card"),
+  }).default(() => ({ enabled: false, username: "", text: "Join my Telegram channel!", placement: "card" as const })),
 });
 export type Widgets = z.infer<typeof widgetsSchema>;
 

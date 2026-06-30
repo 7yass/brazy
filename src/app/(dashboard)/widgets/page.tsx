@@ -8,7 +8,7 @@ import {
   MessageSquare, Clock, Music2,
   Check, ChevronDown, ChevronRight, ExternalLink, Sparkles,
 } from "lucide-react";
-import { FaYoutube, FaGithub } from "react-icons/fa6";
+import { FaYoutube, FaGithub, FaTelegram } from "react-icons/fa6";
 
 import { clientGetProfile, clientSaveProfile } from "@/lib/supabase/profile-helper";
 
@@ -349,6 +349,26 @@ export default function WidgetsPage() {
           )}
           <Row label="Placement">
             <Chips value={w.spotify.placement} onChange={v => setWidget("spotify", "placement", v)}
+              options={[{ value: "card", label: "In card" }, { value: "bottom", label: "Below card" }]} />
+          </Row>
+        </WidgetCard>
+
+        {/* Telegram Card */}
+        <WidgetCard
+          icon={FaTelegram} iconColor="#2AABEE"
+          label="Telegram Card"
+          description="Embed a Telegram join banner directly on your profile."
+          enabled={w.telegram?.enabled ?? false}
+          onToggle={v => setWidget("telegram", "enabled", v)}
+        >
+          <Row label="Telegram Username" hint="Username or channel name link name">
+            <InputText value={w.telegram?.username ?? ""} onChange={v => setWidget("telegram", "username", v)} placeholder="username" />
+          </Row>
+          <Row label="Banner Text">
+            <InputText value={w.telegram?.text ?? "Join my Telegram channel!"} onChange={v => setWidget("telegram", "text", v)} placeholder="Join my Telegram channel!" />
+          </Row>
+          <Row label="Placement">
+            <Chips value={w.telegram?.placement ?? "card"} onChange={v => setWidget("telegram", "placement", v)}
               options={[{ value: "card", label: "In card" }, { value: "bottom", label: "Below card" }]} />
           </Row>
         </WidgetCard>

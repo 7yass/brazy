@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { brandIcons } from "./icons";
 import { Link2 } from "lucide-react";
+import { FaYoutube, FaGithub, FaTelegram, FaSpotify } from "react-icons/fa6";
 
 // ─── Discord Presence ────────────────────────────────────────────────────────
 export function DiscordPresenceWidget({
@@ -171,6 +172,214 @@ export function ProjectsWidget({
           </div>
         </a>
       ))}
+    </div>
+  );
+}
+
+// ─── Time Widget ─────────────────────────────────────────────────────────────
+export function TimeWidget({
+  timezone,
+  format,
+  accentColor,
+  textColor,
+  mutedColor,
+}: {
+  timezone: string;
+  format: "12h" | "24h";
+  accentColor?: string;
+  textColor?: string;
+  mutedColor?: string;
+}) {
+  const [timeStr, setTimeStr] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      try {
+        const date = new Date();
+        const options: Intl.DateTimeFormatOptions = {
+          timeZone: timezone,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: format === "12h",
+        };
+        setTimeStr(new Intl.DateTimeFormat("en-US", options).format(date));
+      } catch (e) {
+        setTimeStr("Invalid timezone");
+      }
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [timezone, format]);
+
+  const txtColor = textColor || "#fafafa";
+  const mutColor = mutedColor || "rgba(255,255,255,0.4)";
+  const accColor = accentColor || "#7c3aed";
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: mutColor }}>Local Time</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: txtColor }}>{timezone.split("/")[1]?.replace("_", " ") || timezone}</span>
+      </div>
+      <span style={{ fontSize: 18, fontFamily: "monospace", fontWeight: 800, color: accColor }}>{timeStr}</span>
+    </div>
+  );
+}
+
+// ─── Spotify Embed Widget ────────────────────────────────────────────────────
+export function SpotifyEmbedWidget({
+  url,
+  accentColor,
+  textColor,
+}: {
+  url: string;
+  accentColor?: string;
+  textColor?: string;
+}) {
+  if (!url) return null;
+  const trackId = url.split("spotify.com/")[1]?.replace(/\?.*/, "");
+  const txtColor = textColor || "#fafafa";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <FaSpotify size={16} color="#1DB954" />
+        <span style={{ fontSize: 12, fontWeight: 700, color: txtColor }}>Spotify Playlist</span>
+      </div>
+      <iframe
+        src={`https://open.spotify.com/embed/${trackId}`}
+        width="100%"
+        height="80"
+        frameBorder="0"
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        style={{ borderRadius: 10, border: "none" }}
+      />
+    </div>
+  );
+}
+
+// ─── GitHub Stats Widget ─────────────────────────────────────────────────────
+export function GithubStatsWidget({
+  username,
+  accentColor,
+  textColor,
+  mutedColor,
+}: {
+  username: string;
+  accentColor?: string;
+  textColor?: string;
+  mutedColor?: string;
+}) {
+  if (!username) return null;
+  const txtColor = textColor || "#fafafa";
+  const accColor = accentColor || "#38bdf8";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <FaGithub size={16} color={txtColor} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: txtColor }}>GitHub Profile</span>
+      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={`https://github-readme-stats.vercel.app/api?username=${username}&show_icons=true&theme=dark&bg_color=00000000&hide_border=true&text_color=94a3b8&icon_color=${accColor.replace("#", "")}&title_color=fafafa`}
+        alt="GitHub Stats"
+        style={{ width: "100%", borderRadius: 10 }}
+      />
+    </div>
+  );
+}
+
+// ─── YouTube Embed Widget ────────────────────────────────────────────────────
+export function YoutubeEmbedWidget({
+  url,
+  accentColor,
+  textColor,
+}: {
+  url: string;
+  accentColor?: string;
+  textColor?: string;
+}) {
+  if (!url) return null;
+  const vidId = url.split("v=")[1]?.split("&")[0] || url.split("youtu.be/")[1];
+  const txtColor = textColor || "#fafafa";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <FaYoutube size={16} color="#FF0000" />
+        <span style={{ fontSize: 12, fontWeight: 700, color: txtColor }}>YouTube Video</span>
+      </div>
+      <div style={{ position: "relative", width: "100%", paddingTop: "56.25%", borderRadius: 10, overflow: "hidden", border: "1px solid rgba(255,255,255,0.04)" }}>
+        <iframe
+          src={`https://www.youtube.com/embed/${vidId}`}
+          width="100%"
+          height="100%"
+          style={{ position: "absolute", inset: 0, border: "none" }}
+          allowFullScreen
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── Telegram Widget ─────────────────────────────────────────────────────────
+export function TelegramWidget({
+  username,
+  text,
+  accentColor,
+  textColor,
+  mutedColor,
+}: {
+  username: string;
+  text: string;
+  accentColor?: string;
+  textColor?: string;
+  mutedColor?: string;
+}) {
+  if (!username) return null;
+  const txtColor = textColor || "#fafafa";
+  const mutColor = mutedColor || "rgba(255,255,255,0.4)";
+  const accColor = accentColor || "#2AABEE";
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <FaTelegram size={24} color="#2AABEE" style={{ flexShrink: 0 }} />
+        <div style={{ minWidth: 0 }}>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: txtColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Telegram Card</p>
+          <p style={{ margin: "2px 0 0", fontSize: 11, color: mutColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{text}</p>
+        </div>
+      </div>
+      <a
+        href={`https://t.me/${username}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "inline-flex",
+          padding: "6px 12px",
+          borderRadius: 8,
+          background: `${accColor}15`,
+          border: `1px solid ${accColor}33`,
+          color: accColor,
+          fontSize: 11,
+          fontWeight: 700,
+          textDecoration: "none",
+          transition: "all 0.2s"
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLAnchorElement).style.background = `${accColor}25`;
+          (e.currentTarget as HTMLAnchorElement).style.borderColor = `${accColor}55`;
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLAnchorElement).style.background = `${accColor}15`;
+          (e.currentTarget as HTMLAnchorElement).style.borderColor = `${accColor}33`;
+        }}
+      >
+        Join
+      </a>
     </div>
   );
 }
