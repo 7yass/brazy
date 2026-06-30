@@ -35,7 +35,7 @@ export function HeroSection({ isLoggedIn }: { isLoggedIn: boolean }) {
 
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
           {isLoggedIn ? (
-            <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-4 transition-all hover:bg-primary/80 hover:shadow-[0_0_24px_rgba(220,38,38,0.4)]">Dashboard</Link>
+            <Link href="/account" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-4 transition-all hover:bg-primary/80 hover:shadow-[0_0_24px_rgba(220,38,38,0.4)]">Dashboard</Link>
           ) : (
             <Link href="/register" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-6 transition-all hover:bg-primary/80 hover:shadow-[0_0_24px_rgba(220,38,38,0.4)]">Get started</Link>
           )}

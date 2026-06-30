@@ -16,7 +16,7 @@ export function CtaSection({ isLoggedIn }: { isLoggedIn: boolean }) {
           </p>
           <div className="mt-8 flex justify-center">
             {isLoggedIn ? (
-              <Link href="/dashboard" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Dashboard</Link>
+              <Link href="/account" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-2.5 transition-colors hover:bg-primary/80">Dashboard</Link>
             ) : (
               <Link href="/register" className="inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-primary text-primary-foreground text-sm font-medium h-9 gap-1.5 px-4 transition-colors hover:bg-primary/80">Get started</Link>
             )}

@@ -132,7 +132,7 @@ export function LandingNav({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           {isLoggedIn ? (
             <Link
-              href="/dashboard"
+              href="/account"
               style={{
                 fontSize: scrolled ? 12 : 13,
                 fontWeight: 600,

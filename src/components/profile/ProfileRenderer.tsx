@@ -251,7 +251,7 @@ function SocialButton({ href, platform, label, color, glow, cardStyle }: {
       }}
     >
       {Icon && (
-        <span className="shrink-0 w-4 h-4" style={{ color }}>
+        <span className="shrink-0" style={{ color, display: "flex", alignItems: "center" }}>
           <Icon className="w-4 h-4" />
         </span>
       )}
