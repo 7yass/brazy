@@ -232,19 +232,26 @@ function SocialButton({ href, platform, label, color, glow, cardStyle }: {
   href: string; platform: string; label: string; color: string; glow: boolean; cardStyle: string;
 }) {
   const Icon = brandIcons[platform as keyof typeof brandIcons];
-  const glowStyle = glow ? { boxShadow: `0 0 12px ${color}55, 0 0 24px ${color}22` } : {};
+  const glowStyle = glow ? { boxShadow: `0 0 12px ${color}25` } : {};
+
+  let borderClass = "rounded-xl";
+  let justifyClass = "justify-start text-left";
+  if (cardStyle === "sleek" || cardStyle === "minimal") {
+    borderClass = "rounded-full";
+    justifyClass = "justify-center text-center";
+  }
 
   return (
     <motion.a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      whileHover={{ scale: 1.03, y: -1 }}
-      whileTap={{ scale: 0.97 }}
-      className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer border"
+      whileHover={{ scale: 1.025, y: -1 }}
+      whileTap={{ scale: 0.975 }}
+      className={`flex items-center gap-3 w-full px-4 py-3 ${borderClass} ${justifyClass} transition-all duration-200 cursor-pointer border`}
       style={{
-        borderColor: `${color}30`,
-        background: `${color}10`,
+        borderColor: cardStyle === "minimal" ? "rgba(255,255,255,0.06)" : `${color}25`,
+        background: cardStyle === "minimal" ? "transparent" : `${color}0d`,
         ...glowStyle,
       }}
     >
@@ -253,7 +260,7 @@ function SocialButton({ href, platform, label, color, glow, cardStyle }: {
           <Icon size={16} />
         </span>
       )}
-      <span className="text-sm font-semibold truncate flex-1" style={{ color: "rgba(255,255,255,0.9)" }}>
+      <span className="text-xs font-bold truncate" style={{ color: "rgba(255,255,255,0.9)" }}>
         {label}
       </span>
     </motion.a>
@@ -457,7 +464,7 @@ export default function ProfileRenderer({
       label: found.name,
       description: found.description,
       icon: found.svg,
-      color: found.color,
+      color: item.color || found.color,
     }];
   });
 
@@ -466,6 +473,16 @@ export default function ProfileRenderer({
   const socialLinks = cfg.social?.links ?? [];
   const skillsEnabled = cfg.skills?.enabled && (cfg.skills?.items?.length ?? 0) > 0;
   const projectsEnabled = cfg.projects?.enabled && (cfg.projects?.items?.length ?? 0) > 0;
+
+  const isLeftAlign = theme.cardStyle === "portfolio" || theme.contentAlign === "left";
+  const alignClass = isLeftAlign ? "items-start text-left" : "items-center text-center";
+  const alignSelfClass = isLeftAlign ? "self-start" : "self-center";
+  const justifyClass = isLeftAlign ? "justify-start" : "justify-center";
+
+  let cardWidthClass = "max-w-sm";
+  if (theme.cardStyle === "portfolio") {
+    cardWidthClass = "max-w-xl md:max-w-2xl";
+  }
 
   return (
     <div
@@ -498,90 +515,178 @@ export default function ProfileRenderer({
         initial={{ opacity: 0, y: 32, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: EASE }}
-        className={`relative z-10 w-full max-w-sm mx-4 my-8 p-6 flex flex-col gap-5 ${
+        className={`relative z-10 w-full ${cardWidthClass} mx-4 my-8 p-6 flex flex-col gap-5 ${
           theme.animatedBorder ? "animated-border" : ""
         }`}
         style={cardStyle}
       >
-        {/* Identity */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          {identity.avatarUrl && (
-            <motion.img
-              src={identity.avatarUrl}
-              alt={identity.displayName || username}
-              className="w-20 h-20 rounded-full object-cover border-2"
-              style={{ borderColor: `${theme.primaryColor}55` }}
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.5, ease: EASE }}
-            />
-          )}
-
-          <div className="flex flex-col items-center gap-1">
-            <h1 className="text-xl">
-              <UsernameText
-                text={identity.displayName || username}
-                effect={effects.usernameEffect ?? "none"}
-                accent={theme.primaryColor}
-                accent2={bg.color2}
-                textColor={theme.textColor}
-                textGlow={effects.textGlow}
+        {/* Identity Section */}
+        {theme.cardStyle === "portfolio" ? (
+          /* Portfolio Side-by-Side Identity Layout */
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-5 text-center md:text-left w-full border-b border-white/[0.04] pb-5">
+            {identity.avatarUrl && (
+              <motion.img
+                src={identity.avatarUrl}
+                alt={identity.displayName || username}
+                className="w-24 h-24 rounded-2xl object-cover border-2 shadow-lg shrink-0"
+                style={{ borderColor: `${theme.primaryColor}50` }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.5, ease: EASE }}
               />
-            </h1>
+            )}
 
-            {identity.tagline && (
-              <p className="text-xs font-medium" style={{ color: theme.mutedTextColor }}>
-                {identity.tagline}
+            <div className="flex-1 flex flex-col items-center md:items-start gap-2 min-w-0">
+              <div className="flex flex-col items-center md:items-start gap-1 w-full">
+                <h1 className="text-2xl font-black tracking-tight">
+                  <UsernameText
+                    text={identity.displayName || username}
+                    effect={effects.usernameEffect ?? "none"}
+                    accent={theme.primaryColor}
+                    accent2={bg.color2}
+                    textColor={theme.textColor}
+                    textGlow={effects.textGlow}
+                  />
+                </h1>
+
+                {identity.tagline && (
+                  <p className="text-xs font-semibold tracking-wider uppercase opacity-80" style={{ color: theme.primaryColor }}>
+                    {identity.tagline}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2 items-center justify-center md:justify-start">
+                {identity.pronouns && (
+                  <span
+                    className="text-[9px] px-2 py-0.5 rounded-full border font-bold uppercase tracking-wider"
+                    style={{ borderColor: `${theme.primaryColor}40`, color: theme.primaryColor, background: `${theme.primaryColor}10` }}
+                  >
+                    {identity.pronouns}
+                  </span>
+                )}
+
+                {identity.location && (
+                  <span className="text-[10px] font-semibold opacity-70" style={{ color: theme.textColor }}>📍 {identity.location}</span>
+                )}
+              </div>
+
+              {identity.bio && (
+                <p className="text-xs leading-relaxed mt-1" style={{ color: theme.mutedTextColor }}>
+                  {identity.bio}
+                </p>
+              )}
+
+              {/* Badges */}
+              {cfg.badges.enabled && earnedBadges.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2 justify-center md:justify-start">
+                  {earnedBadges.map((badge) => (
+                    <span
+                      key={badge.id}
+                      title={badge.description}
+                      className="flex items-center gap-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full border transition hover:scale-105 duration-200"
+                      style={{
+                        borderColor: `${badge.color}40`,
+                        color: badge.color,
+                        background: `${badge.color}15`,
+                        boxShadow: `0 0 8px ${badge.color}20`,
+                      }}
+                    >
+                      <span dangerouslySetInnerHTML={{ __html: badge.icon }} style={{ width: 11, height: 11, display: "inline-flex", fill: badge.color }} />
+                      <span>{badge.label}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* Standard Stacked Identity Layout */
+          <div className={`flex flex-col ${alignClass} gap-3 w-full`}>
+            {identity.avatarUrl && (
+              <motion.img
+                src={identity.avatarUrl}
+                alt={identity.displayName || username}
+                className={`w-20 h-20 object-cover border-2 shadow-md ${
+                  theme.cardStyle === "sleek" ? "rounded-3xl hover:scale-105 transition duration-300" : "rounded-full"
+                }`}
+                style={{ borderColor: `${theme.primaryColor}55` }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.5, ease: EASE }}
+              />
+            )}
+
+            <div className={`flex flex-col ${alignClass} gap-1`}>
+              <h1 className="text-xl">
+                <UsernameText
+                  text={identity.displayName || username}
+                  effect={effects.usernameEffect ?? "none"}
+                  accent={theme.primaryColor}
+                  accent2={bg.color2}
+                  textColor={theme.textColor}
+                  textGlow={effects.textGlow}
+                />
+              </h1>
+
+              {identity.tagline && (
+                <p className="text-xs font-medium" style={{ color: theme.mutedTextColor }}>
+                  {identity.tagline}
+                </p>
+              )}
+
+              <div className={`flex flex-wrap gap-1.5 ${justifyClass}`}>
+                {identity.pronouns && (
+                  <span
+                    className="text-[9px] px-2 py-0.5 rounded-full border font-bold"
+                    style={{ borderColor: `${theme.primaryColor}40`, color: theme.primaryColor, background: `${theme.primaryColor}10` }}
+                  >
+                    {identity.pronouns}
+                  </span>
+                )}
+
+                {identity.location && (
+                  <span className="text-[9px] font-medium" style={{ color: theme.mutedTextColor }}>📍 {identity.location}</span>
+                )}
+              </div>
+            </div>
+
+            {identity.bio && (
+              <p className="text-xs leading-relaxed" style={{ color: theme.mutedTextColor }}>
+                {identity.bio}
               </p>
             )}
 
-            {identity.pronouns && (
-              <span
-                className="text-[10px] px-2 py-0.5 rounded-full border font-semibold"
-                style={{ borderColor: `${theme.primaryColor}40`, color: theme.primaryColor, background: `${theme.primaryColor}10` }}
-              >
-                {identity.pronouns}
-              </span>
+            {/* Badges */}
+            {cfg.badges.enabled && earnedBadges.length > 0 && (
+              <div className={`flex flex-wrap gap-1.5 ${justifyClass}`}>
+                {earnedBadges.map((badge) => (
+                  <span
+                    key={badge.id}
+                    title={badge.description}
+                    className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                    style={{
+                      borderColor: `${badge.color}40`,
+                      color: badge.color,
+                      background: `${badge.color}15`,
+                      boxShadow: `0 0 8px ${badge.color}30`,
+                    }}
+                  >
+                    <span dangerouslySetInnerHTML={{ __html: badge.icon }} style={{ width: 12, height: 12, display: "inline-flex", fill: badge.color }} />
+                    <span>{badge.label}</span>
+                  </span>
+                ))}
+              </div>
             )}
 
-            {identity.location && (
-              <span className="text-[10px] font-medium" style={{ color: theme.mutedTextColor }}>📍 {identity.location}</span>
+            {/* Views inside card */}
+            {viewsPlacement === "inside" && (
+              <div className={alignSelfClass}>
+                <ViewCounter initial={viewsInitial} accent={theme.primaryColor} />
+              </div>
             )}
           </div>
-
-          {identity.bio && (
-            <p className="text-xs leading-relaxed" style={{ color: theme.mutedTextColor }}>
-              {identity.bio}
-            </p>
-          )}
-
-          {/* Badges */}
-          {cfg.badges.enabled && earnedBadges.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 justify-center">
-              {earnedBadges.map((badge) => (
-                <span
-                  key={badge.id}
-                  title={badge.description}
-                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                  style={{
-                    borderColor: `${badge.color}40`,
-                    color: badge.color,
-                    background: `${badge.color}15`,
-                    boxShadow: `0 0 8px ${badge.color}30`,
-                  }}
-                >
-                  <span dangerouslySetInnerHTML={{ __html: badge.icon }} style={{ width: 12, height: 12, display: "inline-flex", fill: badge.color }} />
-                  <span>{badge.label}</span>
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Views inside card */}
-          {viewsPlacement === "inside" && (
-            <ViewCounter initial={viewsInitial} accent={theme.primaryColor} />
-          )}
-        </div>
+        )}
 
         {/* Audio Player */}
         <AudioPlayer cfg={cfg} />
@@ -596,27 +701,64 @@ export default function ProfileRenderer({
           />
         )}
 
-        {/* Social Links */}
+        {/* Social Links / Custom Links */}
         {socialLinks.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {socialLinks.filter((l: any) => l.url).map((link: any, i: number) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15 + i * 0.06, duration: 0.4, ease: EASE }}
-              >
-                <SocialButton
-                  href={link.url}
-                  platform={link.platform}
-                  label={link.label || link.platform}
-                  color={link.color || theme.primaryColor}
-                  glow={theme.glow}
-                  cardStyle={theme.cardStyle}
-                />
-              </motion.div>
-            ))}
-          </div>
+          cfg.social?.layout === "grid" ? (
+            /* Icon Row Mode */
+            <div className={`flex gap-3 items-center flex-wrap ${justifyClass}`}>
+              {socialLinks.filter((l: any) => l.url).map((link: any, i: number) => {
+                const Icon = brandIcons[link.platform as keyof typeof brandIcons];
+                const color = link.color || theme.primaryColor;
+                const glowStyle = theme.glow ? { boxShadow: `0 0 12px ${color}44` } : {};
+                
+                const shapeClass = cfg.social?.shape === "square" ? "rounded-none" : cfg.social?.shape === "rounded" ? "rounded-xl" : "rounded-full";
+                const sizeClass = cfg.social?.size === "sm" ? "w-8 h-8" : cfg.social?.size === "lg" ? "w-12 h-12" : "w-10 h-10";
+                const iconSize = cfg.social?.size === "sm" ? 14 : cfg.social?.size === "lg" ? 22 : 18;
+
+                return (
+                  <motion.a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={cfg.social?.hoverEffect ?? true ? { scale: 1.15, y: -2 } : {}}
+                    whileTap={cfg.social?.hoverEffect ?? true ? { scale: 0.95 } : {}}
+                    className={`${sizeClass} ${shapeClass} flex items-center justify-center border transition-all duration-200 cursor-pointer`}
+                    style={{
+                      borderColor: theme.cardStyle === "minimal" ? "rgba(255,255,255,0.06)" : `${color}25`,
+                      background: theme.cardStyle === "minimal" ? "transparent" : `${color}10`,
+                      color: color,
+                      ...glowStyle,
+                    }}
+                    title={link.label || link.platform}
+                  >
+                    {Icon && <Icon size={iconSize} />}
+                  </motion.a>
+                );
+              })}
+            </div>
+          ) : (
+            /* Full Width Button Mode */
+            <div className="flex flex-col gap-2">
+              {socialLinks.filter((l: any) => l.url).map((link: any, i: number) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15 + i * 0.06, duration: 0.4, ease: EASE }}
+                >
+                  <SocialButton
+                    href={link.url}
+                    platform={link.platform}
+                    label={link.label || link.platform}
+                    color={link.color || theme.primaryColor}
+                    glow={theme.glow}
+                    cardStyle={theme.cardStyle}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )
         )}
 
         {/* Skills Widget */}
@@ -636,7 +778,16 @@ export default function ProfileRenderer({
             accentColor={theme.primaryColor}
             textColor={theme.textColor}
             mutedColor={theme.mutedTextColor}
+            layout={theme.cardStyle === "portfolio" ? "grid" : "list"}
           />
+        )}
+
+        {/* Views under card in Portfolio style if placement is inside */}
+        {theme.cardStyle === "portfolio" && viewsPlacement === "inside" && (
+          <div className="border-t border-white/[0.04] pt-3 flex justify-between items-center w-full">
+            <span className="text-[10px] uppercase font-bold tracking-widest text-neutral-500">Telemetry</span>
+            <ViewCounter initial={viewsInitial} accent={theme.primaryColor} />
+          </div>
         )}
 
         {/* Branding */}

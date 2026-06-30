@@ -136,11 +136,13 @@ export function ProjectsWidget({
   accentColor,
   textColor,
   mutedColor,
+  layout = "list",
 }: {
   projects: any[];
   accentColor?: string;
   textColor?: string;
   mutedColor?: string;
+  layout?: "list" | "grid";
 }) {
   if (!projects || projects.length === 0) return null;
 
@@ -148,7 +150,7 @@ export function ProjectsWidget({
   const mutColor = mutedColor || "rgba(255,255,255,0.4)";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div className={layout === "grid" ? "grid grid-cols-1 sm:grid-cols-2 gap-3" : "flex flex-col gap-2.5"}>
       {projects.map((p, i) => (
         <a key={i} href={p.url || "#"} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, textDecoration: "none", transition: "background 0.2s" }}
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "rgba(255,255,255,0.06)"; }}
