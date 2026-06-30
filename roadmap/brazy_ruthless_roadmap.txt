@@ -138,7 +138,7 @@ Needed work:
 
 This is the highest-impact product surface because it is what users actually share.
 
-### 2.1 Create a new hero/profile composition engine
+### 2.1 Create a new hero/profile composition engine [X]
 
 Build the public profile from slots, not ad hoc stacking.
 
@@ -152,7 +152,7 @@ Core slots:
 - Featured widget slot.
 - Featured link slot.
 
-### 2.2 Redesign the profile card anatomy
+### 2.2 Redesign the profile card anatomy [X]
 
 Core parts:
 
@@ -166,7 +166,7 @@ Core parts:
 
 Each part needs variants so layouts can feel distinct without rewriting the whole product.
 
-### 2.3 Strengthen above-the-fold hierarchy
+### 2.3 Strengthen above-the-fold hierarchy [X]
 
 Rules:
 
@@ -176,7 +176,7 @@ Rules:
 - Featured links should not visually overwhelm identity.
 - Music/widget should complement, not distract.
 
-### 2.4 Improve mobile profile composition
+### 2.4 Improve mobile profile composition [X]
 
 The public page must look great on phones.
 
