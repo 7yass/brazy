@@ -267,7 +267,7 @@ Each layout must show a real miniature screenshot-like preview inside the picker
 
 Links are one of the most interacted-with parts of the profile and need a serious upgrade.
 
-### 4.1 Link style families
+### 4.1 Link style families [X]
 
 Ship at least these:
 
@@ -278,7 +278,7 @@ Ship at least these:
 - Rich link card.
 - Editorial text row.
 
-### 4.2 Link data capabilities
+### 4.2 Link data capabilities [X]
 
 Add:
 
@@ -291,7 +291,7 @@ Add:
 - Hide/show toggle.
 - Duplicate.
 
-### 4.3 Builder improvements for links
+### 4.3 Builder improvements for links [X]
 
 - Better card rows.
 - Quick-add presets for common platforms.
