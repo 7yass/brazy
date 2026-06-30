@@ -367,6 +367,18 @@ export default function ProfileEditor({
               <Row label="Animated Title">
                 <Toggle value={cfg.effects.typewriterTitle} onChange={(v) => updateEffect("typewriterTitle", v)} label="" />
               </Row>
+              <Row label="Motion Profile">
+                <CustomSelect
+                  value={cfg.theme.motionProfile ?? "balanced"}
+                  onChange={(v) => updateNested("theme", "motionProfile", v as ProfileConfig["theme"]["motionProfile"])}
+                  options={[
+                    { value: "none", label: "None" },
+                    { value: "minimal", label: "Minimal" },
+                    { value: "balanced", label: "Balanced" },
+                    { value: "rich", label: "Rich" },
+                  ]}
+                />
+              </Row>
               <Row label="Swap Box Colors">
                 <CustomSelect
                   value={cfg.theme.contentAlign}

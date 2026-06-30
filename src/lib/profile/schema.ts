@@ -45,6 +45,7 @@ export const themeSchema = z.object({
   backgroundOverlayColor: z.string().default("#000000"),
   backgroundOverlayOpacity: z.number().min(0).max(1).default(0.45),
   animatedBorder: z.boolean().default(false),
+  motionProfile: z.enum(["none", "minimal", "balanced", "rich"]).default("balanced"),
   profileSize: z.enum(["default", "medium", "large"]).default("default"),
 });
 export type Theme = z.infer<typeof themeSchema>;

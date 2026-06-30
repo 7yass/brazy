@@ -24,6 +24,66 @@ interface Badge {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// ─── Motion Profile Config ───────────────────────────────────────────────────
+
+function getMotionProfile(profile: string) {
+  switch (profile) {
+    case "none":
+      return {
+        enabled: false,
+        duration: 0,
+        stagger: 0,
+        cardInitial: { opacity: 1, y: 0, scale: 1 } as const,
+        cardAnimate: { opacity: 1, y: 0, scale: 1 } as const,
+        cardTransition: { duration: 0 },
+        avatarInitial: { scale: 1, opacity: 1 } as const,
+        avatarAnimate: { scale: 1, opacity: 1 } as const,
+        avatarTransition: { duration: 0 },
+        itemBaseDelay: 0,
+      };
+    case "minimal":
+      return {
+        enabled: true,
+        duration: 0.3,
+        stagger: 0.03,
+        cardInitial: { opacity: 0, y: 12, scale: 0.99 } as const,
+        cardAnimate: { opacity: 1, y: 0, scale: 1 } as const,
+        cardTransition: { duration: 0.3, ease: EASE },
+        avatarInitial: { scale: 0.95, opacity: 0 } as const,
+        avatarAnimate: { scale: 1, opacity: 1 } as const,
+        avatarTransition: { delay: 0.05, duration: 0.25, ease: EASE },
+        itemBaseDelay: 0.1,
+      };
+    case "rich":
+      return {
+        enabled: true,
+        duration: 0.8,
+        stagger: 0.08,
+        cardInitial: { opacity: 0, y: 40, scale: 0.95 } as const,
+        cardAnimate: { opacity: 1, y: 0, scale: 1 } as const,
+        cardTransition: { duration: 0.8, ease: EASE },
+        avatarInitial: { scale: 0.7, opacity: 0 } as const,
+        avatarAnimate: { scale: 1, opacity: 1 } as const,
+        avatarTransition: { delay: 0.15, duration: 0.6, ease: EASE },
+        itemBaseDelay: 0.2,
+      };
+    case "balanced":
+    default:
+      return {
+        enabled: true,
+        duration: 0.6,
+        stagger: 0.06,
+        cardInitial: { opacity: 0, y: 32, scale: 0.97 } as const,
+        cardAnimate: { opacity: 1, y: 0, scale: 1 } as const,
+        cardTransition: { duration: 0.6, ease: EASE },
+        avatarInitial: { scale: 0.8, opacity: 0 } as const,
+        avatarAnimate: { scale: 1, opacity: 1 } as const,
+        avatarTransition: { delay: 0.1, duration: 0.5, ease: EASE },
+        itemBaseDelay: 0.15,
+      };
+  }
+}
+
 // ─── Username Effect ────────────────────────────────────────────────────────
 
 function UsernameText({ text, effect, accent, accent2, textColor, textGlow }: {
@@ -434,6 +494,7 @@ export default function ProfileRenderer({
   const identity = cfg.identity;
   const effects = cfg.effects;
   const [splashDone, setSplashDone] = useState(!cfg.splash?.enabled);
+  const mp = getMotionProfile(theme.motionProfile ?? "balanced");
 
   const cardStyle = (() => {
     switch (theme.cardStyle) {
@@ -583,9 +644,9 @@ export default function ProfileRenderer({
 
       {/* Profile Card */}
       <motion.div
-        initial={{ opacity: 0, y: 32, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: EASE }}
+        initial={mp.cardInitial}
+        animate={mp.cardAnimate}
+        transition={mp.cardTransition}
         className={`relative z-10 w-full ${cardWidthClass} mx-4 my-8 p-6 flex flex-col gap-5 ${
           theme.animatedBorder ? "animated-border" : ""
         }`}
@@ -601,9 +662,9 @@ export default function ProfileRenderer({
                 alt={identity.displayName || username}
                 className="w-24 h-24 rounded-2xl object-cover border-2 shadow-lg shrink-0"
                 style={{ borderColor: `${theme.primaryColor}50` }}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.5, ease: EASE }}
+                initial={mp.avatarInitial}
+                animate={mp.avatarAnimate}
+                transition={mp.avatarTransition}
               />
             )}
 
@@ -682,9 +743,9 @@ export default function ProfileRenderer({
                   theme.cardStyle === "sleek" ? "rounded-3xl hover:scale-105 transition duration-300" : "rounded-full"
                 }`}
                 style={{ borderColor: `${theme.primaryColor}55` }}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.1, duration: 0.5, ease: EASE }}
+                initial={mp.avatarInitial}
+                animate={mp.avatarAnimate}
+                transition={mp.avatarTransition}
               />
             )}
 
@@ -864,9 +925,9 @@ export default function ProfileRenderer({
               {socialLinks.filter((l: any) => l.url).map((link: any, i: number) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, x: -12 }}
+                  initial={mp.enabled ? { opacity: 0, x: -12 } : { opacity: 1, x: 0 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.06, duration: 0.4, ease: EASE }}
+                  transition={{ delay: mp.itemBaseDelay + i * mp.stagger, duration: mp.enabled ? 0.4 : 0, ease: EASE }}
                 >
                   <SocialButton
                     href={link.url}
@@ -941,6 +1002,5 @@ function hexToRgb(hex: string): string {
   const r = parseInt(full.slice(0, 2), 16);
   const g = parseInt(full.slice(2, 4), 16);
   const b = parseInt(full.slice(4, 6), 16);
-  if (isNaN(r) || isNaN(g) || isNaN(b)) return "20,20,20";
-  return `${r},${g},${b}`;
+  return `${r}, ${g}, ${b}`;
 }

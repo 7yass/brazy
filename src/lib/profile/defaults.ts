@@ -36,6 +36,7 @@ export const brazyProfile: ProfileConfig = {
     backgroundOverlayColor: "#000000",
     backgroundOverlayOpacity: 0.5,
     animatedBorder: false,
+    motionProfile: "balanced",
     profileSize: "default",
   },
   background: {
