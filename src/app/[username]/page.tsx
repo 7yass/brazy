@@ -22,12 +22,12 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   if (!profile) {
     if (username.toLowerCase() === brazyProfile.identity.username.toLowerCase()) {
-      return <ProfileRenderer config={brazyProfile} username={username} />;
+      return <ProfileRenderer config={brazyProfile} username={username} views={0} />;
     }
     return notFound();
   }
 
   const config = normalizeConfig(profile.config);
 
-  return <ProfileRenderer config={config} username={username} />;
+  return <ProfileRenderer config={config} username={username} views={profile.views} />;
 }

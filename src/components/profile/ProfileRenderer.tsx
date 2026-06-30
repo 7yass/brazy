@@ -351,10 +351,16 @@ function AudioPlayer({ cfg }: { cfg: ProfileConfig }) {
 
 // ─── Main Renderer ───────────────────────────────────────────────────────────
 
-export default function ProfileRenderer({ config, username, isOwner = false }: {
+export default function ProfileRenderer({
+  config,
+  username,
+  isOwner = false,
+  views = 0,
+}: {
   config: ProfileConfig;
   username: string;
   isOwner?: boolean;
+  views?: number;
 }) {
   const cfg = config;
   const theme = cfg.theme;
@@ -456,7 +462,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
   });
 
   const viewsPlacement = cfg.analytics?.viewsPlacement ?? (cfg.analytics?.showViews ? "inside" : "none");
-  const viewsInitial = cfg.analytics?.viewCount ?? 0;
+  const viewsInitial = views;
   const socialLinks = cfg.social?.links ?? [];
   const skillsEnabled = cfg.skills?.enabled && (cfg.skills?.items?.length ?? 0) > 0;
   const projectsEnabled = cfg.projects?.enabled && (cfg.projects?.items?.length ?? 0) > 0;
