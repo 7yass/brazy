@@ -474,7 +474,7 @@ export default function ProfileRenderer({ config, username, isOwner = false }: {
       style={{ position: "fixed", inset: 0, overflow: "auto" }}
     >
       {/* Background */}
-      <BackgroundLayer config={cfg} />
+      <BackgroundLayer background={bg} />
 
       {/* Cursor / Click effects */}
       {effects.cursor.enabled && <CursorEffect config={effects.cursor} />}
