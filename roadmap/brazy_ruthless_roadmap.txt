@@ -389,7 +389,7 @@ Let users choose a global motion profile:
 
 Once the structural system is strong, move into expressive breadth.
 
-### 7.1 Curated theme system
+### 7.1 Curated theme system [X]
 
 Start with 8–12 strong presets.
 
@@ -404,7 +404,7 @@ Examples:
 - Emerald.
 - Mono.
 
-### 7.2 Font pairing presets
+### 7.2 Font pairing presets [X]
 
 Ship pairings, not chaos.
 
