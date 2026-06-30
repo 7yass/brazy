@@ -1,0 +1,992 @@
+# Brazy.it — total product blueprint to surpass guns.lol and haunt.gg
+
+This document is the expanded master blueprint for making brazy.it better than both guns.lol and haunt.gg, while keeping everything free at launch and removing the artificial premium gate around core customization, themes, effects, layouts, fonts, cursors, sounds, templates, and profile expression.[web:238][web:241][web:242][web:243][web:251][web:254][web:262][page:1][page:2] The product target is not just "a bio link site" but a full identity platform, live profile builder, theme system, modular content system, public microsite engine, and creator-status layer that feels broader, cleaner, and more polished than both competitors.[web:243][web:251][web:254][web:262][page:2]
+
+The strategy is simple: take every capability that currently creates perceived status on guns.lol and haunt.gg, remove the paywall, improve the implementation quality, improve the visual taste, make the public profile page more beautiful by default, and give users more control without making the builder ugly or overwhelming.[web:241][web:242][web:254][web:262][web:264][page:1] That means better systems, better defaults, better motion, better templates, better layout families, better widgets, better onboarding, better performance, better mobile behavior, and a much stronger actual profile page than either platform currently signals publicly.[web:242][web:243][web:251][web:262][web:269][page:2]
+
+## Competitive scope
+
+guns.lol publicly emphasizes modern customizable bio pages, templates, layout settings, a second-tab widget system, profile and cursor effects, and continuous UI improvements such as custom fonts and expanded personalization options.[web:238][web:241][web:242][web:243][web:251][web:254] haunt.gg publicly advertises that premium includes everything in free plus more profiles, animations, custom fonts, cursors and sound effects, custom profile domains, decorations, themes, templates, assets, and other ongoing additions in its changelog and docs.[web:262][web:263][web:264][web:266][web:269][page:1][page:2] So the complete free brazy.it target has to include all of those categories and then exceed them in finish, clarity, and composition.[web:242][web:251][web:254][web:262][web:264][web:266]
+
+What you are really competing against is not a checklist. You are competing against a feeling: users want their page to look rare, expensive, personal, responsive, animated, complete, and immediately presentable to friends, communities, and followers.[web:243][web:254][web:262][page:2] If brazy.it gives them more power for free but the defaults look worse or the builder feels uglier, they will still perceive it as behind.[web:242][web:243][web:262]
+
+## Product doctrine
+
+Brazy.it should follow these rules everywhere:
+
+- Every major customization category is free.[web:262][web:266]
+- The default profile already looks premium before any customization.[web:238][web:243][web:262]
+- Every style choice is previewed visually, never hidden behind ugly raw dropdowns.[web:237][conversation_history:1]
+- Layout families are structurally different, not just recolors.[web:237][web:269]
+- Motion supports hierarchy and atmosphere, not gimmicks.[web:254][web:264]
+- The public profile is the main product surface, not the dashboard.[web:243][web:262]
+- Users get expressive power without the product becoming corny or cluttered.[web:242][web:254][page:2]
+
+## Everything brazy.it should include
+
+This section is intentionally exhaustive. Even if some items already exist, they should still be reviewed, expanded, improved, and made visually stronger.
+
+### 1. Username and identity system
+
+The identity layer should include:
+
+- Username.
+- Display name.
+- Alternate name or subtitle.
+- Tagline or micro-status.
+- Pronouns toggleable.
+- Location toggleable.
+- Age or birthday optional and private by default.
+- Timezone optional.
+- Discord presence or account badge.[conversation_history:1][web:243]
+- Status text.
+- Activity text such as coding, listening, editing, streaming, away, sleeping.
+- Verified or internal trust badge.
+- Early adopter badge.
+- Theme-specific badge frame.
+- Custom badge row.
+- Pinned identity chips like artist, editor, developer, designer, musician, collector.
+- Links to external handles.
+- Hover tooltips for badges.
+- Availability state like open for work, commissions open, requests closed.
+- Mood/status color or small aura indicator.
+
+How it should work:
+
+- All identity items are modular and reorderable.
+- Every item can be shown or hidden per layout.
+- Some identity items can collapse into a meta row on smaller screens.
+- Users can choose between compact, balanced, and expanded identity density.
+- Identity elements inherit the chosen layout style so they never look pasted in.
+
+How it should be built:
+
+- Store identity in a structured profile schema with per-item visibility and order.
+- Render through a layout engine that maps profile schema to layout components.
+- Use component tokens for chip radius, border, text scale, spacing, and hover feedback.
+- Support optional animation per element with reduced-motion fallbacks.
+
+### 2. Username effects
+
+Offer a much larger library than typical competitors, all free.
+
+Effect families:
+
+- None.
+- Soft glow.
+- Pulse glow.
+- Chromatic shift.
+- Gradient sweep.
+- Metallic sheen.
+- Scanline shimmer.
+- Aurora tint drift.
+- Frost glow.
+- Ember glow.
+- Static grain overlay.
+- Letter flicker.
+- Typewriter reveal.
+- Neon edge.
+- Ghost fade.
+- Shadow float.
+- Breathing blur.
+- Double-outline twitch.
+- Light trail on hover.
+- Underline sweep.
+- Minimal accent underline.
+- Split-color hover transform.
+
+Rules:
+
+- All effects need live preview tiles.
+- Each effect shows motion level and readability level.
+- Effects can target display name, username, or both.
+- Users can adjust intensity, speed, glow radius, color inheritance, and hover-only mode.
+- Effects must be GPU-conscious.
+- Readability is always protected with automatic clamps.
+
+How to implement:
+
+- Use CSS keyframes for most text effects.
+- Use pseudo-elements for sweeps, shadows, glows, and overlays.
+- Use CSS variables for per-user tuning.
+- Keep expensive text-shadow stacking limited.
+- Use `prefers-reduced-motion` to tone down loops.
+
+### 3. Background system
+
+The background system should be one of the biggest reasons people choose brazy.it.
+
+Background types:
+
+- Static solid.
+- Static gradient.
+- Soft radial gradient.
+- Multi-stop mesh gradient.
+- Noise-textured gradient.
+- Image background.
+- Video background in future once performance and moderation are handled.
+- Layered wallpaper upload.
+- Color wash overlay.
+- Ambient animated canvas effects.
+- CSS-based minimal effects.
+
+Effect families:
+
+- Blurred particles.[conversation_history:1]
+- Matrix rain.[conversation_history:1]
+- Moving starfield.[conversation_history:1]
+- Northern aurora.[conversation_history:1]
+- Falling rain.[conversation_history:1]
+- Falling snow.[conversation_history:1]
+- Floating bubbles.[conversation_history:1]
+- Retro grid.[conversation_history:1]
+- Animated gradient.[conversation_history:1]
+- Soft fog.
+- Slow scanlines.
+- Drifting haze.
+- Dust field.
+- Liquid shimmer.
+- VHS static subtle.
+- Cloud shadow drift.
+- Orbiting points.
+- Constellation lines.
+- Heat distortion subtle.
+- Bokeh drift.
+- Stardust burst occasional.
+
+Controls:
+
+- Enable/disable.
+- Speed.
+- Density.
+- Layer opacity.
+- Blur amount.
+- Color mode.
+- Theme sync.
+- Mobile intensity override.
+- Reduced-motion override.
+- Foreground readability shield.
+- Mask center around profile card.
+
+How to build:
+
+- Categorize effects into CSS-only, canvas-based, and WebGL-lite tiers.
+- Default to CSS/canvas for most users.
+- Lazy-load heavier effects.
+- Auto-detect lower-end devices and tone down density.
+- Render effects in isolated layers beneath content with `pointer-events: none`.
+- Use mask gradients behind the main profile card to maintain readability.
+
+### 4. Audio and sound system
+
+haunt.gg explicitly advertises sound effects and related customization in premium, so brazy.it should make sound a first-class free feature.[web:262][web:264] This can be a huge differentiator if tasteful.
+
+Free sound features:
+
+- Profile entrance sound optional.
+- Hover sound optional.
+- Click sound optional.
+- Page music or featured track optional.
+- Ambient low-volume loop optional with explicit user consent.
+- Mute/unmute control always visible if any audio exists.
+- Click-to-start audio behavior to respect browser autoplay policy.
+- Track metadata display.
+- Album art or cover thumbnail.
+- Progress bar.
+- Mini audio widget variants.
+- Playlist or track embed later.
+
+Sound effect library categories:
+
+- Soft pop.
+- Glass click.
+- Digital tick.
+- Retro blip.
+- Vinyl tap.
+- Sparkle tap.
+- Bass click subtle.
+- UI whoosh.
+- Low synth pulse.
+
+Rules:
+
+- Sound is off by default for visitors unless explicitly started.
+- Profile owners can choose silent visual widgets only.
+- Sound should never hijack user experience.
+- Add per-sound volume and mobile disable.
+
+How to build:
+
+- Use HTMLAudioElement or Web Audio for short effects.
+- Cache approved sound assets on CDN.
+- Use a central audio manager in the frontend.
+- Gate playback behind first interaction.
+- Provide profile-level and global mute preferences.
+
+### 5. Cursor system
+
+Make all cursor effects free and much better curated than novelty sites.[web:254][web:262]
+
+Cursor modes:
+
+- Default.
+- Dot trail.
+- Spark trail.
+- Ring trail.
+- Soft glow trail.
+- Pixel squares.
+- Snow dust.
+- Bubble trail.
+- Tiny star trail.
+- Ribbon line subtle.
+- Magnetic hover cursor.
+- Spotlight cursor.
+- Soft blob cursor.
+- Crosshair minimal.
+- Halo expand on hover.
+
+Controls:
+
+- Size.
+- Trail density.
+- Trail fade speed.
+- Theme sync.
+- Hover amplification.
+- Mobile disable.
+- Performance mode.
+
+Implementation:
+
+- Use one cursor engine with pluggable renderers.
+- Prefer CSS transform updates driven by `requestAnimationFrame`.
+- Do not hide the native cursor unless the replacement is excellent.
+- Use throttling and trailing smoothing.
+
+### 6. Click effects
+
+Click effects should create delight without visual trash.
+
+Effects:
+
+- Ripple.
+- Ring burst.
+- Spark burst.
+- Glass fracture subtle.
+- Dust bloom.
+- Soft flash.
+- Tiny confetti minimal.
+- Accent shards.
+- Dot explosion.
+- Light pulse.
+
+Rules:
+
+- Origin at click point.
+- Fast fade.
+- No delayed lag.
+- No text obstruction.
+- Optional disable on forms and inputs.
+
+### 7. Layout families
+
+You already called out portfolio, sleek, modern, minimal. Expand that into a full layout architecture.
+
+Core free layouts:
+
+- Minimal.
+- Sleek.
+- Modern.
+- Portfolio.
+- Compact stack.
+- Centered card.
+- Wide editorial.
+- Split-pane.
+- Bento grid.
+- Showcase.
+- Social-first.
+- Project-first.
+- Artist-first.
+- Link-first.
+- Ambient hero.
+
+Each layout must change real structure, not just colors.
+
+How each should differ:
+
+- Header composition.
+- Card width.
+- Alignment.
+- Whether links are above or below content.
+- How widgets are integrated.
+- How social icons display.
+- How badges anchor.
+- How projects render.
+- Whether sections use cards or clean dividers.
+- Whether hero is center, left, split, or layered.
+
+Implementation:
+
+- Create a layout registry where each layout is a renderer with shared slots.
+- Shared slots: hero, meta, actions, socials, modules, footer.
+- Each layout controls slot arrangement and component variants.
+- Data schema stays stable while renderers change.
+
+### 8. Section system
+
+Sections turn a bio page into a microsite.
+
+Section types:
+
+- About.
+- Featured links.
+- All links.
+- Socials.
+- Music.
+- Discord presence.
+- Projects.
+- Skills.
+- Gallery.
+- Quotes.
+- Testimonials or vouches.
+- FAQ.
+- Contact card.
+- Booking block.
+- Support/donate links.
+- Merch block in future.
+- Timeline.
+- Achievements.
+- Badges showcase.
+- Now section: what I’m doing now.
+- Setup or gear section for streamers/artists.
+- Favorites section.
+- Collections section.
+- Rich text section.
+- Embed section.
+
+Capabilities:
+
+- Enable/disable.
+- Reorder.
+- Per-section style.
+- Compact/regular/expanded density.
+- Background on/off.
+- Divider style.
+- Title on/off.
+- Anchor links.
+- Section intro text.
+
+Implementation:
+
+- Use schema-based dynamic sections.
+- Render through section registry with style variants.
+- Keep editor modular.
+- Add per-section preview cards in builder.
+
+### 9. Link system
+
+This should be one of the strongest areas in the product.
+
+Link capabilities:
+
+- Standard links.
+- Featured links.
+- Rich links with description.
+- Links with thumbnails.
+- Button links.
+- Inline text links.
+- Grouped links.
+- Category tabs for links.
+- Scheduled links.
+- Temporary/promoted links.
+- Password-protected private links later.
+- Redirect tracking.
+- Custom click label analytics.
+- Link badges.
+- Link animations.
+- Per-link icon choice.
+- Platform auto-detect.
+- Social-proof counts later.
+
+Styles:
+
+- Flat bar.
+- Glass pill.
+- Outline button.
+- Soft filled card.
+- Elevated card.
+- Split icon card.
+- Rich media card.
+- Editorial text row.
+- Bento small card.
+
+How to build:
+
+- Separate link data from presentation variants.
+- Support drag-and-drop ordering.
+- Use optimistic updates.
+- Validate URLs.
+- Generate previews asynchronously where safe.
+
+### 10. Widgets and integrations
+
+guns.lol documents a second-tab/widget model including YouTube, Spotify, Telegram, and similar modules.[web:251] Brazy.it should do more, for free, and integrate them better visually.
+
+Widget catalog:
+
+- Spotify now playing.
+- Spotify top track.
+- Spotify playlist card.
+- YouTube latest video.
+- YouTube channel summary.
+- Telegram channel card.
+- Discord presence card.
+- GitHub profile card.
+- GitHub pinned repos.
+- Twitter/X latest post if API/terms allow.
+- Twitch stream status.
+- Kick stream status.
+- Steam profile card.
+- Roblox profile card.
+- SoundCloud card.
+- Last.fm card.
+- Pinterest card future.
+- Dribbble/Behance portfolio card for creatives.
+- Figma community file card later.
+- Etsy/store link card later.
+- Notion document card.
+- Calendly/contact scheduler later.
+- RSS/latest post widget.
+- Custom embed sandboxed later.
+
+Rules:
+
+- Widgets inherit profile theme.
+- Widgets should not feel like ugly iframes.
+- Brand colors are toned down.
+- Skeleton states look clean.
+- Failed widgets degrade gracefully.
+
+Implementation:
+
+- Use a widget registry with server-side fetchers where required.
+- Cache third-party metadata.
+- Provide rate-limit-safe updates.
+- Normalize each widget into a shared card shell.
+
+### 11. Themes and presets
+
+haunt.gg publicly documents themes, customization, templates, and assets, so brazy.it must have a superior free theme system.[web:269][web:270][web:271][web:275]
+
+Theme architecture:
+
+- Base color theme.
+- Accent color.
+- Surface temperature.
+- Border intensity.
+- Shadow profile.
+- Glow profile.
+- Radius scale.
+- Density scale.
+- Typography pair.
+- Motion profile.
+- Section divider style.
+- Card transparency profile.
+
+Curated theme families:
+
+- Obsidian.
+- Graphite.
+- Void.
+- Smoke.
+- Ash.
+- Frost.
+- Crimson.
+- Sapphire.
+- Emerald.
+- Amethyst.
+- Bronze.
+- Mono white-on-black.
+- Mono black-on-white.
+- Muted rose.
+- Ice blue.
+- Lime cyber restrained.
+
+Preset types:
+
+- Layout presets.
+- Full theme presets.
+- Identity presets.
+- Link style presets.
+- Motion presets.
+- Widget arrangement presets.
+
+Implementation:
+
+- Build a design token system with CSS variables.
+- Apply theme tokens at root profile scope.
+- Save presets as JSON configs.
+- Allow copy/duplicate/import/export.
+
+### 12. Templates and community layer
+
+guns.lol and haunt.gg both signal template functionality publicly.[web:241][web:275] Brazy.it can win hard here by making templates free and easier to use.
+
+Template system should include:
+
+- Official starter templates.
+- Community templates.
+- Featured templates.
+- Clone this profile style.
+- Save as template.
+- Fork template.
+- Browse by vibe, purpose, and layout.
+- Filter by subtle, animated, portfolio, minimal, artist, dev, streamer, etc.
+- Preview template live.
+- Apply partially or fully.
+- Keep current content while swapping style only.
+- Keep style while swapping layout only.
+
+How to build:
+
+- Template = structured config bundle, not raw HTML.
+- Store versioned schema.
+- Provide compatibility fallback when new fields are added.
+
+### 13. Fonts and typography
+
+guns.lol changelog notes custom fonts and font collections, and haunt.gg also publicly references custom fonts via premium positioning.[web:242][web:262] Brazy.it should make curated typography free but controlled.
+
+Font sources you can use:
+
+- Google Fonts for open-source web fonts with clear licenses and easy embedding.[web:282]
+- Fontshare for high-quality free commercial-use families that feel more distinctive than basic defaults.[web:280][web:282]
+
+Recommended font categories:
+
+- Clean UI sans.
+- Grotesk sans.
+- Editorial serif.
+- Futuristic sans.
+- Sharp display sans.
+- Monospace accent.
+
+Recommended usage rules:
+
+- One display family and one body family max by default.
+- Prevent users from picking unreadable combinations.
+- Provide pair presets rather than a chaos list.
+- Offer type density presets for each layout.
+
+Implementation:
+
+- Preload a curated short list first.
+- Lazy-load additional families.
+- Use CSS variables for font tokens.
+- Expose display/body pairing in theme config.
+
+### 14. Decorations and assets
+
+haunt.gg publicly documents decorations and assets, so brazy.it should build a broader free asset model.[web:263][web:270]
+
+Asset categories:
+
+- Avatar.
+- Banner/hero image.
+- Background image.
+- Gallery images.
+- Decorative overlays.
+- Badge art.
+- Audio cover art.
+- Cursor sprite optional.
+- Section thumbnails.
+- Link thumbnails.
+- Project thumbnails.
+
+Decorations:
+
+- Avatar frames.
+- Theme frames.
+- Corner flares subtle.
+- Tiny ambient particles around hero card.
+- Decorative separator motifs.
+- Badge backplates.
+- Edge highlights.
+- Hero top ribbons very subtle.
+
+Rules:
+
+- Decorations are optional and tasteful.
+- Do not turn the page into a sticker board.
+- Respect layout family aesthetics.
+
+### 15. Domains and routing
+
+haunt.gg premium advertises custom profile domains, so brazy.it can undercut that by making generous routing free or low-friction.[web:262] Even if true custom domains take extra ops work later, design for it now.
+
+Routing goals:
+
+- Clean username path.
+- Optional short vanity paths.
+- Multi-profile support later.
+- Custom domain support later.
+- Alias domains later.
+- Link redirect tracking routes.
+
+### 16. Discovery and social layer
+
+haunt.gg publicly exposes a leaderboard, which means users are shown public competition and visibility mechanics.[web:274] Brazy.it can add discovery without making it cringe.
+
+Features:
+
+- Featured profiles.
+- Theme gallery.
+- Template gallery.
+- Trending profiles optional.
+- New creators spotlight.
+- Seasonal collections.
+- Public likes optional.
+- Follows optional later.
+- Profile bookmarks later.
+- Collections curated by staff.
+
+Rules:
+
+- Discovery should highlight quality, not spam.
+- Avoid turning everything into popularity farming.
+
+### 17. Analytics
+
+Analytics must go beyond a single number.
+
+Analytics stack:
+
+- Total views.
+- Unique views.
+- Link clicks.
+- CTR by link.
+- Top modules.
+- Time range filters.
+- Referrer sources.
+- Device breakdown.
+- Geography rough view later.
+- Scroll depth later.
+- Widget engagement later.
+- Audio plays.
+- Theme performance experiments later.
+
+Actionable guidance:
+
+- Suggest promoting underclicked links.
+- Suggest using featured links.
+- Suggest enabling a stronger above-the-fold CTA.
+
+### 18. Onboarding and starter experience
+
+The first-run experience should instantly produce a page that already looks shareable.
+
+Flow:
+
+1. Username.
+2. Choose purpose: creator, dev, artist, personal, portfolio, streamer, music.
+3. Choose layout family.
+4. Choose theme preset.
+5. Add avatar.
+6. Add 3 starter links or socials.
+7. Finish with seeded page.
+
+Enhancements:
+
+- Offer starter templates per user type.
+- Auto-fill suggested sections based on category.
+- Generate a nice initial section order.
+
+### 19. Builder UX and interface quality
+
+Your current screenshot already shows the biggest warning sign: ugly dropdowns break the premium illusion instantly.[conversation_history:1] So the builder must be rebuilt around rich controls, not raw form widgets.
+
+Component upgrades needed everywhere:
+
+- Visual tile pickers instead of text-only selects.
+- Real thumbnails for effects.
+- Sticky live preview panel.
+- Inline animation previews.
+- Better sliders with richer handles and numeric pills.
+- Segmented controls for simple choices.
+- Searchable asset picker.
+- Drag-and-drop section and link ordering.
+- Better side navigation hierarchy.
+- Cleaner headers and helper text.
+- Fewer all-caps labels unless used very carefully.
+
+How to build the builder:
+
+- Use a split layout: controls left, preview right on desktop.
+- On mobile use a preview drawer.
+- Autosave changes.
+- Use optimistic UI.
+- Show subtle save state.
+- Expose undo/redo later.
+
+### 20. Public profile composition
+
+This is the most important section in the whole document.
+
+The public profile should always feel like one composed artwork, not stacked random settings. The top fold must establish identity, quality, and action instantly.
+
+Ideal above-the-fold anatomy:
+
+- Background system.
+- Readability mask.
+- Main hero/profile card.
+- Avatar or identity anchor.
+- Display name and username.
+- Badge row.
+- Short bio.
+- Meta row.
+- Primary social/actions.
+- Featured widget or music card optional.
+- Featured links optional.
+
+The rest of the page then flows into sections with a deliberate rhythm.
+
+What makes it feel premium:
+
+- Clear focal point.
+- Great spacing.
+- Clean visual hierarchy.
+- Theme consistency.
+- Motion restraint.
+- No clutter.
+- No corny emojis as decoration.
+
+### 21. Layout details for the four named styles
+
+#### Minimal
+
+- Narrow width.
+- Strong typography.
+- Almost no glow.
+- Flat or lightly elevated surfaces.
+- Very few badges visible.
+- Clean link bars.
+- Background mostly static or very subtle.
+- Social row tiny and elegant.
+- Projects and skills simple.
+
+#### Sleek
+
+- Refined glass.
+- Soft blur.
+- Controlled reflections.
+- Rich hero card.
+- Links as pill cards or glossy bars.
+- Music widget embedded elegantly.
+- Moderate motion.
+- Crisp hover glows only on action.
+
+#### Modern
+
+- Modular card sections.
+- Balanced spacing.
+- Best all-around default.
+- Supports more content without feeling messy.
+- Great for creator/general use.
+- Strong responsive behavior.
+
+#### Portfolio
+
+- Wider hero.
+- Editorial typography.
+- Project blocks prioritized over plain links.
+- Socials secondary.
+- More whitespace.
+- Cleaner backgrounds.
+- Better section storytelling.
+
+### 22. Motion system
+
+Motion should be formalized as a system, not random per-component experiments.
+
+Motion profiles:
+
+- None.
+- Minimal.
+- Balanced.
+- Rich.
+
+Microinteractions:
+
+- Button hover.
+- Link hover.
+- Card lift.
+- Focus ring fade.
+- Toggle easing.
+- Slider drag feedback.
+- Tab transitions.
+- Modal open/close.
+- Section reorder animation.
+
+Page-level motion:
+
+- Hero fade/slide in.
+- Widget appear.
+- Background drift.
+- Parallax subtle on hero layer.
+- Scroll reveal extremely restrained.
+
+### 23. Accessibility and quality
+
+Better than competitors also means more responsible.
+
+Requirements:
+
+- Keyboard navigation.
+- Visible focus states.
+- Reduced motion support.
+- Readable contrast.
+- Image alt support where relevant.
+- Audio controls.
+- Mobile touch targets.
+- Theme validation for low contrast.
+
+### 24. Moderation and safety
+
+If you let users upload more assets and free features, you need moderation.
+
+Needs:
+
+- Report profile feature, which haunt.gg changelog references publicly.[web:264]
+- Asset scanning pipeline.
+- Abuse rate limiting.
+- Link safety checks.
+- Profile visibility options.
+- Age-sensitive content policies.
+- Domain abuse prevention.
+
+### 25. Free resource references for building everything
+
+#### Icons
+
+Best free icon libraries:
+
+- Lucide for a clean modern default React icon set with strong TypeScript support.[web:284][web:279]
+- Heroicons for clean outline/solid icons, especially if you are already using a Tailwind-heavy stack.[web:284]
+- Phosphor for multiple weights and a friendlier more expressive style.[web:284][web:279]
+- Tabler Icons for very broad coverage and lots of utility icons.[web:284][web:286]
+- Remix Icon for system-style UI symbols and broader variety.[web:284][web:286]
+- Simple Icons for brand logos like Discord, Spotify, GitHub, YouTube, Telegram, etc.[web:283][web:290]
+
+Practical recommendation:
+
+- Use one primary UI icon library only, ideally Lucide or Tabler for consistency.[web:279][web:284]
+- Use Simple Icons for brand marks only.[web:283][web:290]
+- Do not mix five different stroke styles in one interface.
+
+Where to search icons:
+
+- Official library sites.
+- Cross-library search tools such as IconSearch or Talos icon finder for fast discovery across open libraries.[web:283][web:288]
+
+#### Fonts
+
+- Google Fonts for safe open-source web fonts.[web:282]
+- Fontshare for higher-end free commercial-use families that feel less generic.[web:280][web:282]
+
+Practical recommendation:
+
+- Curate 12–20 good font pairings instead of exposing 300 raw fonts.
+- Build preset pairs per layout family.
+
+#### Motion libraries
+
+- Motion for React animation and transitions if you want a strong modern API.
+- Lenis for smooth scrolling only if used carefully and not forced everywhere.
+- Use native CSS transitions for many microinteractions to keep things light.
+
+#### UI primitives
+
+- Radix UI or similar headless primitives for accessible popovers, dialogs, selects, tooltips, and tabs.
+- Shadcn-style component patterns can speed implementation, but all visuals must be reauthored to avoid template feel.
+
+#### Color inspiration
+
+- Build your own token system.
+- Use competitor screenshots only as reference, not as a design source of truth.
+- Keep theme palettes neutral-first.
+
+### 26. Exact engineering architecture recommendation
+
+Frontend layers:
+
+- App shell/dashboard.
+- Live builder state manager.
+- Profile preview renderer.
+- Public profile renderer.
+- Shared component system.
+- Theme token engine.
+- Effect engines.
+- Widget registry.
+
+Backend layers:
+
+- User/profile data.
+- Theme configs.
+- Template configs.
+- Asset storage.
+- Analytics events.
+- Moderation/abuse tools.
+- Third-party integration cache.
+
+Schema ideas:
+
+- `profile_identity`
+- `profile_theme`
+- `profile_layout`
+- `profile_sections`
+- `profile_links`
+- `profile_widgets`
+- `profile_effects`
+- `profile_badges`
+- `profile_audio`
+- `profile_analytics_settings`
+- `profile_visibility_settings`
+- `template_configs`
+
+Rendering model:
+
+- One canonical profile schema.
+- Separate layout renderer layer.
+- Shared module components with style variants.
+- Theme tokens injected at render time.
+
+### 27. Visual standards checklist
+
+Every release should be checked against this:
+
+- Does the page look premium with zero customization?
+- Does every picker have a visual preview?
+- Are dropdowns replaced where aesthetics matter?
+- Is the public profile better than the builder?
+- Does mobile still look elite?
+- Are animations clean and not goofy?
+- Is there any default-browser-looking control left?
+- Are spacing and radii consistent?
+- Do icons all come from one system?
+- Can users do core identity customization for free?
+
+### 28. Immediate implementation priorities
+
+1. Kill ugly dropdowns and replace them with preview pickers.[conversation_history:1]
+2. Build a real layout style picker with structural previews.
+3. Rebuild the public profile top fold.
+4. Create stronger link card variants.
+5. Add sticky live preview to customize.
+6. Expand free effects and theme presets.
+7. Add widget registry and better module styling.
+8. Curate fonts and icon systems.
+9. Build template system.
+10. Improve mobile profile polish.
+
+### 29. Final end state
+
+The end state is a platform where every feature that users currently associate with “premium” on guns.lol and haunt.gg is available for free on brazy.it, but implemented with better defaults, better layout discipline, better previews, better visual taste, and a stronger actual profile page.[web:241][web:242][web:251][web:254][web:262][web:264][web:266][web:269][web:275] Users should feel that they are getting the full expressive toolset with no artificial locking, while still getting a cleaner and more elevated result than the competitors’ public pages and dashboards currently signal.[web:242][web:262][page:1][page:2]

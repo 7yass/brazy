@@ -13,6 +13,7 @@ import { normalizeConfig } from "@/lib/profile/schema";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import ProfileRenderer from "@/components/profile/ProfileRenderer";
 import { AssetsUploader } from "@/components/dashboard/AssetsUploader";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Shared primitives ─────────────────────────────────────────────────────────
 
@@ -567,6 +568,7 @@ export default function CustomizePage() {
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [previewDevice, setPreviewDevice] = useState<"mobile" | "desktop">("mobile");
   const [showEffectModal, setShowEffectModal] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
   const cfgRef = useRef<ProfileConfig | null>(null);
@@ -697,7 +699,10 @@ export default function CustomizePage() {
         )}
       </div>
 
-      <div className="w-full max-w-full mx-auto flex flex-col gap-6 pb-8">
+      <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
+
+        {/* Left Column - Form controls */}
+        <div className="w-full lg:w-[50%] xl:w-[46%] shrink-0 flex flex-col gap-6 overflow-y-auto max-h-[calc(100vh-140px)] pr-2 scrollbar-none pb-8">
           
           {/* 1. Assets Uploader Section */}
           <div className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-5 flex flex-col gap-4 font-sans">
@@ -1251,7 +1256,116 @@ export default function CustomizePage() {
             </div>
           </SectionCard>
 
+        </div>
+
+        {/* Right Column - Live Preview Sticky Mockup */}
+        <div className="hidden lg:flex flex-1 w-full lg:sticky lg:top-[85px] flex-col items-center justify-start gap-4">
+          <div className="flex items-center justify-between w-full max-w-[340px] bg-neutral-950/40 border border-white/[0.04] rounded-xl p-2 font-sans">
+            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider pl-2.5">Live Preview</span>
+            <div className="flex gap-1">
+              <button 
+                type="button"
+                onClick={() => setPreviewDevice("mobile")}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
+                  previewDevice === "mobile" 
+                    ? "bg-red-600/10 border-red-600/30 text-red-500" 
+                    : "bg-neutral-900 border-transparent text-neutral-400 hover:text-white"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" /> Mobile
+              </button>
+              <button 
+                type="button"
+                onClick={() => setPreviewDevice("desktop")}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold transition duration-150 border cursor-pointer ${
+                  previewDevice === "desktop" 
+                    ? "bg-red-600/10 border-red-600/30 text-red-500" 
+                    : "bg-neutral-900 border-transparent text-neutral-400 hover:text-white"
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5" /> Desktop
+              </button>
+            </div>
+          </div>
+
+          {/* Viewport Frame */}
+          {previewDevice === "mobile" ? (
+            /* Mobile Device Mockup */
+            <div className="relative w-[340px] h-[600px] rounded-[44px] border-[8px] border-neutral-900 bg-neutral-950 shadow-2xl overflow-hidden flex flex-col no-scrollbar">
+              {/* iPhone Notch/Island */}
+              <div className="absolute top-3 left-1/2 -translate-x-1/2 w-28 h-6 rounded-full bg-black z-50 flex items-center justify-center" />
+              {/* Inner content */}
+              <div className="preview-wrapper flex-1 w-full overflow-y-auto no-scrollbar relative">
+                <ProfileRenderer config={cfg} username={cfg.identity.username || "preview"} />
+              </div>
+            </div>
+          ) : (
+            /* Desktop Mockup */
+            <div className="relative w-full max-w-[680px] h-[480px] rounded-2xl border-4 border-neutral-900 bg-neutral-950 shadow-2xl overflow-hidden flex flex-col">
+              {/* Header Bar */}
+              <div className="h-7 w-full bg-neutral-900 border-b border-neutral-850 flex items-center justify-between px-4 shrink-0 font-sans">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-red-500/80" />
+                  <div className="w-2 h-2 rounded-full bg-yellow-500/80" />
+                  <div className="w-2 h-2 rounded-full bg-green-500/80" />
+                </div>
+                <div className="text-[8px] text-neutral-500 select-none font-mono">brazy.it/{cfg.identity.username || "preview"}</div>
+                <div className="w-10" />
+              </div>
+              {/* Inner Content */}
+              <div className="preview-wrapper flex-1 w-full overflow-y-auto no-scrollbar relative">
+                <ProfileRenderer config={cfg} username={cfg.identity.username || "preview"} />
+              </div>
+            </div>
+          )}
+
+        </div>
+
       </div>
+
+      {/* Mobile Floating Preview Button */}
+      <div className="lg:hidden fixed bottom-6 right-6 z-40">
+        <button
+          type="button"
+          onClick={() => setShowMobilePreview(true)}
+          className="flex items-center gap-2 px-5 py-3 rounded-full bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg transition duration-200 cursor-pointer border border-white/10"
+        >
+          <Eye className="w-4 h-4" /> Live Preview
+        </button>
+      </div>
+
+      {/* Mobile Preview Modal/Drawer */}
+      <AnimatePresence>
+        {showMobilePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col"
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.04] bg-neutral-950/80 backdrop-blur-md">
+              <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Mobile Live Preview</span>
+              <button
+                type="button"
+                onClick={() => setShowMobilePreview(false)}
+                className="w-7 h-7 rounded-lg bg-neutral-900 hover:bg-neutral-800 flex items-center justify-center transition cursor-pointer text-white"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto relative p-4 flex items-center justify-center">
+              {/* iPhone Notch Mockup inside drawer */}
+              <div className="relative w-[320px] h-[560px] rounded-[40px] border-[6px] border-neutral-900 bg-neutral-950 shadow-2xl overflow-hidden flex flex-col">
+                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-24 h-5 rounded-full bg-black z-50" />
+                <div className="preview-wrapper flex-1 w-full overflow-y-auto no-scrollbar relative">
+                  <ProfileRenderer config={cfg} username={cfg.identity.username || "preview"} />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

@@ -1,0 +1,626 @@
+# Brazy.it — ruthless implementation roadmap
+
+This roadmap turns the giant feature blueprint into a build order focused on maximum visible product improvement first, using small iterations and a prioritization mindset based on impact versus effort rather than trying to ship everything at once.[web:293][web:294][web:305] The core idea is to deliver quick wins that immediately improve perceived quality, while planning bigger bets like the layout engine, widget registry, and template ecosystem as structured follow-on milestones.[web:293][web:305]
+
+## Priority model
+
+Each item is grouped into one of four buckets:
+
+- Must build now: core quality blockers or differentiators that shape first impressions.
+- Build next: major systems that unlock breadth and competitiveness.
+- Build after that: strong feature expansion that deepens the platform.
+- Defer for now: useful ideas that should not delay the main leap in quality.[web:305]
+
+The order below assumes one main goal: make the public profile and builder look clearly better, faster, and more complete than what users mentally compare against on guns.lol and haunt.gg.[web:242][web:251][web:262][web:264]
+
+## Phase 0 — standards before features
+
+Before adding more visible features, lock a few standards so the product stops getting messier as it grows.
+
+### 0.1 Design tokens [X]
+
+Build a proper token system first.
+
+Needed tokens:
+
+- Colors: background, surface-1, surface-2, surface-3, border-soft, border-strong, text-primary, text-secondary, text-muted, accent-primary, accent-soft, success, warning, danger.
+- Radius: xs, sm, md, lg, xl, 2xl.
+- Shadow: low, mid, high, glow-subtle, glow-focus.
+- Blur: none, low, mid, high.
+- Spacing: 4, 8, 12, 16, 20, 24, 32, 40, 48.
+- Typography scale: display-xl, display-lg, heading, subheading, body, caption, micro.
+- Motion: fast, base, slow, page, hover.
+
+Why first:
+
+- It stops inconsistent spacing and borders.
+- It makes theming much easier later.
+- It speeds future redesign work.
+
+### 0.2 Component rules [X]
+
+Define component laws before rebuilding the UI.
+
+Every component should define:
+
+- Default state.
+- Hover state.
+- Focus state.
+- Active state.
+- Disabled state.
+- Error state if relevant.
+- Motion behavior.
+- Mobile behavior.
+
+### 0.3 Icon and font system [X]
+
+Pick one main icon system and one secondary brand icon source only, because mixed icon styles instantly lower polish.[web:279][web:283][web:284]
+
+Recommended:
+
+- Lucide or Tabler as the main product icon system.[web:279][web:284][web:286]
+- Simple Icons for brands only.[web:283][web:290]
+- Google Fonts plus Fontshare as your free type sources.[web:280][web:282]
+
+## Phase 1 — fix what makes brazy.it look unfinished immediately
+
+These are the highest-priority visual blockers. They should be done first because they improve perception instantly and reduce the “cheap settings page” feeling.
+
+### 1.1 Replace ugly dropdowns [X]
+
+This is top priority because the current dropdown treatment visibly breaks the premium illusion in the screenshot.[conversation_history:1]
+
+What to build instead:
+
+- Background effect picker as a modal or popover gallery.
+- Username effect picker as animated mini tiles.
+- Font picker as type specimen cards.
+- Layout picker as real profile thumbnails.
+- Link style picker as button/card previews.
+
+Technical plan:
+
+- Build one shared Picker component system with variants: tile grid, card list, horizontal scroller, searchable modal.
+- Use accessible popover/dialog primitives underneath.
+- Each picker item supports preview, title, subtitle, tag badges, and selected state.
+
+### 1.2 Rebuild sliders [X]
+
+Current sliders work but do not feel premium.[conversation_history:1]
+
+Build:
+
+- Custom track with neutral rail and accent fill.
+- Premium thumb with shadow and focus ring.
+- Inline numeric pill.
+- Optional tick markers for meaningful ranges.
+- Drag smoothing.
+
+### 1.3 Improve customize page hierarchy
+
+The page needs to feel like a creative studio, not a long admin form.[conversation_history:1]
+
+Changes:
+
+- Larger section titles.
+- Subtext under major groups.
+- Better card spacing.
+- Clearer separation between core controls and advanced controls.
+- More emphasis on high-value controls like layout, theme, effects, and card style.
+
+### 1.4 Add sticky live preview
+
+The builder must show visual payoff instantly.
+
+Desktop:
+
+- Controls left, preview right.
+- Preview sticky while scrolling.
+
+Mobile:
+
+- Preview drawer or sticky bottom toggle.
+- Quick switch between edit and preview.
+
+### 1.5 Tighten sidebar and app shell [X]
+
+Make the left nav feel premium.
+
+Needed work:
+
+- Better icon alignment.
+- Cleaner active state.
+- More refined typography.
+- Better account area.
+- Consistent spacing rhythm.
+
+## Phase 2 — rebuild the public profile top fold
+
+This is the highest-impact product surface because it is what users actually share.
+
+### 2.1 Create a new hero/profile composition engine
+
+Build the public profile from slots, not ad hoc stacking.
+
+Core slots:
+
+- Background.
+- Hero surface.
+- Identity block.
+- Meta row.
+- Social/action row.
+- Featured widget slot.
+- Featured link slot.
+
+### 2.2 Redesign the profile card anatomy
+
+Core parts:
+
+- Avatar zone.
+- Name + username zone.
+- Badge row.
+- Bio block.
+- Meta row.
+- Primary action area.
+- Optional media/widget footer.
+
+Each part needs variants so layouts can feel distinct without rewriting the whole product.
+
+### 2.3 Strengthen above-the-fold hierarchy
+
+Rules:
+
+- One focal point only.
+- Bio stays concise above fold.
+- Meta row remains controlled.
+- Featured links should not visually overwhelm identity.
+- Music/widget should complement, not distract.
+
+### 2.4 Improve mobile profile composition
+
+The public page must look great on phones.
+
+Build:
+
+- Better fold height handling.
+- Compact but elegant meta row.
+- Better link touch targets.
+- Smart section collapse rules.
+- Toned-down effects on mobile.
+
+## Phase 3 — layout engine and the four flagship styles
+
+This is the first big differentiator. Without this, everything feels like one layout with cosmetic changes.
+
+### 3.1 Build a layout registry
+
+Architecture:
+
+- One shared profile schema.
+- Layout renderers read the same schema.
+- Shared slots render through layout-specific arrangement.
+
+### 3.2 Ship four serious layout families first
+
+#### Minimal
+
+Goal:
+
+- Understated, typography-led, low-glow, sharp.
+
+Needed decisions:
+
+- Narrow width.
+- Flat or lightly elevated surfaces.
+- Minimal badges.
+- Static or very subtle background.
+
+#### Sleek
+
+Goal:
+
+- Premium glass, blur, controlled highlights, glossy but not cheesy.
+
+Needed decisions:
+
+- Strong hero card.
+- Integrated socials and music.
+- Subtle motion.
+- Good surface layering.
+
+#### Modern
+
+Goal:
+
+- Best default for most people; modular, clear, versatile.
+
+Needed decisions:
+
+- Strong section rhythm.
+- Clean card system.
+- Easy content expansion.
+
+#### Portfolio
+
+Goal:
+
+- More editorial and content-forward.
+
+Needed decisions:
+
+- Wider hero.
+- Project-first modules.
+- More whitespace.
+- Less gamer-style ornamentation.
+
+### 3.3 Add layout previews to builder
+
+Each layout must show a real miniature screenshot-like preview inside the picker, not just a name.
+
+## Phase 4 — link system upgrade
+
+Links are one of the most interacted-with parts of the profile and need a serious upgrade.
+
+### 4.1 Link style families
+
+Ship at least these:
+
+- Flat minimal.
+- Glass pill.
+- Elevated card.
+- Split icon card.
+- Rich link card.
+- Editorial text row.
+
+### 4.2 Link data capabilities
+
+Add:
+
+- Featured links.
+- Per-link icon.
+- Subtitle/description.
+- Thumbnail optional.
+- Link badges.
+- Reordering.
+- Hide/show toggle.
+- Duplicate.
+
+### 4.3 Builder improvements for links
+
+- Better card rows.
+- Quick-add presets for common platforms.
+- Auto platform detection.
+- Better empty state.
+- Drag-and-drop ordering.
+
+## Phase 5 — identity and badge system
+
+Make the profile feel personal and status-rich without looking childish.
+
+### 5.1 Identity blocks
+
+Ship:
+
+- Display name.
+- Username.
+- Status line.
+- Pronouns optional.
+- Location optional.
+- Discord presence optional.
+- Availability state optional.
+- Badge row.
+
+### 5.2 Badge system
+
+Start with:
+
+- Early user.
+- Premium-free philosophy badge or founding badge.
+- Creator category badges.
+- Internal featured badge.
+
+Rules:
+
+- Tasteful size.
+- Optional tooltips.
+- Strong alignment with layout style.
+
+## Phase 6 — effects system expansion
+
+This is the “free premium” layer that gets attention, but it should only ship after the core visual system is strong.
+
+### 6.1 Username effects
+
+Expand your picker and polish existing effects.
+
+Add:
+
+- Better previews.
+- Hover-only modes.
+- Intensity controls.
+- Readability safety.
+
+### 6.2 Background effects gallery
+
+Build categories:
+
+- Atmospheric.
+- Weather.
+- Retro.
+- Ambient.
+- Experimental.
+
+Add per-effect controls:
+
+- Speed.
+- Density.
+- Opacity.
+- Mobile tone-down.
+
+### 6.3 Cursor and click effects
+
+Ship tasteful sets first, novelty later.
+
+Best first set:
+
+- Dot trail.
+- Spark trail.
+- Soft glow.
+- Ring ripple.
+- Accent burst.
+- Tiny dust click.
+
+### 6.4 Motion profiles
+
+Let users choose a global motion profile:
+
+- None.
+- Minimal.
+- Balanced.
+- Rich.
+
+## Phase 7 — themes, fonts, and presets
+
+Once the structural system is strong, move into expressive breadth.
+
+### 7.1 Curated theme system
+
+Start with 8–12 strong presets.
+
+Examples:
+
+- Obsidian.
+- Graphite.
+- Smoke.
+- Frost.
+- Crimson.
+- Sapphire.
+- Emerald.
+- Mono.
+
+### 7.2 Font pairing presets
+
+Ship pairings, not chaos.
+
+Examples:
+
+- Neutral UI sans + sharp display sans.
+- Grotesk + serif.
+- Mono accent + clean sans.
+
+### 7.3 Save and clone presets
+
+Allow users to:
+
+- Save style preset.
+- Duplicate preset.
+- Apply preset to another profile later.
+
+## Phase 8 — widgets and integrations
+
+This is where brazy.it starts to feel broader than basic bio tools.
+
+### 8.1 First widget wave
+
+Ship:
+
+- Spotify now playing.
+- YouTube latest video.
+- Discord presence.
+- Telegram card.
+- GitHub card.
+
+### 8.2 Widget shell system
+
+All widgets should use a shared card shell with:
+
+- Header.
+- Brand icon.
+- Content area.
+- CTA area.
+- Loading skeleton.
+- Error state.
+
+### 8.3 Widget style controls
+
+Allow:
+
+- Compact or rich mode.
+- Background on/off.
+- Placement controls.
+- Theme sync.
+
+## Phase 9 — templates and preset marketplace layer
+
+This is a major competitive move.
+
+### 9.1 Official starter templates
+
+Create categories:
+
+- Minimal dark.
+- Sleek glass.
+- Modern creator.
+- Portfolio editorial.
+- Artist/music.
+- Developer/project.
+- Streamer but tasteful.
+
+### 9.2 Community templates
+
+Later add:
+
+- Publish template.
+- Fork template.
+- Browse by vibe and use case.
+- Apply style only or full template.
+
+### 9.3 Template preview page
+
+A strong preview page can become organic marketing content.
+
+## Phase 10 — overview page and product guidance
+
+The dashboard overview should help users improve pages, not just show stats.
+
+### 10.1 Add profile strength guidance
+
+Examples:
+
+- Add 3 links.
+- Pick a layout.
+- Enable a theme.
+- Add avatar.
+- Add one widget.
+- Add a featured link.
+
+### 10.2 Add quick actions
+
+- Edit identity.
+- Customize style.
+- Add link.
+- Share page.
+- View analytics.
+
+## Phase 11 — analytics system
+
+Add meaningful visibility into performance.
+
+### 11.1 First analytics set
+
+Ship:
+
+- Total views.
+- Link clicks.
+- Top links.
+- Time range filters.
+
+### 11.2 Next analytics set
+
+Add:
+
+- Unique views.
+- Device split.
+- Referrer sources.
+- Widget engagement.
+
+### 11.3 Actionable analytics
+
+Show suggestions:
+
+- Move underperforming link higher.
+- Add featured link.
+- Improve top fold CTA.
+
+## Phase 12 — onboarding and starter profiles
+
+This makes the product feel good immediately.
+
+### 12.1 New onboarding flow
+
+Steps:
+
+1. Claim username.
+2. Choose profile purpose.
+3. Choose layout family.
+4. Choose theme preset.
+5. Add avatar.
+6. Add first 3 links.
+7. Launch into builder with a seeded page.
+
+### 12.2 Seeded defaults
+
+Every new profile should already include:
+
+- Strong hero layout.
+- Nice spacing.
+- Three starter section blocks.
+- One recommended link style.
+
+## Phase 13 — free “premium” differentiation pass
+
+After the core experience is excellent, finish the philosophical win: everything good is free.
+
+Make free by default:
+
+- Layouts.
+- Themes.
+- Fonts.
+- Cursor effects.
+- Click effects.
+- Username effects.
+- Background effects.
+- Templates.
+- Widgets.
+- Identity badges.
+- Decorations in a restrained set.
+- Music widget basics.
+
+This is the moment where brazy.it becomes the strong anti-paywall alternative to competitors that market those features as premium value.[web:242][web:254][web:262][web:266]
+
+## Phase 14 — later expansions
+
+These are big future bets and should not slow the first wave.
+
+Later ideas:
+
+- Community template publishing.
+- Multi-profile support.
+- Custom domains.
+- Discovery and featured profiles.
+- Seasonal badge drops.
+- More widgets.
+- Audio effect library expansion.
+- Profile cloning/forking.
+- Public like/follow layer if you ever want it.
+
+## What to do this week
+
+If you want the most ruthless version of this roadmap, do these first in order:
+
+1. Build the shared picker system.
+2. Replace background effect dropdown with a gallery picker.
+3. Add sticky preview to customize.
+4. Rebuild sliders and section hierarchy.
+5. Rebuild public profile top fold.
+6. Implement the four real layout families.
+7. Improve link cards and social rows.
+8. Add curated themes and font pairings.
+9. Add first widget wave.
+10. Start official templates.
+
+## Quality gate for every release
+
+Before shipping anything, ask:
+
+- Does this make the public profile look better?
+- Does it improve first impressions in under 5 seconds?
+- Is it visually previewed in the builder?
+- Does it fit the design system?
+- Does it feel premium without acting premium-gated?
+- Is it mobile-safe?
+- Is it less corny and more polished than the alternatives?
+
+## Final direction
+
+The winning path is not “add the most features fastest.” The winning path is to first make brazy.it look undeniably premium and visually coherent, then layer on the full free feature set that competitors use as premium bait.[web:293][web:305][web:242][web:254][web:262][web:266] If you do that in this order, users will feel the jump immediately: first the product looks better, then it feels broader, then it becomes obviously better value.[web:293][web:294][web:305]
