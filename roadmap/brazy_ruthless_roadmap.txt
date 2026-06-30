@@ -376,7 +376,7 @@ Best first set:
 - Accent burst.
 - Tiny dust click.
 
-### 6.4 Motion profiles
+### 6.4 Motion profiles [X]
 
 Let users choose a global motion profile:
 
