@@ -4,7 +4,6 @@ import ProfileRenderer from "@/components/profile/ProfileRenderer";
 import { getProfile } from "@/lib/profile/store";
 import { normalizeConfig } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
-import { PREDEFINED_BADGES } from "@/lib/profile/badges-data";
 
 export const dynamic = "force-dynamic";
 
@@ -29,31 +28,6 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   }
 
   const config = normalizeConfig(profile.config);
-  let profileBadges: { id: string; label: string; description: string; icon: string; color: string }[] = [];
 
-  if (config.badges?.enabled && config.badges.items) {
-    profileBadges = config.badges.items.map((item: any) => {
-      const lowerIcon = item.emoji?.toLowerCase().replace(/ /g, "_");
-      const predefined = PREDEFINED_BADGES[lowerIcon];
-      return {
-        id: item.id || item.emoji || Math.random().toString(),
-        label: item.label || item.emoji,
-        description: item.tooltip || predefined?.description || "",
-        icon: item.emoji,
-        color: item.color || predefined?.color || "#ffffff"
-      };
-    });
-  }
-
-  return (
-    <ProfileRenderer
-      config={config}
-      username={username}
-      audioTrackId={profile.audio_track_id}
-      audioTitle={profile.audio_title}
-      audioArtist={profile.audio_artist}
-      audioThumb={profile.audio_thumb}
-      profileBadges={profileBadges}
-    />
-  );
+  return <ProfileRenderer config={config} username={username} />;
 }
