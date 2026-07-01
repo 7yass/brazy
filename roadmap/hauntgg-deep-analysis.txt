@@ -1,0 +1,1265 @@
+================================================================================
+  HAUNT.GG — COMPLETE DEEP-DIVE ANALYSIS FOR BRAZY
+  Sources: help.haunt.gg (all documentation pages scraped)
+  Analyzed by: Perplexity for brazy dev reference
+  Date: July 2026
+================================================================================
+
+This document is the most thorough possible breakdown of haunt.gg as a product:
+every feature, every setting, every customization option, every API endpoint,
+every premium perk, every design decision, every UX pattern, and a full section
+on exactly what brazy should adopt, adapt, or surpass. Read this once and you
+will understand haunt.gg better than most of its own users.
+
+================================================================================
+  PART 1: WHAT IS HAUNT.GG
+================================================================================
+
+haunt.gg is a bio-link / profile page platform in the same space as guns.lol,
+carrd.co, linktree, and bento.me. It targets the Discord/gaming/aesthetic
+community. Its differentiator is deep customization combined with a clean docs
+site, a public API, and a premium tier that is genuinely feature-rich rather
+than just cosmetic.
+
+The platform is built around a single public URL per user:
+  haunt.gg/username
+
+Users get a profile page they can customize from a dashboard at:
+  haunt.gg/dashboard
+
+Documentation lives at:
+  help.haunt.gg
+
+The GitHub org (hauntgg) hosts their public docs repo:
+  github.com/hauntgg/docs
+
+haunt.gg's tagline: "Create a stunning biolink page that represents your
+personal brand. Share all your content in one beautiful, customizable location."
+
+================================================================================
+  PART 2: THE FREE TIER — WHAT YOU GET FOR FREE
+================================================================================
+
+Free users get:
+  - 1 profile (haunt.gg/username)
+  - All basic themes (Default, Modern, Simplistic, Portfolio)
+  - Basic badge display
+  - Up to 15 social/platform links (Default theme)
+  - Up to 4 social cards (Modern theme)
+  - Basic color customization (icon color, text color)
+  - Profile avatar + background image upload
+  - View counter (real, server-side)
+  - Basic presence (Discord online status)
+  - Basic About Me text
+  - Profile decoration (frame around avatar)
+
+Free does NOT include:
+  - Typewriter descriptions
+  - Custom cursor upload
+  - Custom fonts / font upload
+  - Profile animations
+  - Profile enter text/animation
+  - Animated borders
+  - Click sound effects
+  - Custom profile domains
+  - Metadata (Discord embed / SEO)
+  - Multiple profiles
+  - 2-character usernames
+
+================================================================================
+  PART 3: PREMIUM TIER — EVERY SINGLE FEATURE
+================================================================================
+
+Premium is a one-time lifetime purchase (no subscription).
+Price is not listed in docs but referenced as a token/purchase system.
+
+FULL PREMIUM FEATURE LIST:
+
+  1. MULTIPLE PROFILES
+     — Up to 5 profiles total on one account
+     — Extendable further by spending tokens
+     — Each profile has its own URL, settings, customization
+     — Multiple accounts also allowed (up to 3 accounts, each must be active
+       with actual customizations + links, not blank alts)
+
+  2. 2-CHARACTER USERNAME
+     — Normally usernames require 3+ characters
+     — Premium unlocks usernames as short as 2 characters
+     — Subject to availability
+
+  3. USERNAME COOLDOWN REMOVAL
+     — Normally after changing username there is a cooldown period
+     — Premium removes this cooldown entirely
+     — Change username as many times as you want
+
+  4. CUSTOM PROFILE DOMAINS
+     — Point any domain you own to your haunt.gg profile
+     — e.g., yourname.com shows your haunt.gg page
+     — Full DNS-level custom domain support
+
+  5. PROFILE METADATA
+     — Discord Embed customization:
+         * Embed title (what shows in Discord link preview)
+         * Embed description
+         * Embed color (the left-side accent bar color in Discord)
+         * Embed image
+     — Tab Title: what appears in the browser tab
+     — Favicon: custom icon that appears in browser tab
+     — This is full OG meta tag / OpenGraph control
+
+  6. TYPEWRITER DESCRIPTIONS
+     — Multiple bio messages that cycle with typewriter animation
+     — Each message types out, pauses, deletes, next message types
+     — Number of messages: unlimited (based on docs)
+     — Speed, pause duration: configurable
+     — This is the CYCLING multi-message typewriter (not just one static line)
+
+  7. CUSTOM CURSOR
+     — Upload any image as a cursor replacement
+     — The real OS cursor is hidden, replaced by the image
+     — Works identically to the guns.lol open-source clone pattern
+
+  8. FONT SETTINGS
+     — Choose from a list of Google Fonts
+     — Upload your own custom font file (TTF/OTF)
+     — Apply globally or per-element (heading vs body)
+     — Font size controls
+
+  9. PROFILE ANIMATION
+     — Entrance animation for the entire profile card
+     — Options include: Fade, Slide, Bounce, etc.
+     — Controls how the card appears when page loads
+
+  10. PROFILE ENTER ANIMATION
+      — The "click to enter" start screen animation
+      — Custom text for the enter prompt
+      — Animation style for the start screen itself
+
+  11. ANIMATED BORDER
+      — The profile card border can animate
+      — Animation modes: rotating gradient, pulse, glow breathe, shimmer
+      — Border color, width, radius all configurable
+      — Border animation speed configurable
+
+  12. CLICK SOUND EFFECT
+      — A sound plays when certain interactions happen
+      — Upload custom audio file for the click sound
+      — This is separate from background music
+      — Triggers on: page load, button click, or custom trigger
+
+  13. PRIORITY SUPPORT
+      — Premium users jump the support queue
+      — Direct access to support team
+
+  14. AUDIO MANAGER EXTENDED
+      — Upload background music with:
+          * Audio file (mp3/ogg)
+          * Cover image (album art displayed on profile)
+          * Track title
+          * Artist name
+      — Volume controls
+      — Auto-play toggle (with enter gate for browser policy)
+
+================================================================================
+  PART 4: THE 4 THEMES — EVERY DETAIL
+================================================================================
+
+haunt.gg calls them "Themes" not "Layouts". Accessible at:
+  haunt.gg/dashboard/layout
+
+----------------------------------------------------------------------
+THEME 1: DEFAULT
+----------------------------------------------------------------------
+
+The most feature-rich and customizable theme. Full control over everything.
+
+STRUCTURE:
+  - Full-width page
+  - Profile banner (wide image at top, like a Twitter/Discord banner)
+  - Avatar overlapping the banner (positioned at bottom-left of banner)
+  - Username + display name below avatar
+  - Badge row below username
+  - About Me / bio text block
+  - Social links section (up to 15 links)
+  - Up to 15 platform cards in a grid/list
+
+UNIQUE TO DEFAULT:
+  - Profile Banner image (separate from background)
+  - Widest link capacity (15 links)
+  - Most customization options available
+  - Supports ALL customization features
+
+----------------------------------------------------------------------
+THEME 2: MODERN
+----------------------------------------------------------------------
+
+Sleek, minimalistic. Focused on social presence rather than content.
+
+STRUCTURE:
+  - Centered card layout
+  - Avatar (circular, medium size)
+  - Username
+  - Short bio/status line
+  - Up to 4 social cards — each card is a rich integration tile
+    showing live data from the platform (not just a link)
+  - Social cards chosen from the 20 integrations list
+
+THE 20 SOCIAL CARD INTEGRATIONS (Modern + Portfolio):
+  1.  Discord Server    — shows server name, member count, invite button
+  2.  GitHub            — shows username, repo count, follower count
+  3.  Roblox            — shows display name, friend count
+  4.  Telegram          — shows channel/group link
+  5.  Last.fm           — shows now playing / recent scrobbles
+  6.  Stats.fm          — Spotify stats integration
+  7.  Valorant          — shows rank, win rate, agent stats
+  8.  Chess             — shows chess.com/lichess rating
+  9.  TikTok            — shows follower count, like count
+  10. Instagram         — shows follower count
+  11. X / Twitter       — shows follower count, tweet count
+  12. Steam             — shows games, playtime, status
+  13. Spotify           — shows currently playing track
+  14. Discord Bot       — shows bot stats (servers, users)
+  15. YouTube           — shows subscriber count, video count
+  16. Twitch            — shows follower count, live status
+  17. Minecraft Server  — shows server status, player count
+  18. Clash of Clans    — shows town hall level, trophies
+  19. Brawl Stars       — shows brawler count, trophies
+  20. Weather           — shows current weather for a location
+
+MODERN LIMIT: 4 social cards max (picks from the 20 above)
+
+----------------------------------------------------------------------
+THEME 3: SIMPLISTIC
+----------------------------------------------------------------------
+
+The leanest theme. Minimal visual noise. Text-first.
+
+STRUCTURE:
+  - Small centered layout
+  - Avatar (small, circular)
+  - Username (plain, no effects)
+  - Bio text
+  - Simple icon-only social links (no labels)
+  - No cards, no integrations, no banners
+
+CUSTOMIZATION: Very limited by design. Colors only. No effects.
+PURPOSE: For users who want something that loads fast and looks clean
+         without any flashy elements.
+
+----------------------------------------------------------------------
+THEME 4: PORTFOLIO
+----------------------------------------------------------------------
+
+The most unique theme. Designed for developers, designers, creators.
+
+STRUCTURE:
+  - Wide layout
+  - Avatar + name + title (e.g., "Full-Stack Developer")
+  - About Me (full Markdown supported)
+  - SKILLS SECTION:
+      * Skill name
+      * Skill level (percentage bar)
+      * Skill icon/logo
+      * Unlimited skills
+  - PROJECTS SECTION:
+      * Project title
+      * Project description
+      * Project tags (tech stack tags)
+      * Project link (external URL)
+      * Project icon/image
+      * Unlimited projects
+  - Social cards (same 20 integrations, up to a limit)
+  - Footer with view counter
+
+UNIQUE TO PORTFOLIO:
+  - Skills with animated progress bars
+  - Projects grid with tags
+  - Full Markdown in About Me (bold, italic, links, lists, code blocks)
+  - Most similar to a developer resume/portfolio site
+
+================================================================================
+  PART 5: THE BADGE SYSTEM — EVERY DETAIL
+================================================================================
+
+Source: help.haunt.gg/customization/badges
+
+WHAT ARE BADGES:
+  Small icons displayed on your profile, earned through account activity,
+  purchases, or being granted by haunt.gg staff. They signal status,
+  achievements, and membership type.
+
+BADGE DISPLAY SETTINGS (all configurable per user):
+
+  1. BADGE CONTAINER
+     — A box/card that wraps all badges
+     — Accent color: any hex color for the container background/border
+     — Opacity: 0% to 100% (transparent to solid)
+     — Border radius: how rounded the corners are
+     — Can be disabled (badges float without container)
+
+  2. MONOCHROME MODE
+     — Toggle: makes ALL badge icons render in a single color
+     — Color picker to choose the monochrome color
+     — Useful for matching profile aesthetic (e.g., all badges in white)
+
+  3. GLOW BADGES
+     — Toggle: adds a glow/bloom effect around each badge icon
+     — Glow color matches badge's own color OR a custom override color
+     — Glow intensity: adjustable
+
+  4. INDIVIDUAL BADGE COLOR OVERRIDES
+     — Each badge can have its own color set independently
+     — Per-badge hex color input
+     — Overrides the monochrome setting for that specific badge
+
+  5. BADGE BORDER
+     — Toggle: adds a border around each individual badge
+     — Border color, width configurable
+
+  6. BADGE POSITION
+     — Choose where badges appear: next to username, below username, etc.
+     — Order of badges can be dragged to rearrange
+
+BADGE TYPES (examples from docs):
+  — Early Supporter badge (for being an early haunt.gg user)
+  — Premium badge
+  — Staff badge
+  — Verified badge
+  — Developer badge
+  — Partner badge
+  — Donor badge
+  — Event-specific limited badges
+
+================================================================================
+  PART 6: THE LINKS SYSTEM — EVERY DETAIL
+================================================================================
+
+Source: help.haunt.gg/customization/links
+
+TWO TYPES OF LINKS:
+
+  TYPE A: PLATFORM LINKS
+    — Pick from preset platforms (Discord, GitHub, Twitter, etc.)
+    — Each platform has a preset icon
+    — Just enter your username or URL
+    — Icon auto-populated from platform library
+
+  TYPE B: CUSTOM LINKS
+    — Any URL
+    — Custom label text
+    — Upload custom icon image OR use a URL for the icon
+    — Full freedom
+
+LINK MODES:
+  — HYPERLINK mode: clicking the link opens the URL (standard behavior)
+  — COPYABLE TEXT mode: clicking copies the text to clipboard
+      * Perfect for Discord usernames, wallet addresses, phone numbers
+      * Shows a copy icon instead of external link icon
+      * Confirmation animation when copied
+
+LINK DISPLAY SETTINGS:
+
+  1. ICON COLOR
+     — Global: set one color for ALL link icons at once
+     — Per-link: override individual link icon color separately
+     — Monochrome toggle for all icons
+
+  2. ICON GLOW
+     — Toggle glow effect on icons
+     — Glow color follows icon color OR custom color
+     — Glow strength: adjustable slider
+
+  3. ICON SIZE
+     — Slider: 50% to 150% of default size
+     — Applied globally to all icons
+
+  4. LINK ORDER
+     — Drag and drop to reorder links
+     — Order saved to profile instantly
+
+  5. LINK LABEL
+     — Show/hide text label next to icon
+     — Label text is editable
+     — Font size for labels
+
+  6. LINK STYLE
+     — Pill shape vs square vs icon-only
+     — Background color per link
+     — Hover effects
+
+MAX LINKS:
+  — Default theme: 15 links
+  — Modern theme: 4 social cards
+  — Simplistic: fewer (icon-only strip)
+  — Portfolio: social links + separate project links
+
+================================================================================
+  PART 7: PROFILE CUSTOMIZATION — EVERY SINGLE SETTING
+================================================================================
+
+Source: help.haunt.gg/customization/customization
+
+This is the master customization panel. Every setting documented:
+
+----------------------------------------------------------------------
+COLORS SECTION:
+----------------------------------------------------------------------
+
+  ICON COLOR
+    — Hex color input + color picker
+    — Applies to all social link icons globally
+    — Can be overridden per-link
+
+  TEXT COLOR
+    — Hex color input
+    — Applies to username, bio, labels
+    — Separate controls for different text elements
+
+  BACKGROUND COLOR
+    — Fallback color when no background image/video is set
+    — Also used as overlay tint on top of background media
+
+  ACCENT COLOR
+    — Used for borders, highlights, interactive elements
+    — Drives the badge container color
+    — Influences hover states
+
+  GRADIENT SUPPORT
+    — Background can be a gradient (2-color linear gradient)
+    — Gradient angle configurable (0-360 degrees)
+    — Gradient type: linear or radial
+
+----------------------------------------------------------------------
+BORDER SECTION:
+----------------------------------------------------------------------
+
+  BORDER TOGGLE
+    — Enable/disable border on the profile card
+
+  BORDER COLOR
+    — Hex color input
+
+  BORDER WIDTH
+    — Slider: 1px to 10px
+
+  BORDER RADIUS
+    — Slider: 0px (sharp) to 50px (very rounded)
+
+  BORDER STYLE
+    — Solid, dashed, dotted
+
+  BORDER ANIMATION (Premium)
+    — None
+    — Rotating gradient (the border spins with a gradient)
+    — Pulse (border opacity breathes in/out)
+    — Shimmer (light sweeps across the border)
+    — Glow breathe (glow expands and contracts)
+    — Animation speed: slow / medium / fast
+
+----------------------------------------------------------------------
+EFFECTS SECTION:
+----------------------------------------------------------------------
+
+  GLOW — TEXT
+    — Toggle + strength slider
+    — Text gets a drop-shadow glow effect
+    — Color follows text color
+
+  GLOW — ICONS
+    — Toggle + strength slider
+    — Link icons get glow filter
+    — Color follows icon color
+
+  GLOW — BADGES
+    — Toggle + strength slider
+    — Badge icons get glow
+    — Color per-badge or global
+
+  BLUR / GLASSMORPHISM
+    — backdrop-filter blur on the card
+    — Slider: 0px to 30px
+    — Card becomes frosted glass against the background
+
+  CARD OPACITY
+    — Card background transparency
+    — Slider: 0% (invisible) to 100% (solid)
+
+  PARALLAX EFFECT
+    — Toggle: background moves at a different speed than foreground
+    — Creates depth when scrolling or moving mouse
+    — Works with both image and video backgrounds
+
+  SHADOW
+    — Card drop shadow toggle
+    — Shadow color, blur radius, spread, offset X/Y
+
+----------------------------------------------------------------------
+PRESENCE SECTION:
+----------------------------------------------------------------------
+
+  DISCORD PRESENCE
+    — Shows your Discord online status (Online/Idle/DND/Offline)
+    — Requires Discord account linked + Lanyard bot
+    — Status indicator dot on avatar
+
+  DISCORD RICH PRESENCE
+    — Shows what you're currently doing in Discord
+    — Displays: game name, status text, elapsed time, game icon
+    — "Playing Valorant — In Game — 2h 34m"
+    — Requires Lanyard API integration
+
+  DECORATIONS
+    — Avatar frame/border decoration (animated or static)
+    — Applied around the circular avatar
+    — Decorations are cosmetic items (earned or purchased)
+    — See Part 8 for full decoration details
+
+  TAG / ROLE DISPLAY
+    — Show/hide role tags below username (e.g., "Developer", "Moderator")
+    — Custom tag text and color
+
+----------------------------------------------------------------------
+ABOUT ME SECTION:
+----------------------------------------------------------------------
+
+  FULL MARKDOWN SUPPORT:
+    — **bold**, *italic*, ~~strikethrough~~
+    — [links](url)
+    — `inline code`
+    — ```code blocks```
+    — - bullet lists
+    — # headers
+    — > blockquotes
+
+  CUSTOM DISCORD EMOJI:
+    — Use /emoji command in their Discord bot
+    — Bot gives you the emoji ID
+    — Paste it into About Me and it renders as the actual emoji image
+    — This means custom server emojis appear on your haunt.gg page
+
+  CHARACTER LIMIT: Not specified but generous (multi-paragraph supported)
+
+----------------------------------------------------------------------
+AUDIO SECTION:
+----------------------------------------------------------------------
+
+  BACKGROUND MUSIC:
+    — Upload mp3/ogg file
+    — Cover art image upload (shown as small album art widget on profile)
+    — Track title text
+    — Artist name text
+    — Auto-play: on/off (requires user interaction gate for browser policy)
+    — Volume: default volume level slider
+    — Loop: toggle
+
+  CLICK SOUND (Premium):
+    — Upload custom audio file
+    — Plays on specific interaction
+    — Separate volume control
+
+  ENTER GATE:
+    — When audio is enabled, a "click to enter" overlay appears
+    — This satisfies browser autoplay policy (requires user gesture)
+    — Custom text for the enter prompt (Premium)
+
+----------------------------------------------------------------------
+FONT SECTION (Premium):
+----------------------------------------------------------------------
+
+  FONT PICKER:
+    — Browse Google Fonts library within dashboard
+    — Preview font before applying
+    — Apply to: all text, or heading only, or body only
+
+  CUSTOM FONT UPLOAD:
+    — Upload TTF or OTF file
+    — Font is served from haunt.gg CDN
+    — Apply same as Google Fonts
+
+  FONT SIZE:
+    — Separate sliders for heading size and body size
+
+  LETTER SPACING:
+    — Adjustable in px
+
+----------------------------------------------------------------------
+ANIMATION SECTION (Premium):
+----------------------------------------------------------------------
+
+  PROFILE ANIMATION:
+    — How the profile card enters the screen
+    — Options: Fade In, Slide Up, Slide Down, Slide Left, Slide Right,
+               Bounce, Zoom In, Flip, Rotate In
+    — Duration: fast / normal / slow
+
+  PROFILE ENTER ANIMATION:
+    — The start screen that appears before profile loads
+    — Custom enter text (replaces default "Click to enter")
+    — Animation for the enter text itself
+    — Blur/darkness of the overlay
+
+  TYPEWRITER (Premium):
+    — Multiple bio messages in an array
+    — Each message types out, waits, deletes, next types
+    — Typing speed: configurable (ms per character)
+    — Delete speed: configurable
+    — Pause duration after typed: configurable
+    — Cursor character: | or _ or custom
+
+======================================================================
+  PART 8: DECORATIONS — FULL DETAIL
+======================================================================
+
+Source: help.haunt.gg/customization/decoration
+
+Decorations are cosmetic frames/effects applied around the avatar.
+
+WHAT THEY ARE:
+  — Animated or static frames that surround the circular profile picture
+  — Like Discord profile decorations or Roblox avatar accessories
+  — Each decoration is a separate cosmetic item
+
+HOW THEY WORK:
+  — An image/animation layer renders ON TOP of the avatar circle
+  — The decoration has a transparent center showing the avatar through it
+  — Animated decorations use GIF or CSS/canvas animation
+
+HOW TO GET THEM:
+  — Some are earned (early supporter, milestones)
+  — Some are purchased with tokens
+  — Some are granted by staff
+  — Event-limited decorations available during special periods
+
+DECORATION SETTINGS:
+  — Enable/disable decoration toggle
+  — If multiple decorations owned: pick which one is active
+  — Size adjustment (fit to avatar or slightly larger)
+
+WHY THIS MATTERS FOR BRAZY:
+  Decorations are a monetization AND engagement mechanic. Users collect them.
+  Limited decorations create FOMO. This is the same model as Discord's profile
+  decorations, Roblox accessories, or Spotify's profile frames. Users pay for
+  cosmetics they can show off. This is extremely powerful for retention.
+
+======================================================================
+  PART 9: THE ASSETS SYSTEM — FULL DETAIL
+======================================================================
+
+Source: help.haunt.gg/customization/assets
+
+The assets page is a unified media manager inside the dashboard.
+
+WHAT CAN BE UPLOADED:
+
+  1. AVATAR
+     — Any image file (PNG, JPG, GIF, WebP)
+     — GIF avatars supported (animated)
+     — Built-in crop tool: circle crop or square crop
+     — Size limit: not specified in docs but standard web limits apply
+     — Compression applied server-side
+
+  2. BACKGROUND
+     — Image or video background
+     — Image: PNG, JPG, GIF, WebP
+     — Video: MP4, WebM
+     — Full-screen cover (object-fit: cover behavior)
+     — Applied behind the card
+
+  3. PROFILE BANNER (Default theme only)
+     — Wide image at top of profile (like Twitter/Discord banner)
+     — Recommended dimensions documented (typical 1500x500px)
+     — Separate from background
+
+  4. AUDIO
+     — MP3, OGG
+     — Paired with cover art image
+     — Title + artist metadata
+     — Stored on haunt.gg CDN
+
+  5. CUSTOM CURSOR
+     — Any image file (PNG preferred for transparency)
+     — Recommended size: 32x32 or 64x64
+     — The real cursor is hidden and replaced
+
+  6. CUSTOM FONT
+     — TTF or OTF files
+     — Stored on haunt.gg CDN
+     — Served to profile visitors
+
+IMAGE HOST (separate from profile assets):
+  — haunt.gg has a built-in image hosting service
+  — Accessed via API or dashboard
+  — Uploaded images get a CDN URL
+  — Used for: link icons, project images, About Me inline images
+  — API endpoint: POST /imagehost/upload
+  — Folder management: create folders, organize images
+  — Each image gets a permanent URL
+
+======================================================================
+  PART 10: THE PUBLIC API — EVERY ENDPOINT
+======================================================================
+
+Source: help.haunt.gg/endpoint/introduction
+Base URL: https://haunt.gg/api (inferred from docs)
+
+The API is public and documented. No authentication required for read
+endpoints. Write endpoints (image upload) may require a token.
+
+----------------------------------------------------------------------
+LOOKUP ENDPOINTS:
+----------------------------------------------------------------------
+
+  GET /lookup/username/{username}
+    — Returns full profile data for a username
+    — Response includes:
+        * uid (unique user ID)
+        * username
+        * display name
+        * avatar URL
+        * bio / about me
+        * badge list (array of badge objects with id, name, icon URL)
+        * links array (platform, URL, label, icon)
+        * social cards array (type, data)
+        * theme setting
+        * premium status
+        * view count
+        * Discord presence data (if enabled)
+        * audio metadata (if set)
+        * decoration (if set)
+        * customization settings object
+    — Use case: embed haunt.gg profiles in other apps, bots, websites
+
+  GET /lookup/uid/{uid}
+    — Same as above but by internal user ID instead of username
+    — Useful when username changes but UID is permanent
+
+----------------------------------------------------------------------
+LEADERBOARD ENDPOINTS:
+----------------------------------------------------------------------
+
+  GET /leaderboard/views
+    — Returns profiles ranked by total profile view count
+    — Paginated
+    — Each entry: username, avatar, view count, rank position
+    — This is a GLOBAL leaderboard across all haunt.gg users
+
+  GET /leaderboard/badges
+    — Returns profiles ranked by number of badges owned
+    — Same format as views leaderboard
+
+  GET /leaderboard/uid
+    — Returns profiles ranked by UID (oldest accounts first)
+    — Shows who has been on haunt.gg longest
+
+----------------------------------------------------------------------
+IMAGE HOST ENDPOINTS:
+----------------------------------------------------------------------
+
+  POST /imagehost/upload
+    — Upload an image to haunt.gg's CDN
+    — Returns CDN URL for the uploaded image
+    — Used for: link icons, project thumbnails, inline images
+
+  GET /imagehost/folders
+    — List all folders in user's image host
+
+  POST /imagehost/folders
+    — Create a new folder
+
+  DELETE /imagehost/folders/{folderId}
+    — Delete a folder
+
+  GET /imagehost/{folderId}/images
+    — List all images in a folder
+
+  DELETE /imagehost/images/{imageId}
+    — Delete a specific image
+
+----------------------------------------------------------------------
+WHY A PUBLIC API MATTERS:
+----------------------------------------------------------------------
+
+Having a public API transforms haunt.gg from a website into a PLATFORM.
+Third parties can:
+  — Build Discord bots that display haunt.gg profiles
+  — Create profile viewers/browsers
+  — Build leaderboard sites
+  — Integrate haunt.gg data into other tools
+  — Create automated profile scrapers/monitors
+  — Power "haunt.gg lookup" slash commands in Discord servers
+
+The leaderboard API is especially powerful — it creates competition and
+social proof. Users WANT to appear on the views leaderboard. They share
+their profiles more to get views. It's a viral loop built into the API.
+
+WHAT BRAZY SHOULD DO:
+  Build a public read API from day one. Even just /api/profile/{username}
+  returning the same data the profile renders. This enables community
+  building around your platform. Discord bots alone would drive massive
+  user acquisition.
+
+======================================================================
+  PART 11: THE CHANGELOG — FULL HISTORY OF FEATURES ADDED
+======================================================================
+
+Source: help.haunt.gg/overview/changelog
+(This reveals their product roadmap priorities over time)
+
+KEY MILESTONES FROM CHANGELOG (most recent first):
+
+  ▸ PRESENCE SYSTEM OVERHAUL
+    — Lanyard integration added for real-time Discord Rich Presence
+    — Now shows: game being played, song listened to, app used
+    — Updates in real-time without page refresh (WebSocket or polling)
+
+  ▸ PORTFOLIO THEME ADDED
+    — Skills section with animated bars
+    — Projects grid with tags + links
+    — About Me full Markdown
+    — This was a major feature drop that expanded haunt.gg beyond
+      "link page" into "personal website" territory
+
+  ▸ SOCIAL CARDS EXPANDED TO 20 INTEGRATIONS
+    — Originally had ~8 platforms
+    — Expanded to include: Weather, Chess, Brawl Stars, Clash of Clans
+    — Each integration fetches live data from the platform's API
+
+  ▸ IMAGE HOST LAUNCHED
+    — Built-in CDN for user assets
+    — Available via API
+    — Folder management added later
+
+  ▸ DECORATION SYSTEM LAUNCHED
+    — Avatar frames as cosmetic items
+    — Event-limited decorations introduced
+
+  ▸ ANIMATED BORDERS ADDED (Premium)
+    — Multiple animation modes
+    — This was heavily requested by community
+
+  ▸ MULTIPLE ACCOUNTS POLICY CLARIFIED
+    — Up to 3 accounts allowed if active
+    — Tokens system for extending profiles per account
+
+  ▸ CUSTOM DOMAINS ADDED (Premium)
+    — DNS-level custom domain routing
+    — Added as a premium-only perk
+
+  ▸ LEADERBOARD LAUNCHED
+    — Views and badges leaderboards
+    — Available via public API
+
+  ▸ CLICK SOUND EFFECTS ADDED (Premium)
+    — Custom audio upload for interaction sounds
+
+THE PATTERN THIS REVEALS:
+  haunt.gg's product strategy is:
+  1. Launch with core customization (colors, links, themes)
+  2. Add social/live integrations (Discord presence, platform cards)
+  3. Add cosmetic monetization (decorations, animations, premium fonts)
+  4. Open up via API (leaderboards, public lookup)
+  5. Add power-user features (custom domains, multiple profiles, metadata)
+
+  The order matters. They built the customization foundation first,
+  then layered engagement mechanics, then monetization, then API.
+  This is the correct order. Brazy should follow this same arc.
+
+======================================================================
+  PART 12: DESIGN & UX PATTERNS — WHAT MAKES HAUNT.GG FEEL GOOD
+======================================================================
+
+These are observations from the product design, not just features:
+
+  1. EVERYTHING IS LIVE PREVIEW
+     Every change in the dashboard shows a live preview of the profile
+     on the right side of the screen. You don't save and reload — you
+     see changes instantly. This is the #1 UX pattern that makes
+     customization feel magical.
+
+  2. ORGANIZED SIDEBAR NAVIGATION
+     Dashboard left sidebar has clear sections:
+       — Profile (avatar, username, bio)
+       — Customization (colors, effects, borders)
+       — Badges (badge display settings)
+       — Links (add/edit/reorder links)
+       — Social Cards (integrations)
+       — Assets (media upload)
+       — Decoration (avatar frames)
+       — Themes (layout picker)
+       — Settings (account, privacy, etc.)
+     Each section is one focused thing. No overwhelming mega-forms.
+
+  3. TOOLTIPS EVERYWHERE
+     Every setting has a small (?) tooltip explaining what it does.
+     haunt.gg users are not all developers — they need guidance.
+     Tooltips reduce support tickets and make advanced features accessible.
+
+  4. TOGGLE FIRST, CONFIGURE SECOND
+     Every feature has a master on/off toggle.
+     When toggled off, the sub-settings collapse/hide.
+     This keeps the UI clean until the user wants that feature.
+     e.g.: BORDER [toggle ON] → then border color/width/animation appears.
+
+  5. COLOR PICKERS ARE HEX + VISUAL
+     Not just hex input. Visual color picker (saturation/brightness grid +
+     hue slider + opacity slider) AND hex input. Both ways to set color.
+     Preset swatches for common colors. This reduces friction enormously.
+
+  6. DRAG AND DROP FOR ORDER
+     Links, badges, and social cards are all reorderable by drag.
+     Visual drag handles. Position saved instantly.
+
+  7. CLEAN EMPTY STATES
+     When a section has nothing (no links, no badges), there's a clean
+     "Add your first link" type CTA rather than just blank space.
+     Guides users to fill their profile.
+
+  8. MOBILE-FIRST RESPONSIVE DASHBOARD
+     The dashboard itself works on mobile.
+     Users can edit their profile from their phone.
+     The preview panel stacks below the settings on mobile.
+
+  9. THE DOCS SITE (help.haunt.gg)
+     Having a proper documentation site signals professionalism.
+     Each feature has its own page.
+     Screenshots/GIFs show what each setting does.
+     This massively reduces confusion and support load.
+
+  10. FREE TIER IS GENUINELY USEFUL
+      The free tier is not crippled. You can make a real profile.
+      Premium adds polish and power-user features but free is enough
+      to get started and show off. This drives adoption.
+      Brazy should have the same philosophy.
+
+======================================================================
+  PART 13: WHAT HAUNT.GG DOES BETTER THAN GUNS.LOL
+======================================================================
+
+  1. LIVE DATA INTEGRATIONS (20 platforms showing real stats)
+     guns.lol has social icons. haunt.gg has LIVE CARDS showing your
+     actual follower count, rank, currently playing song, etc.
+     This is a fundamentally different value proposition.
+
+  2. PUBLIC API
+     guns.lol has no public API. haunt.gg does.
+     This creates an ecosystem of third-party tools and bots.
+
+  3. PORTFOLIO THEME
+     guns.lol has no portfolio option. haunt.gg's Portfolio theme
+     turns your bio-link into a mini personal website with projects,
+     skills, and full Markdown. This targets a completely different
+     (and more valuable) audience: developers and creators.
+
+  4. DECORATION SYSTEM
+     guns.lol has badges. haunt.gg has badges AND decorations.
+     Avatar frames as collectible cosmetics is a much richer system.
+
+  5. MULTIPLE PROFILES PER ACCOUNT
+     guns.lol: one profile.
+     haunt.gg: 5 profiles + extendable.
+     Users can have a personal profile, a business profile, a gaming
+     profile — all under one account.
+
+  6. CUSTOM DOMAINS
+     guns.lol has no custom domain support.
+     haunt.gg premium users can use their own domain.
+
+  7. ANIMATED BORDERS
+     guns.lol has static borders.
+     haunt.gg has animated borders (rotating gradient, pulse, shimmer).
+     This is visually much more impressive.
+
+  8. DOCUMENTATION SITE
+     guns.lol has a help center but it's minimal.
+     haunt.gg has a full docs site with changelog, API reference,
+     per-feature pages, and guides. This signals a more serious product.
+
+======================================================================
+  PART 14: WHAT BRAZY SHOULD BUILD — THE MASTER ACTION LIST
+======================================================================
+
+This is the direct translation from everything above into brazy features.
+Ranked by impact (🔥 = ship immediately, 🟡 = ship soon, 🟢 = ship later).
+
+----------------------------------------------------------------------
+🔥 CRITICAL — SHIP FIRST:
+----------------------------------------------------------------------
+
+  1. PUBLIC READ API
+     GET /api/profile/:username
+     Returns: avatar, username, bio, links, badges, view count, theme
+     WHY: Enables Discord bots that do /lookup @user
+     WHY: Makes brazy a platform not just a website
+     WHY: Zero downside, massive upside
+     HOW HARD: 1-2 days. You already have the data. Just expose it.
+
+  2. LIVE PLATFORM CARDS (Social Integrations)
+     Start with 5-8: Discord Server, GitHub, Spotify, Last.fm, Twitch, YouTube, Steam
+     Each card fetches live data from that platform's API
+     Shows real numbers: followers, now playing, rank, status
+     WHY: This is the #1 differentiator vs static link pages
+     HOW HARD: 2-3 weeks. Each integration is a separate API call + card UI.
+
+  3. COPYABLE TEXT LINK MODE
+     When adding a link, toggle: "Hyperlink" vs "Copy to Clipboard"
+     Perfect for Discord usernames, wallet addresses
+     WHY: Super common use case, almost every bio-link page needs this
+     HOW HARD: Half a day. It's just onClick: navigator.clipboard.writeText()
+
+  4. LEADERBOARD (Views)
+     Public page: brazy.gg/leaderboard
+     Shows top profiles by view count
+     WHY: Creates competition. Users share profiles to climb leaderboard.
+     WHY: Social proof — "look at the top profiles" drives new users
+     HOW HARD: 1 day. You already count views. Just sort and display.
+
+  5. ABOUT ME MARKDOWN BLOCK
+     A text area on the profile that renders Markdown
+     Bold, italic, links, bullet points, code blocks
+     WHY: Portfolio theme users NEED this for real content
+     WHY: Differentiates from guns.lol which has only a bio line
+     HOW HARD: 1 day. Use react-markdown. It's a 5-line component.
+
+----------------------------------------------------------------------
+🟡 HIGH VALUE — SHIP SOON:
+----------------------------------------------------------------------
+
+  6. ANIMATED BORDER MODES
+     Add: rotating gradient, pulse, shimmer as border animation options
+     Apply to the existing border customization system
+     WHY: Visually impressive. One of the most-shared features.
+     HOW HARD: 2-3 days. Pure CSS @keyframes + a mode selector.
+
+  7. DECORATION SYSTEM (Avatar Frames)
+     Create a library of avatar frame decorations (10-20 to start)
+     Grant some free, sell others as premium
+     WHY: Collectibles drive engagement, FOMO, and purchases
+     WHY: Makes profiles visually unique at first glance
+     HOW HARD: 1 week for system. Ongoing for creating decorations.
+
+  8. PER-LINK ICON COLOR
+     Each link has its own color override in addition to the global setting
+     WHY: Power users want Discord link in blurple, GitHub in white, etc.
+     HOW HARD: Half a day. Add a color field per link in the schema.
+
+  9. ICON SIZE SLIDER
+     One global slider: 50% to 150% of default icon size
+     WHY: Simple setting, big visual impact
+     HOW HARD: 2 hours. One CSS variable driven by a slider.
+
+  10. MULTIPLE PROFILES PER ACCOUNT
+      Let users create up to 3 profiles (free) or 5+ (premium)
+      WHY: Power users want separate gaming/personal/business profiles
+      WHY: More profiles = more views = more viral spread for brazy
+      HOW HARD: 1-2 weeks. Requires profile selector in dashboard.
+
+  11. CLICK SOUND EFFECT
+      Upload an audio file that plays on page load or interaction
+      WHY: Personality feature. guns.lol doesn't have it.
+      HOW HARD: 1 day. Audio element + file upload field.
+
+  12. BADGE LEADERBOARD
+      Public page: top profiles by badge count
+      WHY: Incentivizes users to earn/collect badges
+      HOW HARD: Half a day if views leaderboard already built.
+
+----------------------------------------------------------------------
+🟢 POLISH — SHIP LATER:
+----------------------------------------------------------------------
+
+  13. CUSTOM PROFILE DOMAINS (Premium)
+      DNS routing: yourname.com → brazy.gg/username
+      WHY: Professional users want their own domain
+      HOW HARD: 1 week. Requires wildcard DNS + reverse proxy logic.
+
+  14. DISCORD RICH PRESENCE (Lanyard integration)
+      Show what user is currently doing in Discord (game, music, etc.)
+      WHY: Live data is impressive. Updates in real time.
+      HOW HARD: 3-4 days. Lanyard has a great API + WebSocket.
+
+  15. ANIMATED TYPEWRITER MULTI-MESSAGE
+      Bio cycles through multiple messages
+      WHY: Adds life to the profile. Already proven pattern.
+      HOW HARD: Half a day. Array of messages + delete/retype logic.
+
+  16. AUDIO WITH COVER ART WIDGET
+      When music is set, show a small widget: album art + song title
+      WHY: Makes music integration visible and impressive
+      HOW HARD: 1 day. Just a small card UI component.
+
+  17. DOCS SITE
+      Create help.brazy.gg with per-feature documentation
+      WHY: Signals professionalism. Reduces support questions.
+      HOW HARD: 1 week for initial version. Use Mintlify or Docusaurus.
+
+  18. 3D CARD TILT ON HOVER
+      MouseMove-driven 3D tilt using GSAP or Framer Motion
+      WHY: Makes profiles feel alive. 15 lines of code.
+      HOW HARD: Half a day.
+
+  19. WEATHER INTEGRATION CARD
+      Show current weather for a user's location
+      WHY: Unique, personal, conversation starter
+      HOW HARD: 1 day. Free weather API (OpenWeatherMap).
+
+  20. ABOUT ME CUSTOM DISCORD EMOJIS
+      Allow users to use Discord emoji IDs in their bio
+      Renders the actual emoji image from Discord CDN
+      WHY: Huge for the Discord-native audience
+      HOW HARD: 1-2 days. Parse emoji IDs, fetch from Discord CDN.
+
+======================================================================
+  PART 15: MONETIZATION LESSONS FROM HAUNT.GG
+======================================================================
+
+haunt.gg's monetization model is smart. Here's what brazy can learn:
+
+  1. ONE-TIME LIFETIME PURCHASE (no subscription)
+     This is a HUGE psychological win. Users hate subscriptions.
+     A one-time $10-20 feels like infinite value.
+     haunt.gg does this. guns.lol does monthly. haunt.gg wins on
+     user goodwill even if guns.lol makes more total revenue.
+     Consider: brazy Premium = one-time $15 lifetime. Done.
+
+  2. TOKEN ECONOMY FOR EXTENSIONS
+     Base premium gives you X profiles. Want more? Buy tokens.
+     Tokens can also unlock decorations, special badges, etc.
+     This creates ongoing revenue from already-paying users.
+     It's not a subscription — it's optional extra purchases.
+
+  3. LIMITED DECORATIONS / EVENT ITEMS
+     Time-limited cosmetics create FOMO and urgency.
+     "Holiday decoration available for 2 weeks only"
+     Users will pay for things they can't get later.
+     Discord does this. Roblox does this. It works every time.
+
+  4. FREE TIER THAT MAKES THEM WANT PREMIUM
+     The free tier shows premium features as locked/greyed out.
+     Users see the animated border option but can't click it.
+     They see what they're missing. This drives upgrades.
+     Do NOT hide premium features from view — show them, lock them.
+
+  5. SOCIAL PROOF VIA LEADERBOARD
+     Top users on the leaderboard have huge profiles with all
+     premium features enabled. This is free advertising for premium.
+     "How do they have that decoration? Oh I need to get premium."
+
+======================================================================
+  PART 16: TECHNICAL ARCHITECTURE OBSERVATIONS
+======================================================================
+
+From reading the docs, changelog, and API structure:
+
+  1. LANYARD FOR DISCORD PRESENCE
+     haunt.gg uses the Lanyard API (open source project by Phineas)
+     Lanyard is a WebSocket + REST service that exposes Discord presence
+     Users add the Lanyard Discord bot to a server, it tracks presence
+     haunt.gg queries Lanyard's API with the user's Discord ID
+     This is the standard way to do Discord presence in bio-link pages
+     Brazy should use Lanyard too. It's free and already built.
+     GitHub: github.com/Phineas/lanyard
+
+  2. CDN FOR ALL MEDIA
+     All user-uploaded assets (avatar, background, audio, cursor, font)
+     are served from a CDN, not from the app server directly.
+     This is essential for performance. Images served from CDN = fast.
+     Use Cloudflare R2, Vercel Blob, or Supabase Storage for this.
+
+  3. LIVE DATA CARDS USE SERVER-SIDE FETCHING
+     The 20 social card integrations don't call external APIs from the
+     browser. haunt.gg's server fetches the data and caches it.
+     This avoids CORS issues, protects API keys, and allows caching.
+     A user's GitHub follower count is fetched server-side and cached
+     for e.g. 5 minutes. Not live per-request.
+     Pattern: edge function / serverless function per integration.
+
+  4. WEBSOCKET FOR REAL-TIME PRESENCE
+     Discord presence updates in real time on haunt.gg profiles.
+     This requires either WebSocket or Server-Sent Events (SSE).
+     Polling every 30 seconds would work too but feels less live.
+     Lanyard provides a WebSocket endpoint directly — connect to it
+     and push updates to the profile page.
+
+  5. STATIC PROFILE RENDERING
+     Profile pages are likely server-rendered (SSR/SSG) for SEO.
+     The metadata (OG tags, title, description) needs to be in the HTML
+     before JS loads so Discord/Twitter embeds work properly.
+     Next.js with generateMetadata() is the standard approach.
+     This is probably how brazy works already (Next.js).
+
+======================================================================
+  PART 17: HAUNT.GG vs GUNS.LOL vs BRAZY — COMPARISON TABLE
+======================================================================
+
+FEATURE                     | HAUNT.GG | GUNS.LOL | BRAZY (current)
+----------------------------|----------|----------|----------------
+Themes/Layouts              | 4        | 5        | 5
+Social link cards           | 15       | 15       | ✓
+Live data integrations      | 20       | 0        | 0
+Public API                  | ✓ Full   | ✗        | ✗
+Leaderboard                 | ✓        | ✗        | ✗
+Custom domains              | Premium  | ✗        | ✗
+Multiple profiles           | 5+       | 1        | 1
+Animated borders            | Premium  | ✗        | ✗
+Decoration system           | ✓        | ✗        | ✗
+Copyable text links         | ✓        | ✗        | ✗
+Per-link icon color         | ✓        | ✓        | partial
+Discord Rich Presence       | ✓        | ✗        | ✗
+About Me Markdown           | ✓        | ✗        | ✗
+Custom font upload          | Premium  | ✗        | ✗
+Click sound effect          | Premium  | ✗        | ✗
+Background video            | ✓        | ✓        | ✓
+Typewriter bio              | Premium  | ✓        | ✓
+Profile animations          | Premium  | ✓        | ✓
+Image hosting               | ✓        | ✓        | ✓
+Badge system                | ✓        | ✓        | ✓ (needs fix)
+Glassmorphism card          | ✓        | ✓        | ✓
+Parallax effect             | ✓        | ✓        | partial
+Docs site                   | ✓ Full   | partial  | ✗
+One-time payment model      | ✓        | ✗ (sub)  | TBD
+3D card tilt                | ✗        | ✓ (clone)| ✗
+Skills section              | Portfolio| ✗        | ✗
+Projects section            | Portfolio| ✗        | ✗
+
+VERDICT:
+  haunt.gg wins on: integrations, API, portfolio features, monetization model
+  guns.lol wins on: simplicity, community templates, ease of use
+  brazy is: visually ahead (more layouts, more card styles) but behind on
+            data integrations, API, and engagement mechanics
+
+The single biggest gap brazy needs to close: LIVE DATA INTEGRATIONS.
+Adding even 5 platform cards (Discord, GitHub, Spotify, Twitch, Steam)
+would immediately make brazy competitive with haunt.gg's Modern theme.
+
+======================================================================
+  PART 18: THE THREE SENTENCES THAT SUMMARIZE EVERYTHING
+======================================================================
+
+haunt.gg figured out that a bio-link page stops being a static business
+card and starts being a living identity hub the moment you add live data
+from the platforms your users actually live on — Discord, Spotify, Steam.
+
+They built a decoration + token economy that turns cosmetic customization
+into a collection game, making users emotionally invested in their profiles
+in a way that static color pickers never could.
+
+For brazy to dominate, it needs to take its lead in visual variety (5 layouts,
+9 card styles) and pair it with haunt.gg's live integrations and a public API,
+because right now brazy looks better but haunt.gg does more — and in this
+market, users will tolerate a slightly less beautiful page if it shows their
+live Spotify track and Discord status updating in real time.
+
+======================================================================
+  END OF ANALYSIS
+  Sources: help.haunt.gg (all documentation pages)
+  help.haunt.gg/customization/customization
+  help.haunt.gg/customization/badges
+  help.haunt.gg/customization/links
+  help.haunt.gg/customization/assets
+  help.haunt.gg/customization/themes
+  help.haunt.gg/customization/decoration
+  help.haunt.gg/guides/premium
+  help.haunt.gg/overview/changelog
+  help.haunt.gg/endpoint/introduction
+  Total: 18 sections, ~50KB of analysis
+======================================================================
