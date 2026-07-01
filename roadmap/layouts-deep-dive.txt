@@ -1,0 +1,858 @@
+================================================================================
+BRAZY — LAYOUTS DEEP DIVE
+Every card style explained, how they work, what's customizable per layout,
+and the badge system including where the bug is.
+================================================================================
+Source of truth: src/components/profile/ProfileRenderer.tsx
+Written: July 2026
+================================================================================
+
+TABLE OF CONTENTS
+─────────────────
+1.  The System: How Layouts Actually Work
+2.  The cardStyle Switch — Full CSS Per Layout
+3.  LAYOUT: default (glass)
+4.  LAYOUT: modern
+5.  LAYOUT: sleek
+6.  LAYOUT: simplistic
+7.  LAYOUT: portfolio
+8.  LAYOUT: solid
+9.  LAYOUT: outline
+10. LAYOUT: neon
+11. LAYOUT: minimal
+12. Identity Section — Standard vs Portfolio
+13. Social Links — List Mode vs Grid Mode
+14. Alignment System (center vs left)
+15. Card Width System
+16. Motion Profiles (animation intensity)
+17. Username Effects
+18. The Badge System — How It Works
+19. BADGE BUG — Where They Went & How to Fix It
+20. Full Customization Map (every field, every layout)
+21. What Each Layout Should Expose in Dashboard
+
+
+================================================================================
+SECTION 1 — THE SYSTEM: HOW LAYOUTS ACTUALLY WORK
+================================================================================
+
+The layout system is controlled by a SINGLE field:
+  cfg.theme.cardStyle  (type: string)
+
+Possible values:
+  "glass"        → default look
+  "modern"       → gradient card
+  "sleek"        → heavy blur, minimal border
+  "simplistic"   → very dark, barely-there borders
+  "portfolio"    → wide card, left-aligned, side-by-side identity
+  "solid"        → opaque filled card
+  "outline"      → transparent with accent border
+  "neon"         → glowing neon border
+  "minimal"      → fully transparent, no card
+
+Each value affects TWO things:
+  A) The card container CSS (background, border, blur, shadow)
+  B) The layout STRUCTURE (how identity, badges, links are arranged)
+
+IMPORTANT: Most layouts use the SAME structure — only "portfolio" has a
+different HTML structure. The others share the standard stacked layout.
+The differences between glass/modern/sleek/etc are purely cosmetic CSS.
+
+The cardStyle switch lives at line ~300 in ProfileRenderer.tsx:
+  const cardStyle = (() => { switch(theme.cardStyle) { ... } })()
+
+This object is applied as `style={cardStyle}` on the main .motion.div card.
+
+
+================================================================================
+SECTION 2 — THE cardStyle SWITCH — FULL CSS PER LAYOUT
+================================================================================
+
+Here is exactly what CSS each layout produces. All values come from
+cfg.theme and cfg.background.
+
+Variables used:
+  bg.color1       → primary background color (hex)
+  bg.color2       → secondary color
+  theme.cardOpacity     → 0–1 opacity for card background
+  theme.cardBlur        → px value for backdrop blur
+  theme.borderWidth     → border thickness in px
+  theme.borderRadius    → corner radius in px
+  theme.primaryColor    → accent color
+
+──────────────────────────────────────────────
+case "glass" (default):
+──────────────────────────────────────────────
+  background:      rgba(hexToRgb(bg.color1), cardOpacity)
+  backdropFilter:  blur(cardBlur px)
+  border:          borderWidth px solid rgba(255,255,255,0.08)
+  borderRadius:    borderRadius px
+
+  The classic frosted glass look. Semi-transparent bg color
+  blurred against whatever background is set. White 8% border.
+
+──────────────────────────────────────────────
+case "solid":
+──────────────────────────────────────────────
+  background:      bg.color1 (fully opaque)
+  border:          borderWidth px solid bg.color2
+  borderRadius:    borderRadius px
+
+  No transparency, no blur. Pure flat card. The border uses bg.color2
+  so you can set a contrasting color pair.
+
+──────────────────────────────────────────────
+case "outline":
+──────────────────────────────────────────────
+  background:      transparent
+  border:          borderWidth px solid theme.primaryColor
+  borderRadius:    borderRadius px
+
+  No background at all. Only the accent-colored border frame visible.
+  Everything floats over the raw background.
+
+──────────────────────────────────────────────
+case "neon":
+──────────────────────────────────────────────
+  background:      rgba(hexToRgb(bg.color1), cardOpacity)
+  border:          borderWidth px solid theme.primaryColor
+  boxShadow:       0 0 20px primaryColor55, inset 0 0 20px primaryColor11
+  borderRadius:    borderRadius px
+
+  Like glass but with glowing accent border + inner glow shadow.
+  The "55" suffix on primaryColor is 33% opacity hex.
+
+──────────────────────────────────────────────
+case "minimal":
+──────────────────────────────────────────────
+  background:      transparent
+  border:          none
+  borderRadius:    borderRadius px
+
+  No card whatsoever. Pure floating content. Works best with
+  a strong background (image or gradient) so text is readable.
+
+──────────────────────────────────────────────
+case "portfolio":
+──────────────────────────────────────────────
+  background:      rgba(hexToRgb(bg.color1), min(cardOpacity+0.1, 1))
+  backdropFilter:  blur(cardBlur+4 px)
+  border:          borderWidth px solid rgba(255,255,255,0.06)
+  borderRadius:    borderRadius px
+  boxShadow:       0 25px 50px -12px rgba(0,0,0,0.5)
+
+  Like glass but 10% more opaque, 4px more blur, deeper drop shadow.
+  The extra darkness makes it feel like a document/resume card.
+
+──────────────────────────────────────────────
+case "simplistic":
+──────────────────────────────────────────────
+  background:      rgba(0,0,0, cardOpacity*0.6)
+  border:          borderWidth px solid rgba(255,255,255,0.04)
+  borderRadius:    borderRadius px
+
+  Forces the background to pure black (ignores bg.color1) at 60% of
+  cardOpacity. The border is barely-there white (4% opacity). Very
+  dark, minimal aesthetic. No blur.
+
+──────────────────────────────────────────────
+case "modern":
+──────────────────────────────────────────────
+  background:      linear-gradient(135deg,
+                     rgba(hexToRgb(bg.color1), cardOpacity),
+                     rgba(hexToRgb(bg.color2), cardOpacity*0.7))
+  backdropFilter:  blur(cardBlur px)
+  border:          borderWidth px solid rgba(255,255,255,0.1)
+  borderRadius:    borderRadius px
+
+  A diagonal gradient from color1 to color2 at 70% opacity.
+  Blurred like glass. Use color1 and color2 to control the gradient.
+
+──────────────────────────────────────────────
+case "sleek":
+──────────────────────────────────────────────
+  background:      rgba(hexToRgb(bg.color1), cardOpacity)
+  backdropFilter:  blur(cardBlur*1.5 px)   ← 1.5x MORE blur than glass
+  border:          1px solid rgba(255,255,255,0.05)
+  borderRadius:    borderRadius px
+  boxShadow:       0 4px 6px -1px rgba(0,0,0,0.3),
+                   0 2px 4px -1px rgba(0,0,0,0.2)
+
+  Like glass with 50% more blur, thinner/more-faded border, and a
+  subtle drop shadow beneath. Border is hardcoded to 1px (ignores
+  borderWidth). More refined, less stylized.
+  ALSO: avatar is rounded-3xl + hover:scale-105 (unique to sleek)
+  ALSO: social buttons are rounded-full pill shape (not rounded-xl)
+
+
+================================================================================
+SECTION 3 — LAYOUT: default / glass
+================================================================================
+
+CARD CSS:
+  Semi-transparent bg.color1 + backdrop blur + white/8% border
+
+IDENTITY LAYOUT:
+  Stacked / centered
+  Avatar → round (rounded-full), 80×80px
+  Name → centered, text-xl
+  Tagline → below name, mutedTextColor
+  Pronouns + Location → small pills, centered row
+  Bio → centered paragraph
+  Badges → centered row below bio
+
+SOCIAL LINKS:
+  Full-width buttons (list mode by default)
+  Button style: rounded-xl, left-aligned icon+label
+  Background: primaryColor at 5% opacity
+  Border: primaryColor at 14% opacity
+
+ALIGNMENT:
+  Centered (both avatar and text)
+
+CARD WIDTH:
+  max-w-sm (384px)
+
+CUSTOMIZABLE:
+  ✓ bg.color1 (card background tint)
+  ✓ cardOpacity (transparency level)
+  ✓ cardBlur (frosted glass intensity)
+  ✓ borderWidth
+  ✓ borderRadius
+  ✓ primaryColor (accent)
+  ✓ textColor, mutedTextColor
+  ✓ fontFamily
+  ✓ motionProfile (animation speed)
+  ✓ usernameEffect
+  ✓ textGlow
+  ✓ glow (link glow)
+  ✓ animatedBorder (CSS animation class)
+
+
+================================================================================
+SECTION 4 — LAYOUT: modern
+================================================================================
+
+CARD CSS:
+  135° gradient from bg.color1 to bg.color2 + blur + white/10% border
+
+IDENTITY LAYOUT:
+  Identical to default (stacked, centered)
+  Avatar → rounded-full, 80×80px
+
+KEY DIFFERENCE from glass:
+  Uses BOTH bg.color1 AND bg.color2 for the diagonal gradient.
+  bg.color1 = top-left corner color
+  bg.color2 = bottom-right corner color (at 70% of cardOpacity)
+
+USE CASE:
+  Good for colorful profiles. Set color1=#1a0040 and color2=#003366
+  for a purple-to-blue gradient card.
+
+CUSTOMIZABLE:
+  ✓ bg.color1 (gradient start)
+  ✓ bg.color2 (gradient end)
+  ✓ cardOpacity
+  ✓ cardBlur
+  ✓ borderWidth
+  ✓ borderRadius
+  ✓ All shared customizations from glass
+
+
+================================================================================
+SECTION 5 — LAYOUT: sleek
+================================================================================
+
+CARD CSS:
+  bg.color1 + 1.5x cardBlur + barely-visible border + subtle drop shadow
+  Border hardcoded to 1px (borderWidth slider has no effect here)
+
+IDENTITY LAYOUT:
+  Stacked / centered — SAME as glass with two visual exceptions:
+  1. Avatar is rounded-3xl (squared-off corners) + hover:scale-105
+  2. Avatar border uses primaryColor55 (55% hex opacity)
+
+SOCIAL BUTTONS DIFFERENCE:
+  In SocialButton component, when cardStyle is "sleek" OR "minimal":
+    borderClass = "rounded-full"   (pill shape, not rectangle)
+    justifyClass = "justify-center text-center"  (centered text)
+
+CUSTOMIZABLE:
+  ✓ bg.color1
+  ✓ cardOpacity
+  ✓ cardBlur (gets ×1.5 amplified — lower values recommended)
+  ✓ borderRadius
+  ✗ borderWidth (hardcoded to 1px in CSS)
+  ✓ All shared customizations
+
+PRO TIP:
+  Set cardBlur to 8-12. Since it's amplified to 1.5x, that gives
+  12-18px actual blur which is the sweet spot for sleek.
+
+
+================================================================================
+SECTION 6 — LAYOUT: simplistic
+================================================================================
+
+CARD CSS:
+  Pure black background (ignores bg.color1) at cardOpacity×0.6
+  White/4% border (barely visible)
+  No blur
+
+IDENTITY LAYOUT:
+  Stacked / centered — identical to glass
+  Avatar → rounded-full
+
+KEY CHARACTERISTIC:
+  bg.color1 and bg.color2 are IGNORED for the card background.
+  The card is always black. Only the page background uses those colors.
+  This makes it very consistent — no surprise tints.
+
+SOCIAL BUTTONS:
+  Standard rounded-xl, left-aligned (same as glass)
+
+CUSTOMIZABLE:
+  ✓ cardOpacity (controls how dark the black card is)
+  ✓ borderWidth (controls the faint border thickness)
+  ✓ borderRadius
+  ✓ primaryColor, textColor, mutedTextColor
+  ✗ bg.color1, bg.color2 (irrelevant for card — only affect background)
+  ✓ All shared customizations
+
+
+================================================================================
+SECTION 7 — LAYOUT: portfolio
+================================================================================
+
+This is the ONLY layout with a completely different HTML structure.
+
+CARD CSS:
+  Like glass but +0.1 opacity and +4px blur, plus deep drop shadow:
+  boxShadow: 0 25px 50px -12px rgba(0,0,0,0.5)
+
+CARD WIDTH:
+  max-w-xl md:max-w-2xl  (significantly wider — 512px to 672px)
+  This is the only layout that breaks out of max-w-sm.
+
+IDENTITY LAYOUT (UNIQUE — side-by-side on md+ screens):
+  ┌──────────────────────────────────────────────────┐
+  │  [Avatar 96×96 rounded-2xl]  [Name + Info block] │
+  │                              [Tagline]            │
+  │                              [Pronouns + Location]│
+  │                              [Bio]                │
+  │                              [Badges]             │
+  └──────────────────────────────────────────────────┘
+  On mobile: stacks vertically (flex-col), centered
+  On desktop (md+): side-by-side (flex-row), left-aligned
+
+  This is controlled by Tailwind classes:
+  "flex flex-col md:flex-row items-center md:items-start"
+
+AVATAR (portfolio-specific):
+  w-24 h-24 (96×96, larger than other layouts)
+  rounded-2xl (softer square, not circle)
+  border-2 with primaryColor50
+  shadow-lg
+
+NAME (portfolio-specific):
+  text-2xl font-black (larger than glass's text-xl)
+
+TAGLINE (portfolio-specific):
+  Shown as UPPERCASE TRACKING-WIDER accent-colored tag
+  (feels like a job title / role label)
+  style={{ color: theme.primaryColor }}
+
+BADGES (portfolio-specific):
+  justify-center md:justify-start (left-aligned on desktop)
+  gap-1.5, slightly smaller (text-[9px], w:11 h:11 icon)
+
+DIVIDER:
+  After the identity section: border-b border-white/[0.04] pb-5
+  This separates bio from links with a subtle divider line.
+
+PROJECTS WIDGET (portfolio-specific):
+  When cardStyle is portfolio, ProjectsWidget uses layout="grid"
+  instead of the default "list" layout. This shows projects
+  in a 2-column grid instead of vertical stack.
+
+VIEWS COUNTER (portfolio-specific):
+  If viewsPlacement === "inside", portfolio layout shows it at
+  the BOTTOM of the card in a footer bar:
+    [Telemetry label]  [ViewCounter]
+  (other layouts show views inline near the bio)
+
+ALIGNMENT:
+  isLeftAlign = true when cardStyle === "portfolio"
+  alignClass = "items-start text-left"
+  justifyClass = "justify-start"
+
+CUSTOMIZABLE:
+  ✓ bg.color1 (card tint)
+  ✓ cardOpacity (+0.1 auto-applied)
+  ✓ cardBlur (+4 auto-applied)
+  ✓ borderWidth
+  ✓ borderRadius
+  ✓ primaryColor (used for tagline + border accent)
+  ✓ textColor, mutedTextColor
+  ✓ All shared customizations
+
+
+================================================================================
+SECTION 8 — LAYOUT: solid
+================================================================================
+
+CARD CSS:
+  background: bg.color1 (fully opaque, no transparency)
+  border: borderWidth px solid bg.color2
+  No blur
+
+IDENTITY LAYOUT:
+  Stacked / centered — same as glass
+
+USE CASE:
+  Retro/flat design aesthetic. Set color1=#0d0d0d and
+  color2=#333333 for a dark flat card with grey border.
+
+CUSTOMIZABLE:
+  ✓ bg.color1 (card fill color — fully opaque)
+  ✓ bg.color2 (border color)
+  ✓ borderWidth
+  ✓ borderRadius
+  ✗ cardOpacity (opacity not applied to solid)
+  ✗ cardBlur (no blur on solid)
+
+
+================================================================================
+SECTION 9 — LAYOUT: outline
+================================================================================
+
+CARD CSS:
+  background: transparent
+  border: borderWidth px solid primaryColor
+  No blur
+
+IDENTITY LAYOUT:
+  Stacked / centered — same as glass
+
+USE CASE:
+  Bold, high-contrast look. The card is invisible — only its
+  border frame shows. Background bleeds through entirely.
+
+CUSTOMIZABLE:
+  ✓ primaryColor (this IS the border color)
+  ✓ borderWidth
+  ✓ borderRadius
+  ✗ bg.color1, bg.color2, cardOpacity, cardBlur (all irrelevant)
+
+
+================================================================================
+SECTION 10 — LAYOUT: neon
+================================================================================
+
+CARD CSS:
+  background: rgba(bg.color1, cardOpacity)
+  border: borderWidth px solid primaryColor
+  boxShadow: 0 0 20px primaryColor55, inset 0 0 20px primaryColor11
+
+IDENTITY LAYOUT:
+  Stacked / centered — same as glass
+
+KEY FEATURE:
+  The outer glow (20px) + inner glow make the card look lit from inside.
+  primaryColor drives both the border AND the glow color — change one,
+  change both.
+
+CUSTOMIZABLE:
+  ✓ primaryColor (drives everything — border + glow)
+  ✓ bg.color1, cardOpacity (dark bg recommended for max neon pop)
+  ✓ borderWidth (thicker = more neon)
+  ✓ borderRadius
+  ✗ cardBlur (no blur property in neon CSS)
+
+
+================================================================================
+SECTION 11 — LAYOUT: minimal
+================================================================================
+
+CARD CSS:
+  background: transparent
+  border: none
+
+IDENTITY LAYOUT:
+  Stacked / centered — same as glass
+
+SOCIAL BUTTONS (minimal-specific):
+  Like sleek — rounded-full pill shape, centered text
+  Button border: rgba(255,255,255,0.06) (near invisible)
+  Button background: transparent
+
+USE CASE:
+  Floating text-only look. Works beautifully with a strong
+  background image or particle/canvas effect.
+
+CUSTOMIZABLE:
+  ✓ primaryColor (only visible color element on links)
+  ✓ textColor, mutedTextColor
+  ✗ bg.color1, cardOpacity, cardBlur, borderWidth (all irrelevant)
+
+
+================================================================================
+SECTION 12 — IDENTITY SECTION: STANDARD VS PORTFOLIO
+================================================================================
+
+There is a big ternary in ProfileRenderer:
+  if (theme.cardStyle === "portfolio") { ... } else { ... }
+
+STANDARD identity (all layouts except portfolio):
+  Avatar: w-20 h-20 (80px), rounded-full
+  Name:   text-xl, centered
+  Tagline: text-xs font-medium, mutedTextColor (subtle)
+  Pronouns/Location: small pills, justified by alignClass
+  Bio: text-xs leading-relaxed
+  Badges: flex-wrap row, justified by justifyClass
+  Views: if inside placement, shown below badges
+
+PORTFOLIO identity:
+  Avatar: w-24 h-24 (96px), rounded-2xl, shadow-lg
+  Name:   text-2xl font-black (bigger + bolder)
+  Tagline: text-xs uppercase tracking-wider, primaryColor (prominent)
+  Pronouns/Location: same pills
+  Bio: text-xs leading-relaxed
+  Badges: gap-1.5, md:justify-start
+  Views: in footer bar at bottom of card (not near bio)
+  Divider: border-b below entire identity block
+
+
+================================================================================
+SECTION 13 — SOCIAL LINKS: LIST MODE VS GRID MODE
+================================================================================
+
+cfg.social.layout controls this:
+  "list" (default) → full-width SocialButton components, stacked vertically
+  "grid"           → icon-only squares/circles in a row
+
+LIST MODE (SocialButton component):
+  Shows: icon + label + optional subtitle + optional badgeText
+  Shape: rounded-xl for most layouts, rounded-full for sleek/minimal
+  Alignment: justify-start text-left for most, justify-center for sleek/minimal
+  Hover: scale(1.025) translateY(-1px)
+  Featured links: pulse border animation, bigger glow
+
+GRID MODE (icon row):
+  Shows: icon only (no label)
+  Shape: controlled by cfg.social.shape:
+    "circle"  → rounded-full
+    "rounded" → rounded-xl
+    "square"  → rounded-none
+  Size: controlled by cfg.social.size:
+    "sm" → w-8 h-8, icon size 14
+    "md" → w-10 h-10, icon size 18  (default)
+    "lg" → w-12 h-12, icon size 22
+  Hover: scale(1.15) translateY(-2px) — can be disabled with cfg.social.hoverEffect=false
+
+Social link fields per link:
+  url        → the href
+  platform   → key to look up brandIcons
+  label      → displayed text
+  color      → per-link accent color
+  subtitle   → second line of text (list mode only)
+  thumbnail  → custom image instead of platform icon
+  badgeText  → floating badge pill ("NEW", "HOT", etc)
+  badgeColor → color of that badge
+  featured   → adds pulse animation + stronger glow
+
+
+================================================================================
+SECTION 14 — ALIGNMENT SYSTEM
+================================================================================
+
+Two classes control alignment of ALL content inside the card:
+
+  isLeftAlign = theme.cardStyle === "portfolio" || theme.contentAlign === "left"
+
+  alignClass      = isLeftAlign ? "items-start text-left"  : "items-center text-center"
+  alignSelfClass  = isLeftAlign ? "self-start"             : "self-center"
+  justifyClass    = isLeftAlign ? "justify-start"          : "justify-center"
+
+So:
+  - portfolio is ALWAYS left-aligned regardless of contentAlign setting
+  - All other layouts are center-aligned by default
+  - Other layouts CAN be made left-aligned by setting theme.contentAlign = "left"
+
+This affects:
+  - The flex direction of the identity block
+  - Where badges wrap to
+  - Where social links in grid mode align
+  - Where pronouns/location pills sit
+
+
+================================================================================
+SECTION 15 — CARD WIDTH SYSTEM
+================================================================================
+
+  let cardWidthClass = "max-w-sm";
+  if (theme.cardStyle === "portfolio") {
+    cardWidthClass = "max-w-xl md:max-w-2xl";
+  }
+
+This is applied as a className on the card div.
+
+  max-w-sm  = 384px   (all layouts except portfolio)
+  max-w-xl  = 512px   (portfolio on mobile)
+  max-w-2xl = 672px   (portfolio on desktop md+)
+
+Note: mx-4 padding is applied on both sides, so on mobile the card
+is effectively viewport_width - 32px.
+
+
+================================================================================
+SECTION 16 — MOTION PROFILES (ANIMATION INTENSITY)
+================================================================================
+
+cfg.theme.motionProfile controls how cards animate on load:
+
+  "none"     → No animation. Everything appears instantly.
+  "minimal"  → Fast, subtle. 300ms, y:12, scale 0.99
+  "balanced" → Default. 600ms, y:32, scale 0.97 (most natural)
+  "rich"     → Dramatic. 800ms, y:40, scale 0.95, stagger 0.08s
+
+Three animations controlled per profile:
+  1. Card entry (cardInitial → cardAnimate)
+  2. Avatar entry (avatarInitial → avatarAnimate) with delay
+  3. Social link stagger (each link slides in from x:-12 with delay)
+
+All use the cubic EASE = [0.22, 1, 0.36, 1] (custom spring-like curve)
+
+
+================================================================================
+SECTION 17 — USERNAME EFFECTS
+================================================================================
+
+cfg.effects.usernameEffect — runs in the UsernameText component.
+
+Effect values and what they do:
+  "none"       → plain text
+  "typewriter" → types out and erases the name in a loop (120ms per char)
+  "rainbow"    → each character cycles through 6 colors on 80ms tick
+  "glow"       → animated text shadow that pulses in brightness
+  "glitch"     → random micro-offset + red/cyan split shadow every 20 ticks
+  "neon"       → purple-ish color with breathing glow shadow
+  "shake"      → random small translate every 30 ticks
+  "gradient"   → animated rainbow gradient via background-clip text
+  "bounce"     → each character sine-waves vertically, offset by index
+  "pulse"      → entire name scale breathes (1.0 → 1.06 → 1.0)
+  "wave"       → each character sine-waves with phase shift (smoother than bounce)
+
+All effects update via a setInterval(80ms) tick counter.
+textGlow (boolean) adds a static text-shadow using primaryColor to any effect.
+
+
+================================================================================
+SECTION 18 — THE BADGE SYSTEM: HOW IT WORKS
+================================================================================
+
+Badges are profile achievements/tags that display as colored pills.
+
+DATA FLOW:
+  1. PREDEFINED_BADGES is a record in src/lib/profile/badges-data.ts:
+     Each entry: { name, description, svg, color }
+     Keyed by a string ID like "verified", "og", "dev", etc.
+
+  2. cfg.badges.items is an array stored in Supabase:
+     Each item: { id: string, color?: string }
+     The id is the key into PREDEFINED_BADGES.
+
+  3. At render time in ProfileRenderer:
+     const earnedBadges = (cfg.badges.items ?? []).flatMap((item) => {
+       const key = item?.id;
+       const found = PREDEFINED_BADGES[key];
+       if (!found) return [];
+       return [{ id: key, label: found.name, description: found.description,
+                 icon: found.svg, color: item.color || found.color }];
+     });
+
+  4. Badges render only when:
+     cfg.badges.enabled === true  AND  earnedBadges.length > 0
+
+BADGE PILL STYLE:
+  Both layouts (standard and portfolio) render badges similarly:
+  - Flex row, gap-1.5, flex-wrap
+  - Each pill: text-[9px] or text-[10px] font-bold
+  - Border: badge.color at 40% opacity
+  - Background: badge.color at 15% opacity
+  - Text: badge.color
+  - SVG icon: dangerouslySetInnerHTML with fill: badge.color
+  - BoxShadow: 0 0 8px badge.color at 20-30% opacity
+  - Hover: scale-105 (portfolio layout only)
+
+PORTFOLIO badge placement:
+  Inside the flex-1 right column, after bio, mt-2:
+  <div className="flex flex-wrap gap-1.5 mt-2 justify-center md:justify-start">
+
+STANDARD badge placement:
+  After bio, before views counter:
+  <div className={`flex flex-wrap gap-1.5 ${justifyClass}`}>
+
+
+================================================================================
+SECTION 19 — BADGE BUG: WHERE THEY WENT & HOW TO FIX IT
+================================================================================
+
+LOL ok here's what likely happened and where to check:
+
+BUG SCENARIO A: badges.items is an array of strings, not objects
+──────────────────────────────────────────────────────────────────
+The flatMap does:
+  const key = item?.id as string
+If someone saved badges as ["verified", "og"] instead of
+[{ id: "verified" }, { id: "og" }], then item.id is UNDEFINED.
+flatMap returns [] for every item. Badges silently disappear.
+
+FIX:
+  In the flatMap, handle both formats:
+  const key = typeof item === "string" ? item : item?.id;
+
+BUG SCENARIO B: PREDEFINED_BADGES key mismatch
+────────────────────────────────────────────────
+If the badge id stored in DB is "Verified" but the key in
+PREDEFINED_BADGES is "verified", the lookup fails silently.
+PREDEFINED_BADGES["Verified"] === undefined → flatMap returns [].
+
+FIX:
+  Normalize the key to lowercase:
+  const key = (item?.id as string)?.toLowerCase();
+
+BUG SCENARIO C: cfg.badges.enabled is false/undefined
+───────────────────────────────────────────────────────
+The guard: if (cfg.badges.enabled && earnedBadges.length > 0)
+If badges.enabled was never set (default undefined), the
+condition short-circuits and badges never render.
+
+FIX:
+  Change the guard to:
+  if ((cfg.badges.enabled !== false) && earnedBadges.length > 0)
+  Or ensure schema defaults badges.enabled to true.
+
+BUG SCENARIO D: cfg.badges.items is undefined (not [])
+────────────────────────────────────────────────────────
+The code uses (cfg.badges.items ?? []) which handles this,
+but if the schema doesn't have a .default([]) on items,
+old profiles might not have this field at all. Combined with
+a missing deep-merge on load, badges.items stays undefined.
+
+FIX:
+  In schema.ts, badges items field should be:
+  items: z.array(...).default([])
+  AND ensure normalizeConfig/deepMerge runs on load.
+
+BUG SCENARIO E: badges render but are 0×0 invisible
+─────────────────────────────────────────────────────
+The SVG uses dangerouslySetInnerHTML and
+style={{ width: 11, height: 11, display: "inline-flex", fill: badge.color }}
+If the SVG string itself has hardcoded fill="#000" or fill="none",
+the style fill is overridden and the icon is invisible.
+
+FIX:
+  In badges-data.ts, ensure all SVG strings use fill="currentColor"
+  instead of hardcoded colors, then use style={{ color: badge.color }}
+  on the wrapper span instead of fill.
+
+HOW TO DEBUG RIGHT NOW:
+  Add this temporarily in ProfileRenderer before the earnedBadges render:
+
+  console.log("badges.enabled:", cfg.badges.enabled);
+  console.log("badges.items:", cfg.badges.items);
+  console.log("earnedBadges:", earnedBadges);
+
+  This will tell you exactly which scenario you're in.
+
+MOST LIKELY CULPRIT:
+  Scenario A or B — the id format mismatch.
+  Check what's actually stored in Supabase for a user who had badges.
+
+
+================================================================================
+SECTION 20 — FULL CUSTOMIZATION MAP
+================================================================================
+
+Every cfg.theme field and which layouts it affects:
+
+  FIELD               AFFECTS
+  ─────────────────── ──────────────────────────────────────────
+  cardStyle           ALL — determines which layout renders
+  primaryColor        ALL — accent, borders (outline/neon), tagline, badges
+  textColor           ALL — username, link labels
+  mutedTextColor      ALL — bio, tagline (glass), location, artist name
+  cardOpacity         glass, modern, neon, simplistic, sleek, portfolio
+  cardBlur            glass, modern, sleek (×1.5), portfolio (+4)
+  borderWidth         glass, solid, outline, neon, modern, portfolio, simplistic
+                      (IGNORED by sleek — hardcoded to 1px)
+  borderRadius        ALL
+  fontFamily          ALL — changes font-class on root card div
+  glow                ALL — adds box-shadow to social link buttons
+  animatedBorder      ALL — adds "animated-border" CSS class
+  motionProfile       ALL — controls entry animation speed
+  contentAlign        ALL except portfolio — "left" forces left-align
+  textGlow            ALL — adds text-shadow to username
+  usernameEffect      ALL — typewriter/rainbow/etc
+
+  cfg.background fields:
+  FIELD               AFFECTS
+  ─────────────────── ──────────────────────────────────────────
+  bg.color1           glass (tint), solid (fill), modern (gradient start),
+                      sleek (tint), neon (tint), portfolio (tint)
+                      IGNORED by simplistic (always black), outline, minimal
+  bg.color2           solid (border color), modern (gradient end)
+                      IGNORED by all others
+  bg.type             BackgroundLayer component — image/gradient/video/etc
+
+
+================================================================================
+SECTION 21 — WHAT EACH LAYOUT SHOULD EXPOSE IN DASHBOARD
+================================================================================
+
+These are the controls that MAKE SENSE to show per layout in your customize page.
+Showing irrelevant controls creates confusion. This is your ideal UX guide:
+
+glass (default):
+  Show: color1, cardOpacity, cardBlur, borderWidth, borderRadius, primaryColor
+  Hide: color2 (not used)
+
+modern:
+  Show: color1, color2, cardOpacity, cardBlur, borderWidth, borderRadius, primaryColor
+  Note: Explain color1=start, color2=end of gradient in the label
+
+sleek:
+  Show: color1, cardOpacity, cardBlur, borderRadius, primaryColor
+  Hide: borderWidth (hardcoded to 1px — don't show slider)
+
+simplistic:
+  Show: cardOpacity, borderWidth, borderRadius, primaryColor
+  Hide: color1, color2, cardBlur (all irrelevant)
+  Note: Add a tooltip — "Card is always dark, colors only affect background"
+
+portfolio:
+  Show: color1, cardOpacity, cardBlur, borderWidth, borderRadius, primaryColor
+  Note: Mention wider card and left-aligned layout in description
+  Show: Lyrics Display panel (this is the portfolio-exclusive feature)
+
+solid:
+  Show: color1 (card fill), color2 (card border), borderWidth, borderRadius
+  Hide: cardOpacity, cardBlur
+  Note: Label color1 as "Card color" and color2 as "Border color"
+
+outline:
+  Show: primaryColor (this IS the border), borderWidth, borderRadius
+  Hide: color1, color2, cardOpacity, cardBlur
+
+neon:
+  Show: color1, cardOpacity, primaryColor (this IS the glow), borderWidth, borderRadius
+  Hide: color2, cardBlur
+
+minimal:
+  Show: primaryColor, textColor, mutedTextColor, borderRadius
+  Hide: color1, color2, cardOpacity, cardBlur, borderWidth
+
+================================================================================
+END OF DOCUMENT — 21 sections
+================================================================================
