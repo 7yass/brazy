@@ -27,6 +27,28 @@ export async function POST(req: NextRequest) {
   const bucket = BUCKETS[type];
   if (!bucket) return NextResponse.json({ error: "unknown asset type" }, { status: 400 });
 
+  const MAX_SIZES: Record<string, number> = {
+    background: 50 * 1024 * 1024,
+    avatar: 5 * 1024 * 1024,
+    audio: 25 * 1024 * 1024,
+    cursor: 1 * 1024 * 1024,
+  };
+  const maxSize = MAX_SIZES[type] ?? 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return NextResponse.json({ error: `File too large. Max ${maxSize / 1024 / 1024}MB` }, { status: 400 });
+  }
+
+  const ALLOWED: Record<string, string[]> = {
+    background: ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm"],
+    avatar: ["image/jpeg", "image/png", "image/webp", "image/gif"],
+    audio: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/webm"],
+    cursor: ["image/png", "image/svg+xml"],
+  };
+  const allowed = ALLOWED[type] ?? ["image/jpeg", "image/png", "image/webp"];
+  if (!allowed.includes(file.type)) {
+    return NextResponse.json({ error: `Invalid file type: ${file.type}` }, { status: 400 });
+  }
+
   const ext = file.name.split(".").pop() ?? "bin";
   const path = `${user.id}/${type}.${ext}`;
 

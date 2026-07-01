@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Upload, Trash2, Copy, Check, Sparkles } from "lucide-react";
+import { Upload, Sparkles, Loader2 } from "lucide-react";
 import type { ProfileConfig } from "@/lib/profile/schema";
 import { normalizeConfig } from "@/lib/profile/schema";
 import type { UsernameEffect } from "@/lib/profile/schema";
@@ -71,12 +71,12 @@ export default function ProfileEditor({
   saving: boolean;
 }) {
   const [cfg, setCfg] = useState<ProfileConfig>(normalizeConfig(initialConfig ?? brazyProfile));
-  const [assets, setAssets] = useState<{ id: string; name: string; type: string; size: string; url: string }[]>([
-    { id: "1", name: "avatar-default.png", type: "image", size: "24 KB", url: "/assets/avatar.png" },
-    { id: "2", name: "background.mp4", type: "video", size: "1.2 MB", url: "/assets/bg.mp4" },
-    { id: "3", name: "track.mp3", type: "audio", size: "3.4 MB", url: "/assets/track.mp3" },
-  ]);
-  const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const bgFileRef = useRef<HTMLInputElement>(null);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const audioFileRef = useRef<HTMLInputElement>(null);
+  const cursorFileRef = useRef<HTMLInputElement>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [usernameModalOpen, setUsernameModalOpen] = useState(false);
 
@@ -142,16 +142,23 @@ export default function ProfileEditor({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); if (savedFadeRef.current) clearTimeout(savedFadeRef.current); };
   }, []);
 
-  const copyAssetUrl = useCallback(async (url: string, id: string) => {
+  const handleUpload = useCallback(async (file: File, type: string, onSuccess: (url: string) => void) => {
+    setUploading(type);
+    setUploadError(null);
     try {
-      await navigator.clipboard.writeText(url);
-      setCopiedAssetId(id);
-      setTimeout(() => setCopiedAssetId(null), 2000);
-    } catch {}
-  }, []);
-
-  const removeAsset = useCallback((id: string) => {
-    setAssets((prev) => prev.filter((a) => a.id !== id));
+      const form = new FormData();
+      form.append("file", file);
+      form.append("type", type);
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Upload failed");
+      onSuccess(data.url);
+    } catch (e: any) {
+      setUploadError(e.message || "Upload failed");
+      setTimeout(() => setUploadError(null), 4000);
+    } finally {
+      setUploading(null);
+    }
   }, []);
 
   const applyPreset = useCallback((partial: Partial<ProfileConfig>) => {
@@ -222,15 +229,25 @@ export default function ProfileEditor({
 
             {/* 1. Assets Uploader */}
             <DashboardCard title="Assets Uploader">
+              {uploadError && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs text-red-400">{uploadError}</div>
+              )}
+
+              {/* Hidden file inputs */}
+              <input ref={bgFileRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "background", (url) => updateNested("background", "imageUrl", url)); e.target.value = ""; }} />
+              <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "avatar", (url) => updateNested("identity", "avatarUrl", url)); e.target.value = ""; }} />
+              <input ref={audioFileRef} type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "audio", (url) => updateNested("audio", "src", url)); e.target.value = ""; }} />
+              <input ref={cursorFileRef} type="file" accept="image/png,image/svg+xml" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "cursor", (url) => updateCursor("customUrl", url)); e.target.value = ""; }} />
+
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Background Image & Video</p>
                 <div className="mb-3 flex items-center gap-2">
                   <TextInput value={cfg.background.imageUrl} onChange={(v) => updateNested("background", "imageUrl", v)} placeholder="Image URL" />
                   <TextInput value={cfg.background.videoUrl} onChange={(v) => updateNested("background", "videoUrl", v)} placeholder="Video URL" />
                 </div>
-                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
-                  <Upload className="h-4 w-4 text-white/30" />
-                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> image or video</p>
+                <div onClick={() => bgFileRef.current?.click()} className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  {uploading === "background" ? <Loader2 className="h-4 w-4 animate-spin text-violet-400" /> : <Upload className="h-4 w-4 text-white/30" />}
+                  <p className="text-xs text-white/40">{uploading === "background" ? "Uploading..." : <><span className="font-medium text-violet-400">Upload</span> image or video</>}</p>
                 </div>
               </div>
 
@@ -239,9 +256,9 @@ export default function ProfileEditor({
                 <div className="mb-3">
                   <TextInput value={cfg.identity.avatarUrl} onChange={(v) => updateNested("identity", "avatarUrl", v)} placeholder="Avatar URL" />
                 </div>
-                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
-                  <Upload className="h-4 w-4 text-white/30" />
-                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> avatar image</p>
+                <div onClick={() => avatarFileRef.current?.click()} className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  {uploading === "avatar" ? <Loader2 className="h-4 w-4 animate-spin text-violet-400" /> : <Upload className="h-4 w-4 text-white/30" />}
+                  <p className="text-xs text-white/40">{uploading === "avatar" ? "Uploading..." : <><span className="font-medium text-violet-400">Upload</span> avatar image</>}</p>
                 </div>
               </div>
 
@@ -250,9 +267,9 @@ export default function ProfileEditor({
                 <div className="mb-3">
                   <TextInput value={cfg.audio.src} onChange={(v) => updateNested("audio", "src", v)} placeholder="Audio URL (mp3)" />
                 </div>
-                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
-                  <Upload className="h-4 w-4 text-white/30" />
-                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> audio file</p>
+                <div onClick={() => audioFileRef.current?.click()} className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  {uploading === "audio" ? <Loader2 className="h-4 w-4 animate-spin text-violet-400" /> : <Upload className="h-4 w-4 text-white/30" />}
+                  <p className="text-xs text-white/40">{uploading === "audio" ? "Uploading..." : <><span className="font-medium text-violet-400">Upload</span> audio file</>}</p>
                 </div>
               </div>
 
@@ -266,34 +283,11 @@ export default function ProfileEditor({
                   />
                   <ColorInput value={cfg.effects.cursor.color} onChange={(v) => updateCursor("color", v)} />
                 </div>
-                <div className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
-                  <Upload className="h-4 w-4 text-white/30" />
-                  <p className="text-xs text-white/40"><span className="font-medium text-violet-400">Upload</span> cursor file</p>
+                <div onClick={() => cursorFileRef.current?.click()} className="flex cursor-pointer flex-col items-center gap-2 rounded-xl border-2 border-dashed border-white/[0.08] px-4 py-5 transition hover:border-white/[0.2]">
+                  {uploading === "cursor" ? <Loader2 className="h-4 w-4 animate-spin text-violet-400" /> : <Upload className="h-4 w-4 text-white/30" />}
+                  <p className="text-xs text-white/40">{uploading === "cursor" ? "Uploading..." : <><span className="font-medium text-violet-400">Upload</span> cursor file</>}</p>
                 </div>
               </div>
-
-              {assets.length > 0 && (
-                <div className="mt-1 grid grid-cols-2 gap-2">
-                  {assets.map((asset) => (
-                    <div key={asset.id} className="group rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 transition hover:border-white/[0.12]">
-                      <p className="truncate text-xs font-medium text-white/70">{asset.name}</p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="rounded px-1.5 py-0.5 text-[9px] font-medium uppercase text-white/30">{asset.type}</span>
-                        <span className="text-[10px] text-white/20">{asset.size}</span>
-                      </div>
-                      <div className="mt-2 flex items-center gap-1">
-                        <button onClick={() => copyAssetUrl(asset.url, asset.id)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] text-white/30 transition hover:bg-white/[0.04] hover:text-white/50">
-                          {copiedAssetId === asset.id ? <Check className="h-2.5 w-2.5 text-emerald-400" /> : <Copy className="h-2.5 w-2.5" />}
-                          {copiedAssetId === asset.id ? "Copied" : "Copy URL"}
-                        </button>
-                        <button onClick={() => removeAsset(asset.id)} className="rounded-lg p-1 text-white/20 transition hover:bg-red-500/10 hover:text-red-400">
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </DashboardCard>
 
             {/* 2. General Customization */}
