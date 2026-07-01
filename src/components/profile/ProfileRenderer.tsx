@@ -587,8 +587,9 @@ export default function ProfileRenderer({
   })();
 
   const earnedBadges: Badge[] = (cfg.badges.items ?? []).flatMap((item: any) => {
-    const key = item?.id as string | undefined;
-    if (!key) return [];
+    const rawKey = typeof item === "string" ? item : item?.id;
+    if (!rawKey) return [];
+    const key = rawKey.toLowerCase();
     const found = PREDEFINED_BADGES[key];
     if (!found) return [];
     return [{
@@ -596,7 +597,7 @@ export default function ProfileRenderer({
       label: found.name,
       description: found.description,
       icon: found.svg,
-      color: item.color || found.color,
+      color: item?.color || found.color,
     }];
   });
 
@@ -710,7 +711,7 @@ export default function ProfileRenderer({
               )}
 
               {/* Badges */}
-              {cfg.badges.enabled && earnedBadges.length > 0 && (
+              {cfg.badges.enabled !== false && earnedBadges.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2 justify-center md:justify-start">
                   {earnedBadges.map((badge) => (
                     <span
@@ -790,7 +791,7 @@ export default function ProfileRenderer({
             )}
 
             {/* Badges */}
-            {cfg.badges.enabled && earnedBadges.length > 0 && (
+            {cfg.badges.enabled !== false && earnedBadges.length > 0 && (
               <div className={`flex flex-wrap gap-1.5 ${justifyClass}`}>
                 {earnedBadges.map((badge) => (
                   <span
