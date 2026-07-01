@@ -13,6 +13,7 @@ import { SpiderLogo } from "@/components/spider-logo";
 import { DiscordPresenceWidget, SkillsWidget, ProjectsWidget, TimeWidget, SpotifyEmbedWidget, GithubStatsWidget, YoutubeEmbedWidget, TelegramWidget } from "./Widgets";
 import { PREDEFINED_BADGES } from "@/lib/profile/badges-data";
 import { getPipedStreamUrl } from "@/lib/profile/audio-resolver";
+import LyricsDisplay from "./widgets/LyricsDisplay";
 
 interface Badge {
   id: string;
@@ -468,9 +469,17 @@ function AudioPlayer({ cfg }: { cfg: ProfileConfig }) {
       <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
         <div className="h-full rounded-full bg-white/60 transition-all duration-300" style={{ width: `${progress * 100}%` }} />
       </div>
-      {currentLyric && (
+      {cfg.audio.lyricsEnabled && cfg.audio.lyrics.length > 0 ? (
+        <LyricsDisplay
+          lyrics={cfg.audio.lyrics as { time: number; text: string }[]}
+          audioRef={audioRef}
+          textColor="rgba(255,255,255,0.95)"
+          mutedTextColor="rgba(255,255,255,0.35)"
+          borderRadius={12}
+        />
+      ) : currentLyric ? (
         <p className="text-[10px] text-white/60 text-center italic truncate px-1">{currentLyric}</p>
-      )}
+      ) : null}
     </div>
   );
 }

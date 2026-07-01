@@ -107,6 +107,9 @@ export const brazyProfile: ProfileConfig = {
     trackId: "",
     coverUrl: "",
     lyrics: [],
+    lyricsRaw: "",
+    lyricsEnabled: true,
+    lyricsSource: "none" as const,
   },
   social: {
     links: [

@@ -151,6 +151,9 @@ export const audioSchema = z.object({
     time: z.number().nullable(),
     text: z.string(),
   })).default([]),
+  lyricsRaw: z.string().default(""),
+  lyricsEnabled: z.boolean().default(true),
+  lyricsSource: z.enum(["lrclib", "manual", "none"]).default("none"),
 });
 export type Audio = z.infer<typeof audioSchema>;
 

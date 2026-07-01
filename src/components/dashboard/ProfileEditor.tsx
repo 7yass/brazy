@@ -237,7 +237,7 @@ export default function ProfileEditor({
               <input ref={bgFileRef} type="file" accept="image/*,video/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "background", (url) => updateNested("background", "imageUrl", url)); e.target.value = ""; }} />
               <input ref={avatarFileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "avatar", (url) => updateNested("identity", "avatarUrl", url)); e.target.value = ""; }} />
               <input ref={audioFileRef} type="file" accept="audio/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "audio", (url) => updateNested("audio", "src", url)); e.target.value = ""; }} />
-              <input ref={cursorFileRef} type="file" accept="image/png,image/svg+xml" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "cursor", (url) => updateCursor("customUrl", url)); e.target.value = ""; }} />
+              <input ref={cursorFileRef} type="file" accept="image/png,image/svg+xml" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f, "cursor", (url) => updateCursor("url", url)); e.target.value = ""; }} />
 
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Background Image & Video</p>
