@@ -1,0 +1,1125 @@
+================================================================================
+BRAZY — LYRICS DISPLAY & AUDIO WIDGET SYSTEM
+Complete Implementation Guide for Portfolio Bio Layout
+================================================================================
+Reference screenshot: "Lyrics Display" panel from guns.lol
+Target: brazy.it portfolio layout audio section
+Written: July 2026
+================================================================================
+
+TABLE OF CONTENTS
+─────────────────
+1.  What This Feature Is (Overview)
+2.  How guns.lol's Lyrics Display Works (Reverse Engineered)
+3.  Where This Lives in Your Codebase
+4.  Schema Changes Required
+5.  AssetsUploader Component — Audio Section Changes
+6.  LyricsDisplay Widget Component (New File)
+7.  LRC Parser Utility (New File)
+8.  Lyrics Search API Route (New File)
+9.  ProfileRenderer — Portfolio Layout Integration
+10. Audio Player Engine (How Sync Works)
+11. UI Panel Breakdown (Row by Row)
+12. Data Flow: Upload → Store → Render → Sync
+13. Edge Cases & Gotchas
+14. File Map (Every file to create/edit)
+15. Step-by-Step Build Order
+16. Full Code: LyricsDisplay.tsx
+17. Full Code: lrc-parser.ts
+18. Full Code: lyrics-search API route
+19. Full Code: AssetsUploader audio section patch
+20. Full Code: Schema patch
+21. Fidelity Checklist
+
+
+================================================================================
+SECTION 1 — WHAT THIS FEATURE IS (OVERVIEW)
+================================================================================
+
+The "Lyrics Display" widget shows synchronized scrolling lyrics on the profile
+page while an audio track plays. It is tied to the audio file the user uploads.
+
+WHAT THE USER SEES ON THEIR PROFILE:
+  - A card (inside or below the portfolio bio layout) that shows the current
+    line of the song being played, with the previous and next lines visible
+    in a dimmed state.
+  - Lines animate vertically — the active line is full brightness, adjacent
+    lines are 40% opacity, further lines are 10% opacity.
+  - When the audio is paused, the lyrics freeze at the last synced position.
+  - When the audio loops or restarts, lyrics reset to line 0.
+
+WHAT THE USER SEES IN THE DASHBOARD (THE PANEL YOU SCREENSHOTTED):
+  ┌─────────────────────────────────────────────────────────────┐
+  │  🎵 Lyrics Display                    👁 ↑ 🗑              │
+  │  Live lyrics for your song                                  │
+  ├─────────────────────────────────────────────────────────────┤
+  │  Audio track                                                │
+  │  ┌────────────────────────────────────────────────────┐    │
+  │  │ 🎵  junkie season 2                             ▼  │    │
+  │  └────────────────────────────────────────────────────┘    │
+  │                                                             │
+  │  Track name                                                 │
+  │  ┌────────────────────────────────────────────────────┐    │
+  │  │ 🎵  e.g. Starboy                                   │    │
+  │  └────────────────────────────────────────────────────┘    │
+  │                                                             │
+  │  Artist (optional)                                          │
+  │  ┌────────────────────────────────────────────────────┐    │
+  │  │ 👥  e.g. The Weeknd                                │    │
+  │  └────────────────────────────────────────────────────┘    │
+  │                                                             │
+  │  [🎵 Search lyrics]  [⬆ Import .lrc file]                  │
+  └─────────────────────────────────────────────────────────────┘
+
+This panel appears ONLY when:
+  a) The user has the "Portfolio" layout selected (cfg.theme.cardStyle === "portfolio")
+  b) OR you expose it globally for any layout (simpler, recommended for v1)
+
+The widget has five controls:
+  1. Audio track selector (dropdown of uploaded audio files)
+  2. Track name (text input — used for searching lyrics)
+  3. Artist (optional text input — used for searching lyrics)
+  4. "Search lyrics" button — calls LRCLIB API
+  5. "Import .lrc file" button — manual .lrc upload
+
+
+================================================================================
+SECTION 2 — HOW GUNS.LOL'S LYRICS DISPLAY WORKS (REVERSE ENGINEERED)
+================================================================================
+
+guns.lol is a profile page builder with a very similar feature set. Based on
+the screenshot you shared and public analysis:
+
+2.1 THE LRC FORMAT
+──────────────────
+Lyrics are stored as .lrc (LyRiCs) format. This is a plain text format:
+
+  [00:12.34] First line of lyrics
+  [00:15.00] Second line of lyrics
+  [00:18.50] Third line of lyrics
+
+Each line has a timestamp in [MM:SS.xx] format. The player reads the audio
+currentTime and highlights the line whose timestamp is <= currentTime AND
+whose next line's timestamp is > currentTime.
+
+2.2 THE SYNC ENGINE
+────────────────────
+The sync engine runs on a requestAnimationFrame loop (NOT setInterval, because
+rAF is more accurate and pauses when tab is hidden). Every frame:
+
+  1. Read audio.currentTime (the HTMLAudioElement's live position in seconds)
+  2. Binary-search the parsed LRC array for the correct line index
+  3. If the active index changed, update state — React re-renders the card
+  4. Smooth scroll / animate the lyric card to center the active line
+
+2.3 THE LYRIC CARD UI
+──────────────────────
+guns.lol renders a card with:
+  - A visible window of ~5 lines
+  - Center line = active = full opacity + slightly larger font
+  - Lines above/below = progressively faded (opacity: 0.4, 0.15)
+  - Smooth CSS transition on translateY so lines "scroll" vertically
+  - The card has a top and bottom gradient mask (CSS mask-image) to fade edges
+
+2.4 LYRICS SOURCE
+──────────────────
+guns.lol almost certainly uses LRCLIB (lrclib.net) — a free, open, no-auth-
+required API that returns synced LRC lyrics for millions of songs. Query:
+
+  GET https://lrclib.net/api/get?artist_name=The+Weeknd&track_name=Starboy
+
+Response:
+  {
+    "syncedLyrics": "[00:12.34] I been on...",
+    "plainLyrics": "I been on...",
+    ...
+  }
+
+This is what powers the "Search lyrics" button.
+
+2.5 THE SECTION SYSTEM
+───────────────────────
+In guns.lol, each widget on the profile is a "section" that can be:
+  - Shown/hidden (the eye icon in the header)
+  - Reordered (the up arrow in the header)
+  - Deleted (the trash icon in the header)
+
+In your codebase, this maps to the sections system already in place.
+The Lyrics Display widget is essentially a section of type "lyrics".
+
+
+================================================================================
+SECTION 3 — WHERE THIS LIVES IN YOUR CODEBASE
+================================================================================
+
+Files that need to change or be created:
+
+  EXISTING FILES TO EDIT:
+  src/lib/profile/schema.ts                        Add lyrics fields to audio schema
+  src/components/dashboard/AssetsUploader.tsx      Add lyrics UI panel
+  src/components/profile/ProfileRenderer.tsx       Render lyrics in portfolio
+  src/app/(dashboard)/customize/_page.tsx          Wire lyrics to AssetsUploader
+
+  NEW FILES TO CREATE:
+  src/components/profile/widgets/LyricsDisplay.tsx   The profile card widget
+  src/lib/audio/lrc-parser.ts                        Parse .lrc format
+  src/lib/audio/lyrics-sync.ts                       rAF sync engine hook
+  src/app/api/lyrics/search/route.ts                 Server-side LRCLIB proxy
+
+
+================================================================================
+SECTION 4 — SCHEMA CHANGES REQUIRED
+================================================================================
+
+In src/lib/profile/schema.ts, the audio section currently has:
+  src, enabled, volume, autoplay, loop, title, artist, coverUrl, trackId
+
+You need to ADD:
+  lyrics         array of parsed LRC lines (stored as JSON in Supabase)
+  lyricsRaw      raw .lrc string (for editing / re-parsing)
+  lyricsEnabled  boolean, show/hide the lyrics card on profile
+  lyricsSource   "lrclib" | "manual" | "none" — where lyrics came from
+
+The lyrics array shape (each element):
+  { time: number;   seconds (e.g. 12.34)
+    text: string;   lyric line text
+  }
+
+SCHEMA PATCH (add to audioSchema in schema.ts):
+  lyrics: z.array(z.object({
+    time: z.number(),
+    text: z.string(),
+  })).default([]),
+  lyricsRaw: z.string().default(""),
+  lyricsEnabled: z.boolean().default(true),
+  lyricsSource: z.enum(["lrclib", "manual", "none"]).default("none"),
+
+WHY STORE BOTH lyrics (parsed) AND lyricsRaw:
+  - lyricsRaw is the original .lrc string — useful for re-parsing, editing
+  - lyrics (parsed array) is what the profile page actually uses at render time
+  - You don't want to parse .lrc on every page load (parsing is cheap but
+    it's cleaner to store the result)
+
+
+================================================================================
+SECTION 5 — ASSETSUPLOADER COMPONENT — AUDIO SECTION CHANGES
+================================================================================
+
+The AssetsUploader already handles audio upload. You need to extend it to show
+the Lyrics Display panel BELOW the volume slider, but ONLY when an audio track
+is uploaded (cfg.audio.src is not empty).
+
+CURRENT AssetsUploader audio props (from _page.tsx):
+  audioUrl, onAudioChange, audioVolume, onAudioVolumeChange,
+  selectedTrack, onAudioMetaChange, lyrics, onLyricsChange
+
+THE LYRICS DISPLAY PANEL (new UI inside AssetsUploader):
+
+  When audio is uploaded, render below the volume slider:
+
+  ┌──────────────────────────────────────────────────────────────┐
+  │ 🎵 Lyrics Display                                            │
+  │ Live lyrics for your song                                    │
+  ├──────────────────────────────────────────────────────────────┤
+  │ Audio track (read-only dropdown showing current track)       │
+  │ Track name (for lyrics search)                               │
+  │ Artist (optional)                                            │
+  │ [Search lyrics]   [Import .lrc file]                         │
+  │ IF lyrics loaded: "42 lines loaded  [Clear]"                 │
+  │ Show lyrics on profile [Toggle ON/OFF]                       │
+  └──────────────────────────────────────────────────────────────┘
+
+STATE NEEDED INSIDE AssetsUploader (local state):
+  const [lyricsTrackName, setLyricsTrackName] = useState(selectedTrack?.title || "")
+  const [lyricsArtist, setLyricsArtist] = useState(selectedTrack?.artist || "")
+  const [lyricsSearching, setLyricsSearching] = useState(false)
+  const [lyricsError, setLyricsError] = useState<string | null>(null)
+
+SEARCH BUTTON HANDLER:
+  async function handleSearchLyrics() {
+    setLyricsSearching(true);
+    setLyricsError(null);
+    try {
+      const res = await fetch(
+        `/api/lyrics/search?track=${encodeURIComponent(lyricsTrackName)}&artist=${encodeURIComponent(lyricsArtist)}`
+      );
+      const data = await res.json();
+      if (data.syncedLyrics) {
+        const parsed = parseLrc(data.syncedLyrics);
+        onLyricsChange(parsed);
+        onLyricsRawChange(data.syncedLyrics);
+      } else if (data.error) {
+        setLyricsError(data.error);
+      } else {
+        setLyricsError("No synced lyrics found. Try importing a .lrc file.");
+      }
+    } catch (e) {
+      setLyricsError("Network error. Try again.");
+    } finally {
+      setLyricsSearching(false);
+    }
+  }
+
+IMPORT .LRC FILE HANDLER:
+  function handleLrcImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const raw = ev.target?.result as string;
+      const parsed = parseLrc(raw);
+      onLyricsChange(parsed);
+      onLyricsRawChange(raw);
+    };
+    reader.readAsText(file);
+  }
+  // Trigger with: <input type="file" accept=".lrc" onChange={handleLrcImport} />
+  // Hidden input, triggered by clicking the "Import .lrc file" button
+
+
+================================================================================
+SECTION 6 — LYRICSSDISPLAY WIDGET COMPONENT (NEW FILE)
+================================================================================
+
+FILE: src/components/profile/widgets/LyricsDisplay.tsx
+
+This component is rendered INSIDE ProfileRenderer when:
+  cfg.audio.lyricsEnabled === true
+  cfg.audio.lyrics.length > 0
+  cfg.audio.src is not empty
+
+PROPS:
+  interface LyricsDisplayProps {
+    lyrics: { time: number; text: string }[];
+    audioRef: React.RefObject<HTMLAudioElement>;
+    primaryColor: string;
+    textColor: string;
+    mutedTextColor: string;
+  }
+
+HOW IT WORKS:
+
+1. The component imports useLyricsSync (custom hook, see Section 10)
+2. useLyricsSync returns: { activeIndex: number }
+3. The component renders a list of ~7 lines centered on activeIndex
+4. Each line has opacity based on distance from activeIndex:
+     distance 0  opacity: 1,    font-weight: 700, scale: 1.0
+     distance 1  opacity: 0.45, font-weight: 500, scale: 0.97
+     distance 2  opacity: 0.18, font-weight: 400, scale: 0.95
+     distance 3+ opacity: 0.06, font-weight: 400, scale: 0.93
+
+5. Vertical position is achieved with translateY animation:
+   The offset formula:
+     const LINE_HEIGHT = 32;
+     const offset = -activeIndex * LINE_HEIGHT + CONTAINER_HEIGHT / 2 - LINE_HEIGHT / 2;
+
+6. Apply CSS transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)
+
+7. Top and bottom gradient masks (fade edges):
+   mask-image: linear-gradient(
+     to bottom,
+     transparent 0%,
+     black 20%,
+     black 80%,
+     transparent 100%
+   );
+
+EMPTY LINE HANDLING:
+  Some .lrc files have lines like "[00:12.00] " (blank) for musical intros.
+  Show a music note character for these so there's still a visual placeholder.
+
+PORTFOLIO LAYOUT PLACEMENT:
+  In the Portfolio layout, the LyricsDisplay card appears as a section below
+  the main bio area. It should look like a frosted card, same border/radius
+  as the rest of the portfolio layout.
+
+
+================================================================================
+SECTION 7 — LRC PARSER UTILITY (NEW FILE)
+================================================================================
+
+FILE: src/lib/audio/lrc-parser.ts
+
+PURPOSE: Convert raw .lrc string into array of { time: number, text: string }
+
+LRC FORMAT RULES:
+  - Lines start with [MM:SS.xx] timestamp
+  - The rest of the line is the lyric text
+  - Lines starting with [ti:], [ar:], [al:] are metadata — SKIP these
+  - Blank lines — include as { time: X, text: "" }
+  - Multiple timestamps on same line — duplicate the text for each
+    e.g. "[00:12.00][00:45.50] Chorus line" creates two entries
+
+ALGORITHM:
+  function parseLrc(raw: string): { time: number; text: string }[] {
+    const lines = raw.split("\n");
+    const result: { time: number; text: string }[] = [];
+    const timeRegex = /\[(\d{1,2}):(\d{2}\.\d{1,3})\]/g;
+    const metaRegex = /^\[(ti|ar|al|by|offset|re|ve):/i;
+
+    for (const line of lines) {
+      if (metaRegex.test(line)) continue;
+      const times: number[] = [];
+      let match;
+      let lastIndex = 0;
+      timeRegex.lastIndex = 0;
+      while ((match = timeRegex.exec(line)) !== null) {
+        const minutes = parseInt(match[1], 10);
+        const seconds = parseFloat(match[2]);
+        times.push(minutes * 60 + seconds);
+        lastIndex = timeRegex.lastIndex;
+      }
+      if (times.length === 0) continue;
+      const text = line.slice(lastIndex).trim();
+      for (const time of times) {
+        result.push({ time, text });
+      }
+    }
+    return result.sort((a, b) => a.time - b.time);
+  }
+
+EDGE CASES TO HANDLE:
+  - Timestamps like [1:23.4] (single digit minute) — handled by \d{1,2}
+  - Timestamps with 1-3 decimal places — handled by \d{1,3}
+  - Windows line endings \r\n — split on \n and trim each line
+  - BOM character at file start — strip with raw.replace(/^\uFEFF/, "")
+
+
+================================================================================
+SECTION 8 — LYRICS SEARCH API ROUTE (NEW FILE)
+================================================================================
+
+FILE: src/app/api/lyrics/search/route.ts
+
+WHY A SERVER ROUTE (not client-side fetch):
+  1. Avoids CORS issues on some browsers
+  2. Server-side caching with Next.js revalidate (avoids hammering LRCLIB)
+  3. Future: swap LRCLIB for Genius/Musixmatch without changing frontend
+
+IMPLEMENTATION:
+  import { NextRequest, NextResponse } from "next/server";
+
+  export async function GET(req: NextRequest) {
+    const track = req.nextUrl.searchParams.get("track") || "";
+    const artist = req.nextUrl.searchParams.get("artist") || "";
+
+    if (!track) {
+      return NextResponse.json({ error: "track parameter is required" }, { status: 400 });
+    }
+
+    try {
+      // Try LRCLIB direct get first
+      const url = new URL("https://lrclib.net/api/get");
+      url.searchParams.set("track_name", track);
+      if (artist) url.searchParams.set("artist_name", artist);
+
+      const res = await fetch(url.toString(), {
+        headers: { "Lrclib-Client": "brazy.it (contact@brazy.it)" },
+        next: { revalidate: 86400 }, // cache 24h
+      });
+
+      if (res.status === 404) {
+        // Fallback to search endpoint
+        const searchUrl = new URL("https://lrclib.net/api/search");
+        searchUrl.searchParams.set("q", `${artist} ${track}`.trim());
+        const searchRes = await fetch(searchUrl.toString());
+        const searchData = await searchRes.json();
+
+        if (Array.isArray(searchData) && searchData.length > 0) {
+          const synced = searchData.find((r: any) => !!r.syncedLyrics);
+          const best = synced || searchData[0];
+          return NextResponse.json({
+            syncedLyrics: best.syncedLyrics || null,
+            plainLyrics: best.plainLyrics || null,
+            source: "lrclib",
+          });
+        }
+        return NextResponse.json({ error: "No lyrics found for this track" }, { status: 404 });
+      }
+
+      if (!res.ok) {
+        return NextResponse.json({ error: "LRCLIB error" }, { status: 500 });
+      }
+
+      const data = await res.json();
+      return NextResponse.json({
+        syncedLyrics: data.syncedLyrics || null,
+        plainLyrics: data.plainLyrics || null,
+        source: "lrclib",
+      });
+
+    } catch (err) {
+      console.error("Lyrics search error:", err);
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+  }
+
+RESPONSE CONTRACT:
+  Success: { syncedLyrics: string | null, plainLyrics: string | null, source: "lrclib" }
+  Error:   { error: string }
+
+NOTE ON synced vs plain lyrics:
+  - syncedLyrics = full .lrc string with timestamps — USE THIS for the widget
+  - plainLyrics = just the text lines, no timestamps — fallback only
+  - If syncedLyrics is null but plainLyrics exists, show as static list (v2)
+
+
+================================================================================
+SECTION 9 — PROFILERENDERER — PORTFOLIO LAYOUT INTEGRATION
+================================================================================
+
+In src/components/profile/ProfileRenderer.tsx you need to:
+
+1. Create an HTMLAudioElement ref that the audio player uses
+2. Pass that ref to LyricsDisplay
+3. Conditionally render LyricsDisplay
+
+HOW THE AUDIO REF WORKS:
+  ProfileRenderer already renders the audio player (the music player widget
+  that shows album art + play button). That player uses an <audio> tag.
+  You need to expose that <audio> element's ref so LyricsDisplay can read
+  .currentTime from it.
+
+  Pattern:
+    const audioRef = useRef<HTMLAudioElement>(null);
+
+    // Inside the audio player section:
+    <audio ref={audioRef} src={cfg.audio.src} ... />
+
+    // Inside the portfolio layout, after bio section:
+    {cfg.audio.lyricsEnabled && cfg.audio.lyrics.length > 0 && (
+      <LyricsDisplay
+        lyrics={cfg.audio.lyrics}
+        audioRef={audioRef}
+        primaryColor={cfg.theme.primaryColor}
+        textColor={cfg.theme.textColor}
+        mutedTextColor={cfg.theme.mutedTextColor}
+      />
+    )}
+
+PORTFOLIO LAYOUT STRUCTURE (where to insert):
+  [Avatar + Name + Bio]
+  [Social links row]
+  [Stats / badges row]
+  ─────────────────────   divider
+  [Lyrics Display card]   NEW — goes here
+
+
+================================================================================
+SECTION 10 — AUDIO PLAYER ENGINE (HOW SYNC WORKS)
+================================================================================
+
+FILE: src/lib/audio/lyrics-sync.ts
+
+THE HOOK: useLyricsSync
+
+  export function useLyricsSync(
+    lyrics: { time: number; text: string }[],
+    audioRef: React.RefObject<HTMLAudioElement>
+  ): { activeIndex: number } {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const rafRef = useRef<number>();
+
+    useEffect(() => {
+      if (!audioRef.current || lyrics.length === 0) return;
+
+      function tick() {
+        const audio = audioRef.current;
+        if (!audio) return;
+        const t = audio.currentTime;
+
+        // Binary search: find last line whose time <= t
+        let lo = 0, hi = lyrics.length - 1, idx = 0;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          if (lyrics[mid].time <= t) {
+            idx = mid;
+            lo = mid + 1;
+          } else {
+            hi = mid - 1;
+          }
+        }
+        setActiveIndex(idx);
+        rafRef.current = requestAnimationFrame(tick);
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+      return () => {
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      };
+    }, [lyrics, audioRef]);
+
+    return { activeIndex };
+  }
+
+WHY BINARY SEARCH:
+  With 200+ lyric lines, linear search runs 200 comparisons per frame (60fps).
+  Binary search does it in log2(200) ≈ 7 comparisons.
+
+WHY requestAnimationFrame NOT setInterval:
+  - rAF runs at the display refresh rate (60-120fps) for smooth updates
+  - rAF is automatically paused when the tab is hidden (saves battery)
+  - rAF sync errors do not accumulate like setInterval drift
+
+HANDLING SEEK:
+  When the user drags the audio progress bar to a new position, audio.currentTime
+  jumps instantly. The next rAF tick picks up the new time and binary-searches
+  to the correct line. No special handling needed.
+
+HANDLING LOOP:
+  When audio.loop is true and the track ends, currentTime resets to 0. The next
+  rAF tick finds index 0. The LyricsDisplay animates back to the first line.
+
+
+================================================================================
+SECTION 11 — UI PANEL BREAKDOWN (ROW BY ROW)
+================================================================================
+
+Matching exactly what guns.lol shows in the screenshot:
+
+ROW 1: Header bar
+  Icon: Music note (Lucide: Music)
+  Title: "Lyrics Display" — font-bold text-sm text-neutral-200
+  Subtitle: "Live lyrics for your song" — text-xs text-neutral-500
+  Eye icon = toggle lyricsEnabled (show/hide on profile)
+  Up arrow = reorder sections (optional for v1)
+  Trash icon = clear lyrics + set lyricsSource to "none"
+
+ROW 2: Audio track selector
+  Label: "Audio track"
+  Control: SelectControl (the existing primitive from _page.tsx)
+  Shows current uploaded track title
+  Icon: Music note (Lucide: Music)
+
+ROW 3: Track name input
+  Label: "Track name"
+  Control: InputText with Music icon
+  Placeholder: "e.g. Starboy"
+  Value: lyricsTrackName (local state, pre-filled from selectedTrack.title)
+  Purpose: sent to lyrics search API
+
+ROW 4: Artist input
+  Label: "Artist (optional)"
+  Control: InputText with Users icon
+  Placeholder: "e.g. The Weeknd"
+  Value: lyricsArtist (local state, pre-filled from selectedTrack.artist)
+  Purpose: improves search accuracy on LRCLIB
+
+ROW 5: Action buttons
+  [Search lyrics] — calls handleSearchLyrics(), shows spinner when loading
+  [Import .lrc file] — triggers hidden <input type="file" accept=".lrc">
+
+ROW 6: Status (conditional)
+  If lyrics.length > 0:
+    "{lyrics.length} lines loaded   [Clear lyrics]"
+    Show on profile: [Toggle]
+  If lyricsError:
+    Error message in red
+  If lyricsSearching:
+    "Searching..." with spinner
+
+STYLING:
+  Background: bg-neutral-950
+  Border: border border-white/[0.06] rounded-xl
+  Separator from volume control: border-t border-neutral-900/60 pt-4 mt-2
+
+
+================================================================================
+SECTION 12 — DATA FLOW: UPLOAD → STORE → RENDER → SYNC
+================================================================================
+
+STEP 1: User uploads audio file
+  AssetsUploader → Supabase Storage → returns URL
+  onAudioChange(url) called
+  _page.tsx updates cfg.audio.src, cfg.audio.enabled = true
+  scheduleSave() → clientSaveProfile() → Supabase upsert
+
+STEP 2: User fills track name + artist, clicks "Search lyrics"
+  fetch("/api/lyrics/search?track=...&artist=...")
+  Server calls LRCLIB API
+  Response: { syncedLyrics: "[00:12.34] I been..." }
+  parseLrc(syncedLyrics) → array of { time, text }
+  onLyricsChange(parsedArray) called
+  _page.tsx updates cfg.audio.lyrics, cfg.audio.lyricsRaw, cfg.audio.lyricsSource
+  scheduleSave() → saved to Supabase
+
+STEP 3: Profile page loads (public view)
+  Next.js server renders ProfileRenderer with cfg from Supabase
+  cfg.audio.lyrics is the pre-parsed array (no runtime parsing needed)
+  ProfileRenderer mounts LyricsDisplay with the lyrics array
+  LyricsDisplay calls useLyricsSync which starts the rAF loop
+
+STEP 4: Visitor views profile, audio plays
+  Browser starts HTMLAudioElement playback
+  rAF loop reads currentTime every frame
+  Binary search finds correct lyric line
+  activeIndex state updates → React re-renders lyric lines
+  CSS transitions animate the scroll
+
+
+================================================================================
+SECTION 13 — EDGE CASES & GOTCHAS
+================================================================================
+
+13.1 LRCLIB RATE LIMITS
+  LRCLIB is free but rate-limited. Use Next.js caching:
+  fetch(url, { next: { revalidate: 86400 } }) caches for 24h on the server.
+  If 100 users search for the same track, only 1 real LRCLIB request per day.
+
+13.2 NO SYNCED LYRICS FOUND
+  LRCLIB has synced lyrics for ~60% of popular songs. For the other 40%,
+  you get plainLyrics only. For v1: tell user to import a .lrc file manually.
+
+13.3 AUDIO AUTOPLAY BLOCKED BY BROWSER
+  Browsers block autoplay until user interaction. The lyrics sync starts on
+  the first rAF tick — if audio has not started, currentTime = 0 and the
+  first lyric line shows. This is correct behavior.
+
+13.4 LYRICS AND AUDIO OUT OF SYNC
+  LRCLIB lyrics can be slightly off-sync for some tracks. No automatic fix —
+  the user would need to import a corrected .lrc file manually.
+
+13.5 LARGE LYRIC ARRAYS (200+ lines)
+  Even 300 lines of { time, text } is about 15KB JSON.
+  This is fine in Supabase JSONB. No optimization needed.
+
+13.6 SSR / HYDRATION
+  The rAF loop must NOT run on the server. useLyricsSync uses useEffect,
+  which only runs client-side. activeIndex defaults to 0 on server render
+  so the first lyric line shows in SSR — correct behavior.
+
+13.7 PORTFOLIO LAYOUT ONLY VS ALL LAYOUTS
+  For your v1, add it as a section type that works in any layout but is
+  introduced and promoted in the Portfolio layout UI.
+
+13.8 MULTIPLE AUDIO TRACKS
+  Current schema supports only one audio track. The Audio track dropdown
+  shows only one option. Do NOT over-engineer multi-track unless requested.
+
+
+================================================================================
+SECTION 14 — FILE MAP (EVERY FILE TO CREATE OR EDIT)
+================================================================================
+
+CREATE (new files):
+  src/components/profile/widgets/LyricsDisplay.tsx    ~120 lines
+  src/lib/audio/lrc-parser.ts                         ~50 lines
+  src/lib/audio/lyrics-sync.ts                        ~50 lines
+  src/app/api/lyrics/search/route.ts                  ~60 lines
+
+EDIT (existing files):
+  src/lib/profile/schema.ts
+    Add 4 fields to audioSchema: lyrics, lyricsRaw, lyricsEnabled, lyricsSource
+
+  src/components/dashboard/AssetsUploader.tsx
+    Add Lyrics Display UI panel below volume slider
+    Add handleSearchLyrics() function
+    Add handleLrcImport() function
+    Add lyricsTrackName, lyricsArtist, lyricsSearching, lyricsError state
+    Add new props: lyricsRaw, onLyricsRawChange, lyricsEnabled, onLyricsEnabledChange
+
+  src/app/(dashboard)/customize/_page.tsx
+    Pass new props to AssetsUploader
+    Wire cfg.audio.lyricsRaw and cfg.audio.lyricsEnabled to set() calls
+
+  src/components/profile/ProfileRenderer.tsx
+    Import LyricsDisplay
+    Add audioRef to existing <audio> element
+    Conditionally render <LyricsDisplay> in portfolio layout section
+
+
+================================================================================
+SECTION 15 — STEP-BY-STEP BUILD ORDER
+================================================================================
+
+Follow this exact order to avoid import errors:
+
+STEP 1: Schema
+  Edit src/lib/profile/schema.ts
+  Add lyrics, lyricsRaw, lyricsEnabled, lyricsSource to audioSchema
+  Run: npx tsc --noEmit to check no type errors
+
+STEP 2: LRC Parser
+  Create src/lib/audio/lrc-parser.ts
+  Export: parseLrc(raw: string): { time: number; text: string }[]
+  Test: parseLrc("[00:12.34] Hello world") → [{ time: 12.34, text: "Hello world" }]
+
+STEP 3: Lyrics Sync Hook
+  Create src/lib/audio/lyrics-sync.ts
+  Export: useLyricsSync(lyrics, audioRef): { activeIndex }
+
+STEP 4: API Route
+  Create src/app/api/lyrics/search/route.ts
+  Test: curl "http://localhost:3000/api/lyrics/search?track=Starboy&artist=The+Weeknd"
+  Expected: JSON with syncedLyrics field
+
+STEP 5: LyricsDisplay Widget
+  Create src/components/profile/widgets/LyricsDisplay.tsx
+  Import useLyricsSync from step 3
+  Hardcode a 3-line lyrics array for initial testing
+
+STEP 6: ProfileRenderer integration
+  Add audioRef to <audio> element
+  Conditionally render <LyricsDisplay> in portfolio section
+  Test: visit your profile with lyrics loaded
+
+STEP 7: AssetsUploader UI
+  Add the full Lyrics Display panel (see Section 5 and Section 11)
+  Wire Search and Import buttons
+  Test full flow: upload audio → search lyrics → see sync on profile
+
+STEP 8: _page.tsx wiring
+  Pass new props to AssetsUploader
+  Ensure all 4 new schema fields are properly saved and loaded
+
+
+================================================================================
+SECTION 16 — FULL CODE: LyricsDisplay.tsx
+================================================================================
+
+// src/components/profile/widgets/LyricsDisplay.tsx
+"use client";
+
+import { useMemo } from "react";
+import { useLyricsSync } from "@/lib/audio/lyrics-sync";
+
+interface LyricLine {
+  time: number;
+  text: string;
+}
+
+interface LyricsDisplayProps {
+  lyrics: LyricLine[];
+  audioRef: React.RefObject<HTMLAudioElement>;
+  primaryColor?: string;
+  textColor?: string;
+  mutedTextColor?: string;
+  borderRadius?: number;
+}
+
+const LINE_HEIGHT = 34;
+const VISIBLE_LINES = 7;
+const CONTAINER_HEIGHT = LINE_HEIGHT * VISIBLE_LINES;
+
+function getOpacity(distance: number): number {
+  if (distance === 0) return 1;
+  if (distance === 1) return 0.45;
+  if (distance === 2) return 0.18;
+  return 0.07;
+}
+
+function getScale(distance: number): number {
+  if (distance === 0) return 1;
+  if (distance === 1) return 0.97;
+  return 0.94;
+}
+
+export default function LyricsDisplay({
+  lyrics,
+  audioRef,
+  primaryColor = "#ffffff",
+  textColor = "#ffffff",
+  mutedTextColor = "#666666",
+  borderRadius = 16,
+}: LyricsDisplayProps) {
+  const { activeIndex } = useLyricsSync(lyrics, audioRef);
+
+  const translateY = useMemo(() => {
+    return -activeIndex * LINE_HEIGHT + CONTAINER_HEIGHT / 2 - LINE_HEIGHT / 2;
+  }, [activeIndex]);
+
+  if (lyrics.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        borderRadius,
+        overflow: "hidden",
+        position: "relative",
+        height: CONTAINER_HEIGHT,
+        maskImage:
+          "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
+      }}
+    >
+      <div
+        style={{
+          transform: `translateY(${translateY}px)`,
+          transition: "transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          willChange: "transform",
+        }}
+      >
+        {lyrics.map((line, i) => {
+          const distance = Math.abs(i - activeIndex);
+          const isActive = i === activeIndex;
+          return (
+            <div
+              key={`${line.time}-${i}`}
+              style={{
+                height: LINE_HEIGHT,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                textAlign: "center",
+                padding: "0 24px",
+                opacity: getOpacity(distance),
+                transform: `scale(${getScale(distance)})`,
+                transition: "opacity 0.3s ease, transform 0.3s ease",
+                fontSize: isActive ? "13px" : "12px",
+                fontWeight: isActive ? 700 : 400,
+                color: isActive ? textColor : mutedTextColor,
+                letterSpacing: isActive ? "-0.01em" : "0",
+                userSelect: "none",
+                pointerEvents: "none",
+              }}
+            >
+              {line.text || "\u266A"}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+================================================================================
+SECTION 17 — FULL CODE: lrc-parser.ts
+================================================================================
+
+// src/lib/audio/lrc-parser.ts
+
+export interface LyricLine {
+  time: number;
+  text: string;
+}
+
+export function parseLrc(raw: string): LyricLine[] {
+  const cleaned = raw.replace(/^\uFEFF/, "");
+  const lines = cleaned.split(/\r?\n/);
+  const result: LyricLine[] = [];
+  const timeRegex = /\[(\d{1,2}):(\d{2}\.\d{1,3})\]/g;
+  const metaRegex = /^\[(ti|ar|al|by|offset|re|ve|length):/i;
+
+  for (const line of lines) {
+    if (metaRegex.test(line)) continue;
+    const times: number[] = [];
+    let match: RegExpExecArray | null;
+    let lastMatchEnd = 0;
+
+    timeRegex.lastIndex = 0;
+    while ((match = timeRegex.exec(line)) !== null) {
+      const minutes = parseInt(match[1], 10);
+      const seconds = parseFloat(match[2]);
+      times.push(minutes * 60 + seconds);
+      lastMatchEnd = timeRegex.lastIndex;
+    }
+
+    if (times.length === 0) continue;
+    const text = line.slice(lastMatchEnd).trim();
+    for (const time of times) {
+      result.push({ time, text });
+    }
+  }
+
+  return result.sort((a, b) => a.time - b.time);
+}
+
+export function findActiveLine(lyrics: LyricLine[], currentTime: number): number {
+  if (lyrics.length === 0) return 0;
+  let lo = 0, hi = lyrics.length - 1, idx = 0;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (lyrics[mid].time <= currentTime) {
+      idx = mid;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return idx;
+}
+
+
+================================================================================
+SECTION 18 — FULL CODE: lyrics-sync.ts
+================================================================================
+
+// src/lib/audio/lyrics-sync.ts
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { findActiveLine, LyricLine } from "./lrc-parser";
+
+export function useLyricsSync(
+  lyrics: LyricLine[],
+  audioRef: React.RefObject<HTMLAudioElement>
+): { activeIndex: number } {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const rafRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (lyrics.length === 0) return;
+    let lastIndex = -1;
+
+    function tick() {
+      const audio = audioRef.current;
+      if (audio) {
+        const idx = findActiveLine(lyrics, audio.currentTime);
+        if (idx !== lastIndex) {
+          lastIndex = idx;
+          setActiveIndex(idx);
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== undefined) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [lyrics, audioRef]);
+
+  return { activeIndex };
+}
+
+
+================================================================================
+SECTION 19 — FULL CODE: lyrics search API route
+================================================================================
+
+// src/app/api/lyrics/search/route.ts
+import { NextRequest, NextResponse } from "next/server";
+
+const LRCLIB_BASE = "https://lrclib.net/api";
+const CLIENT_HEADER = "brazy.it lyrics-display/1.0";
+
+export async function GET(req: NextRequest) {
+  const track = req.nextUrl.searchParams.get("track")?.trim() || "";
+  const artist = req.nextUrl.searchParams.get("artist")?.trim() || "";
+
+  if (!track) {
+    return NextResponse.json(
+      { error: "track parameter is required" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const getUrl = new URL(`${LRCLIB_BASE}/get`);
+    getUrl.searchParams.set("track_name", track);
+    if (artist) getUrl.searchParams.set("artist_name", artist);
+
+    const getRes = await fetch(getUrl.toString(), {
+      headers: { "Lrclib-Client": CLIENT_HEADER },
+      next: { revalidate: 86400 },
+    });
+
+    if (getRes.ok) {
+      const data = await getRes.json();
+      return NextResponse.json({
+        syncedLyrics: data.syncedLyrics || null,
+        plainLyrics: data.plainLyrics || null,
+        trackName: data.trackName || track,
+        artistName: data.artistName || artist,
+        source: "lrclib",
+      });
+    }
+
+    // Fallback to search
+    const searchUrl = new URL(`${LRCLIB_BASE}/search`);
+    searchUrl.searchParams.set("q", `${artist} ${track}`.trim());
+
+    const searchRes = await fetch(searchUrl.toString(), {
+      headers: { "Lrclib-Client": CLIENT_HEADER },
+      next: { revalidate: 3600 },
+    });
+
+    if (searchRes.ok) {
+      const results = await searchRes.json();
+      if (Array.isArray(results) && results.length > 0) {
+        const synced = results.find((r: any) => !!r.syncedLyrics);
+        const best = synced || results[0];
+        return NextResponse.json({
+          syncedLyrics: best.syncedLyrics || null,
+          plainLyrics: best.plainLyrics || null,
+          trackName: best.trackName || track,
+          artistName: best.artistName || artist,
+          source: "lrclib",
+        });
+      }
+    }
+
+    return NextResponse.json(
+      { error: "No lyrics found. Try importing a .lrc file manually." },
+      { status: 404 }
+    );
+
+  } catch (err) {
+    console.error("[lyrics/search] error:", err);
+    return NextResponse.json(
+      { error: "Failed to fetch lyrics. Please try again." },
+      { status: 500 }
+    );
+  }
+}
+
+
+================================================================================
+SECTION 20 — FULL CODE: Schema patch
+================================================================================
+
+// In src/lib/profile/schema.ts
+// Find the audioSchema (z.object({ ... })) and ADD these fields after trackId:
+
+// lyrics: z.array(
+//   z.object({
+//     time: z.number(),
+//     text: z.string(),
+//   })
+// ).default([]),
+//
+// lyricsRaw: z.string().default(""),
+//
+// lyricsEnabled: z.boolean().default(true),
+//
+// lyricsSource: z.enum(["lrclib", "manual", "none"]).default("none"),
+//
+// Zod's .default() means existing profiles without these fields will get
+// safe defaults automatically. No database migration needed if you store
+// config as JSONB in Supabase (the normalize/deepMerge handles it).
+
+
+================================================================================
+SECTION 21 — FIDELITY CHECKLIST (matching guns.lol exactly)
+================================================================================
+
+[ ] Gradient mask fade on top/bottom edges of lyrics window
+[ ] Active line is bold (font-weight: 700) and slightly larger (13px vs 12px)
+[ ] Opacity steps: 1.0, 0.45, 0.18, 0.07 (not just binary on/off)
+[ ] Scale animation on lines: 1.0, 0.97, 0.94
+[ ] CSS transition on translateY: cubic-bezier(0.25, 0.46, 0.45, 0.94) 350ms
+[ ] Empty lines show music note character
+[ ] Panel header: icon + title + subtitle + 3 action icons
+[ ] Audio track dropdown shows currently uploaded track name
+[ ] Track name input pre-filled from uploaded file metadata
+[ ] Artist input is optional, pre-filled from metadata
+[ ] Search lyrics button shows spinner while fetching
+[ ] Import .lrc file opens native file picker (hidden input)
+[ ] Status line after loading: "N lines loaded [Clear]"
+[ ] Show on profile toggle (lyricsEnabled)
+[ ] Binary search for active line (not linear scan)
+[ ] requestAnimationFrame sync loop (not setInterval)
+[ ] Lyrics panel only visible in AssetsUploader when audio is uploaded
+[ ] LRCLIB API called server-side with 24h cache
+[ ] Fallback to search endpoint if direct get returns 404
+[ ] lyricsRaw stored for potential re-parsing
+[ ] Full TypeScript types throughout
+
+================================================================================
+END OF DOCUMENT — 21 sections
+================================================================================
