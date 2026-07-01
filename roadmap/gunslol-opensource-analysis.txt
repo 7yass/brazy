@@ -1,0 +1,950 @@
+================================================================================
+  GUNS.LOL OPEN SOURCE — COMPLETE DEEP-DIVE ANALYSIS
+  Source: https://github.com/JAQLIV/gunslol-open-source
+  Analyzed by: Perplexity for brazy dev reference
+  Date: July 2026
+================================================================================
+
+This document is a line-by-line, concept-by-concept breakdown of every single
+thing the JAQLIV open-source guns.lol clone does. Read this to understand how
+the real guns.lol-style profile page is constructed, what tricks it uses, what
+you can steal, what you should do differently, and where brazy already beats it.
+
+================================================================================
+  FILE STRUCTURE — ONLY 4 FILES
+================================================================================
+
+  index.html   — 31,485 bytes  — ALL HTML + ALL inline CSS (no external sheet)
+  script.js    — 23,688 bytes  — ALL JavaScript logic
+  style.css    — 14,021 bytes  — Additional/override styles (separate file)
+  README.MD    — 3,244 bytes   — Setup instructions
+
+That's it. No framework. No React. No build step. No npm. Pure vanilla HTML +
+CSS + JS. The entire app is a single static page that you drop on a web server.
+
+Assets are loaded from a local /assets/ folder:
+  assets/profile.gif          — profile picture (animated GIF)
+  assets/background.mp4       — default theme video background
+  assets/hacker_background.mp4
+  assets/rain_background.mov  — NOTE: .mov not .mp4 (important for compatibility)
+  assets/anime_background.mp4
+  assets/car_background.mp4
+  assets/background_music.mp3
+  assets/hacker_music.mp3
+  assets/rain_music.mp3
+  assets/anime_music.mp3
+  assets/car_music.mp3
+  assets/custom_cursor.png    — custom mouse cursor image
+  assets/Angel_wish.ttf       — custom font loaded via @font-face
+  assets/staff.gif            — badge
+  assets/owner.gif            — badge
+  assets/partner.gif          — badge
+  assets/developer.png        — badge (only badge that is .png not .gif)
+  assets/bug_bounty.gif       — badge
+  assets/hated_guns.gif       — badge
+  assets/hated_fakecrime.gif  — badge
+  assets/verified.gif         — badge
+  assets/rule_maker.gif       — badge
+  assets/discord.png          — social icon
+  assets/github.png           — social icon
+  assets/youtube.png          — social icon
+  assets/tiktok.png           — social icon
+  assets/python.png           — skills panel icon
+  assets/cpp.png              — skills panel icon
+  assets/csharp.png           — skills panel icon
+
+LESSON FOR BRAZY: This project hardcodes every asset path. In brazy you store
+everything in the database and serve dynamic URLs — that's massively better and
+scalable. This clone is a personal static page, not a multi-user platform.
+
+================================================================================
+  SECTION 1: THE PAGE ENTRY — START SCREEN
+================================================================================
+
+When the page first loads, a full-screen black overlay (#start-screen) covers
+everything with z-index: 30 (above everything else).
+
+Inside it, a typewriter animation runs on the text:
+  "Click here to see the motion baby"
+
+HOW THE TYPEWRITER WORKS:
+  - startIndex starts at 0
+  - Every 100ms, one character is added to startTextContent
+  - The blinking cursor "|" toggles every 500ms via setInterval
+  - Text is just: startText.textContent = startTextContent + (cursorVisible ? '|' : ' ')
+  - No library — pure setTimeout recursion
+
+WHY THIS PATTERN EXISTS:
+  Browser autoplay policy blocks audio until user interacts. The start screen is
+  a trick to get a user click before trying to play music. The moment the user
+  clicks the start screen:
+    1. startScreen.classList.add('hidden')
+    2. backgroundMusic.muted = false
+    3. backgroundMusic.play()
+    4. Profile block animates in via GSAP
+    5. Typewriter for name + bio begins
+
+The same touchstart handler is duplicated for mobile support.
+
+LESSON FOR BRAZY: You use a "Page Enter Text" field (seen in the screenshot —
+"who said im black???"). Same concept. The start screen is the unlock gate.
+This clone proves the pattern is correct. You're already doing this right.
+
+================================================================================
+  SECTION 2: THE PROFILE BLOCK — HTML STRUCTURE
+================================================================================
+
+The main card is a div with id="profile-block". Let's break down every child:
+
+  #profile-block (the card)
+  └── .profile-header (flex row: avatar LEFT, info RIGHT)
+      ├── .profile-container (150x150px square, contains the avatar)
+      │   └── .profile-picture (img, 150x150, border-radius: 50% = circle)
+      └── .profile-info (flex column, takes remaining width)
+          ├── .name-and-badges (flex row: name + badge box side by side)
+          │   ├── #profile-name (the username text)
+          │   └── .badge-box (outer wrapper with semi-transparent border)
+          │       └── .badge-box-inner (darker inner box with inset shadow)
+          │           └── .badge-group (flex row of all badges)
+          │               └── .badge-container (×9, one per badge)
+          │                   ├── img.badge (22x22px badge icon)
+          │                   └── span.tooltip (hidden label, shows on hover)
+          └── #profile-bio (the bio text, filled by typewriter)
+  └── .bio-separator (just a 1px horizontal line, rgba white 20%)
+  └── .profile-footer (flex column, bottom of card)
+      ├── .social-links (flex row of social icons)
+      │   └── a > img.social-icon (×4: Discord, GitHub, YouTube, TikTok)
+      └── .visitor-counter (pill-shaped views display)
+          ├── svg (eye icon inline)
+          ├── #visitor-count (the number)
+          └── span.tooltip (says "Profile Views" on hover)
+
+TOTAL NESTING DEPTH: 6 levels deep.
+
+CARD CSS (the #profile-block styles):
+  position: fixed
+  top: 50%
+  left: 50%
+  transform: translate(-50%, -50%)   ← centered on screen
+  width: 820px                        ← fixed width, NOT responsive by default
+  min-height: 332px
+  background: rgba(0, 0, 0, 0.7)     ← dark glass effect
+  border: 1px solid rgba(255,255,255,0.2)
+  padding: 20px
+  border-radius: 15px
+  z-index: 20
+  backdrop-filter: blur(10px)         ← the frosted glass blur
+  opacity: 0                          ← starts invisible, GSAP animates it in
+  transform-style: preserve-3d        ← needed for 3D tilt effect
+  transition: transform 0.5s ease-out
+
+LESSON FOR BRAZY: Your card widths are configurable (narrow/normal/wide/full).
+This clone is hardcoded to 820px. Your approach is strictly better. The
+backdrop-filter: blur(10px) is the glassmorphism effect — you already do this
+with your `cardBlur` setting. The preserve-3d is needed for the tilt effect
+which you should consider adding (explained in Section 7).
+
+================================================================================
+  SECTION 3: THE BADGE SYSTEM
+================================================================================
+
+This is extremely relevant because you're fixing badges right now.
+
+HOW THIS CLONE DOES BADGES:
+  - All badges are hardcoded directly in the HTML
+  - No JavaScript rendering of badges at all
+  - No database. No config. Just raw HTML img tags.
+
+Each badge follows this exact pattern:
+  <div class="badge-container">
+    <img src="assets/verified.gif" alt="Verified" class="badge">
+    <span class="tooltip">Verified</span>
+  </div>
+
+All badge-containers live inside .badge-group, which lives inside .badge-box-inner,
+which lives inside .badge-box.
+
+THE BADGE BOX CSS:
+  .badge-box:
+    background: rgba(255, 255, 255, 0.15)  ← outer glow ring
+    padding: 2px
+    border-radius: 15px
+    display: inline-block
+
+  .badge-box-inner:
+    background: rgba(0, 0, 0, 0.5)
+    padding: 5px
+    border-radius: 12px
+    display: flex
+    gap: 8px
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2)  ← inner glow
+
+  .badge:
+    width: 22px
+    height: 22px
+    transition: transform 0.3s
+
+  .badge:hover:
+    transform: scale(1.2)   ← subtle pop on hover
+
+THE TOOLTIP:
+  Default visibility: hidden, opacity: 0
+  On .badge-container:hover → visibility: visible, opacity: 1
+  Positioned: absolute, bottom: 125% (above the badge), left: 50%, margin-left: -60px
+  Size: 120px wide, dark semi-transparent background
+
+9 BADGES IN THIS CLONE:
+  1. staff.gif     — "Staff Member"
+  2. owner.gif     — "Owner"
+  3. partner.gif   — "Partner"
+  4. developer.png — "Developer"  ← only .png not .gif, notable
+  5. bug_bounty.gif — "Bug Bounty"
+  6. hated_guns.gif — "Hated by Guns.lol"   ← lol
+  7. hated_fakecrime.gif — "Hated by Fakecrime.bio"
+  8. verified.gif  — "Verified"
+  9. rule_maker.gif — "Rule Maker"
+
+WHY YOUR BADGES ARE PROBABLY BROKEN (connecting to this):
+  This clone hardcodes badges in HTML. In brazy you render them dynamically
+  from a config object. The key insight from this source: badges are just
+  img tags with tooltip spans. If your dynamic render produces the same DOM
+  structure but the config data is malformed (wrong key, undefined items array,
+  string instead of object), the img src will be undefined and the badge
+  silently disappears (broken image or empty box).
+
+  The fix: ensure your earnedBadges array produces objects like:
+    { id: "verified", src: "/badges/verified.gif", label: "Verified" }
+  Not strings like "verified".
+
+================================================================================
+  SECTION 4: THE PROFILE AVATAR — ORBIT ANIMATION
+================================================================================
+
+The avatar is a circular image with an animated orbiting dot around it.
+
+HOW IT WORKS:
+  .profile-container has position: relative and a ::after pseudo-element.
+
+  .profile-container::after:
+    content: ''
+    position: absolute
+    top: -2px, left: -2px, right: -2px, bottom: -2px
+    border-radius: 50%
+    background: radial-gradient(
+      circle at 10px 10px,
+      var(--primary-color, #00CED1) 10%,
+      transparent 15%
+    )
+    animation: orbit 3s linear infinite
+    z-index: -1
+    filter: blur(1px)
+
+  @keyframes orbit:
+    0%   { transform: rotate(0deg) }
+    100% { transform: rotate(360deg) }
+
+The dot is NOT a separate element — it's a radial-gradient painted at position
+"10px 10px" inside the pseudo-element, and the entire pseudo-element rotates.
+This gives the illusion of a dot orbiting the avatar.
+
+The --primary-color CSS variable changes per theme:
+  home-theme:   #00CED1  (teal/cyan)
+  hacker-theme: #22C55E  (green)
+  rain-theme:   #1E3A8A  (dark blue)
+  anime-theme:  #DC2626  (red)
+  car-theme:    #EAB308  (yellow/gold)
+
+CLICK BEHAVIOR:
+  When user clicks the profile picture, it triggers a "fast orbit":
+    profileContainer.classList.remove('fast-orbit', 'orbit')
+    void profileContainer.offsetWidth   ← forces reflow to restart animation
+    profileContainer.classList.add('fast-orbit')
+  
+  .profile-container.fast-orbit::after:
+    animation: fast-orbit 0.5s linear forwards
+  
+  After 500ms, it switches back to regular orbit animation.
+
+LESSON FOR BRAZY: The void offsetWidth trick is how you restart a CSS animation
+without removing the element from DOM. You force a layout reflow which resets
+the animation timeline. This is used in the profile click easter egg. Consider
+adding this to brazy's avatar — clicking the avatar does a spin burst.
+
+================================================================================
+  SECTION 5: THE THEME SYSTEM — 5 THEMES
+================================================================================
+
+This is the heart of the app. There are 5 themes, each with:
+  - A different background VIDEO
+  - A different background MUSIC track
+  - A different primary COLOR for the orbit dot + card border
+  - Optional particle OVERLAY
+
+THE 5 THEMES:
+  ┌─────────────────┬──────────────────────────┬────────────────┬─────────────┐
+  │ Button          │ Video                    │ Music          │ Color       │
+  ├─────────────────┼──────────────────────────┼────────────────┼─────────────┤
+  │ 1 = Home        │ background.mp4           │ background_mp3 │ #00CED1     │
+  │ 2 = Hacker      │ hacker_background.mp4    │ hacker_mp3     │ #22C55E     │
+  │ 3 = Rain        │ rain_background.mov      │ rain_mp3       │ #1E3A8A     │
+  │ 4 = Anime       │ anime_background.mp4     │ anime_mp3      │ #DC2626     │
+  │ 5 = Car         │ car_background.mp4       │ car_mp3        │ #EAB308     │
+  └─────────────────┴──────────────────────────┴────────────────┴─────────────┘
+
+HOW switchTheme() WORKS — LINE BY LINE:
+  function switchTheme(videoSrc, audio, themeClass, overlay, overlayOverProfile)
+
+  1. Sets --primary-color CSS variable via:
+       document.documentElement.style.setProperty('--primary-color', color)
+     This instantly recolors the orbit dot and card border across all elements.
+
+  2. GSAP fade-out the background video:
+       gsap.to(backgroundVideo, { opacity: 0, duration: 0.5 })
+  
+  3. Inside the onComplete callback (after fade-out):
+     a. Sets backgroundVideo.src to new video
+     b. Pauses old audio, resets to time 0
+     c. Sets new audio volume from slider value
+     d. Plays new audio
+     e. Removes all theme classes from body, adds new one
+     f. Hides/shows particle overlays (hacker = matrix, rain = snow)
+     g. Adjusts z-index of profile block (overlayOverProfile moves card behind overlay)
+     h. Shows/hides the "View Results" button (only visible in hacker theme)
+     i. GSAP fade-in the background video: opacity back to 1
+
+  4. After fade-in, restart orbit animation:
+       profileContainer.classList.remove('orbit')
+       void profileContainer.offsetWidth
+       profileContainer.classList.add('orbit')
+
+THEME-SPECIFIC CARD BORDERS (via body class):
+  .home-theme #profile-block   { border-color: rgba(0, 195, 255, 0.5) }
+  .hacker-theme #profile-block { border-color: rgba(0, 255, 0, 0.5) }
+  .rain-theme #profile-block   { border-color: rgba(100, 149, 237, 0.5) }
+  .anime-theme #profile-block  { border-color: rgba(255, 0, 255, 0.5) }
+  .car-theme #profile-block    { border-color: rgba(255, 165, 0, 0.5) }
+
+SPECIAL: THE HACKER THEME
+  When hacker theme is active:
+  - resultsButtonContainer (the "View Results" button) is shown
+  - It unlocks access to the Skills Panel (see Section 8)
+  - The hacker matrix overlay (#hacker-overlay) is activated
+
+SPECIAL: THE RAIN THEME
+  - Uses overlayOverProfile: true — meaning the snow/rain overlay renders ON TOP
+    of the profile block (profile z-index drops from 20 to 10, overlay stays at 3)
+  - This creates a rain-falling-over-card visual depth effect
+
+LESSON FOR BRAZY: You have Profile Animation (Fade, Slide, etc.) and Profile
+Effects, but you don't have theme-linked music or theme-linked orbit colors.
+The one-click theme that changes video + music + accent color simultaneously is
+a powerful UX pattern. Consider: if a user sets their layout to "sleek" and
+picks an "accent color", that accent could drive the orbit dot color too.
+
+================================================================================
+  SECTION 6: BACKGROUND VIDEO + AUDIO ARCHITECTURE
+================================================================================
+
+BACKGROUND VIDEO:
+  <video id="background" autoplay loop muted playsinline webkit-playsinline>
+    <source src="assets/background.mp4" type="video/mp4">
+  </video>
+
+  CSS:
+    position: fixed
+    top: 0, left: 0
+    width: 100%, height: 100%
+    object-fit: cover      ← fills screen, maintains aspect ratio, crops
+    z-index: 1             ← behind everything
+    pointer-events: none   ← video doesn't block clicks
+
+  The video starts MUTED (autoplay policy requires muted). It stays muted.
+  Only the music audio elements are unmuted after user interaction.
+
+AUDIO SYSTEM:
+  5 audio elements in the HTML, all with loop attribute:
+    <audio id="background-music" loop>
+    <audio id="hacker-music" loop muted>
+    <audio id="rain-music" loop muted>
+    <audio id="anime-music" loop muted>
+    <audio id="car-music" loop muted>
+
+  All except background-music start muted. This pre-loads them all but keeps
+  them silent. When a theme switches, the old audio is paused + reset and the
+  new audio is unmuted + played.
+
+  VOLUME CONTROL:
+    currentAudio.volume = volumeSlider.value
+    Range input: min=0, max=1, step=0.01, default=0.3
+    When slider changes, volume updates on currentAudio only.
+
+  MUTE TOGGLE:
+    volumeIcon click → isMuted = !isMuted → currentAudio.muted = isMuted
+    Icon SVG changes between speaker and muted speaker inline.
+
+LESSON FOR BRAZY: You currently support background images and video. The multi-
+track audio switcher is something brazy doesn't have. For brazy, you could offer
+a "background music" field where users paste a SoundCloud/YouTube embed or a
+direct .mp3 URL. Then play it via an Audio element the same way this clone does.
+
+================================================================================
+  SECTION 7: THE 3D TILT EFFECT
+================================================================================
+
+This is the mousemove handler on the profile card that tilts it in 3D.
+
+function handleTilt(e, element):
+  1. Gets element's bounding rect
+  2. Calculates center: centerX = rect.left + rect.width/2
+  3. Gets mouse position relative to center: mouseX = clientX - centerX
+  4. Maps mouse position to tilt angle (max 15 degrees):
+       tiltX = (mouseY / rect.height) * maxTilt
+       tiltY = -(mouseX / rect.width) * maxTilt
+  5. Applies via GSAP:
+       gsap.to(element, {
+         rotationX: tiltX,
+         rotationY: tiltY,
+         duration: 0.3,
+         ease: 'power2.out',
+         transformPerspective: 1000
+       })
+
+On mouseleave: rotationX + rotationY reset to 0 over 0.5s.
+
+This works on BOTH #profile-block AND #skills-block.
+Touch support: touchmove fires the same function using e.touches[0] coordinates.
+
+WHY IT LOOKS GOOD:
+  transformPerspective: 1000 sets the camera distance. Lower = more extreme tilt.
+  The ease: 'power2.out' makes the tilt feel snappy going in, smooth going out.
+  The max 15 degree limit prevents it from looking broken on fast mouse moves.
+
+REQUIRES: transform-style: preserve-3d on the element (already set in CSS).
+
+LESSON FOR BRAZY: This effect is ZERO JavaScript overhead beyond GSAP (which you
+might already use). The entire effect is ~15 lines. It makes profiles feel alive.
+Consider adding it as an optional "Card Effect: Tilt" in your customization panel.
+The key CSS requirement is just adding transform-style: preserve-3d to your card.
+
+================================================================================
+  SECTION 8: THE SKILLS / RESULTS PANEL
+================================================================================
+
+This is a hidden second panel (#skills-block) that slides in when the user
+clicks "View Results" (only available in hacker theme).
+
+SKILLS BLOCK STRUCTURE:
+  #skills-block (same size/position as #profile-block, starts hidden)
+  └── h2.skills-title ("Programming Skills")
+  └── .skill (×3, one per language)
+      ├── .skill-name (flex row: icon + language name + percentage)
+      │   ├── img.skill-icon (22x22px language logo)
+      │   ├── span (language name)
+      │   └── span (percentage like "87%")
+      └── .skill-bar-container (gray track bar)
+          └── .skill-bar (colored fill bar, animated width)
+
+3 SKILLS HARDCODED:
+  Python — 87% — gradient: #ff6b6b → #ff9f9f (warm red/pink)
+  C++    — 75% — gradient: #4facfe → #00f2fe (blue/cyan)
+  C#     — 80% — gradient: #43e97b → #38f9d7 (green/teal)
+
+THE SLIDE ANIMATION (resultsButton click):
+  Showing skills:
+    GSAP slides profile block LEFT (x: -100, opacity: 0) →
+    hides profile-block, shows skills-block →
+    GSAP slides skills IN from RIGHT (x: 100 → x: 0)
+    Simultaneously animates skill bar widths from 0% to their values over 2s
+
+  Hiding skills (click again):
+    GSAP slides skills RIGHT out (x: 100, opacity: 0) →
+    hides skills-block, shows profile-block →
+    GSAP slides profile in from LEFT (x: -100 → x: 0)
+
+  A hint message (#results-hint) appears above the button: "Click again to
+  return to profile" — this is toggled with classList hidden.
+
+LESSON FOR BRAZY: The concept of a "second panel" accessible from the profile is
+interesting. In brazy you could add "extra pages" to a profile (About, Projects,
+Skills, etc.) that slide in the same way. The left/right slide is a clean UX
+pattern — profile slides left, new panel slides in from right. Very intuitive.
+
+================================================================================
+  SECTION 9: THE VISITOR COUNTER
+================================================================================
+
+This is FAKE. It's purely client-side using localStorage.
+
+HOW IT WORKS:
+  function initializeVisitorCounter():
+    1. Checks localStorage for 'totalVisitorCount'
+    2. If not found, seeds it to 921,234 (hardcoded fake number)
+    3. Checks localStorage for 'hasVisited'
+    4. If not visited before: increments count by 1, sets hasVisited = 'true'
+    5. Displays count with .toLocaleString() (adds commas: 921,234)
+
+This means:
+  - Every new browser that visits adds 1 to THEIR OWN localStorage count
+  - Clearing localStorage "adds" you again
+  - There is NO server. NO real tracking. It's all local.
+  - The number starts at 921,234 to look impressive
+
+LESSON FOR BRAZY: Your visitor counter is real (server-side, actual IP tracking).
+This clone's is smoke and mirrors. Your implementation is correct and honest.
+The .toLocaleString() formatting is worth noting — makes 921234 look like 921,234.
+Make sure your visitor counter display uses this same formatting.
+
+================================================================================
+  SECTION 10: THE CUSTOM CURSOR
+================================================================================
+
+CSS:
+  .custom-cursor:
+    position: fixed
+    width: 40px, height: 40px
+    background: url('assets/custom_cursor.png') no-repeat center center
+    background-size: contain
+    pointer-events: none    ← doesn't interfere with clicks
+    z-index: 9999           ← always on top
+    transform: translate(-50%, -50%)  ← centers image on actual cursor point
+
+  body:not(.touch-device):
+    cursor: none             ← hides the real OS cursor on desktop
+
+JS:
+  document.addEventListener('mousemove', (e) => {
+    cursor.style.left = e.clientX + 'px'
+    cursor.style.top = e.clientY + 'px'
+    cursor.style.display = 'block'
+  })
+
+  mousedown: cursor scales to 0.8 (click feedback)
+  mouseup:   cursor scales back to 1.0
+
+TOUCH DEVICE DETECTION:
+  window.matchMedia("(pointer: coarse)").matches
+  If touch device: body gets class 'touch-device', cursor stays visible
+  Touch events update cursor position (so it shows where you touched)
+  touchend: cursor hides
+
+LESSON FOR BRAZY: You already have a "Cursor Effects Color" setting (seen in
+the screenshot). This clone shows the simplest possible custom cursor — just a
+PNG following the mouse. You could offer:
+  - Custom cursor image upload
+  - Cursor trail (this clone has cursorTrailEffect called but not defined in
+    script.js — it's likely in style.css or a missing lib, see note below)
+  - Cursor color (your current implementation is probably a colored ring/dot)
+
+NOTE ON CURSOR TRAIL:
+  In script.js line ~95, after start screen click:
+    new cursorTrailEffect({ length: 10, size: 8, speed: 0.2 })
+  But cursorTrailEffect is never defined in script.js or shown in index.html.
+  This is either in style.css or a missing dependency. The try/catch around it
+  prevents it from crashing the page. This is a bug in the open-source clone.
+
+================================================================================
+  SECTION 11: THE SOCIAL LINKS
+================================================================================
+
+HTML structure:
+  <div class="social-links">
+    <a href="https://discord.gg/motiongoats" target="_blank">
+      <img src="assets/discord.png" alt="Discord" class="social-icon">
+    </a>
+    ... (GitHub, YouTube, TikTok)
+  </div>
+
+CSS:
+  .social-links:
+    display: flex
+    justify-content: center  ← centered in footer
+    gap: 12px
+    pointer-events: auto
+
+  .social-icon:
+    width: 36px, height: 36px
+    transition: transform 0.3s ease
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.7))  ← glow effect
+
+  .social-icon:hover:
+    transform: scale(1.4) rotateY(15deg)   ← scale UP + slight 3D flip on hover
+
+The hover effect is great: scale(1.4) is 40% bigger, rotateY(15deg) adds depth.
+No JavaScript needed — pure CSS transform.
+
+LESSON FOR BRAZY: The drop-shadow glow on social icons is subtle but effective.
+Your social icons likely have similar hover effects. The rotateY on hover is a
+nice touch to steal. Your icons already have this in some form from the
+ProfileRenderer, but make sure you have the rotateY component.
+
+================================================================================
+  SECTION 12: THE TYPEWRITER SYSTEM
+================================================================================
+
+There are 3 separate typewriter instances running simultaneously:
+  1. Start screen text ("Click here to see the motion baby")
+  2. Profile name ("JAQLIV" — types, waits 10 seconds, deletes, retypes)
+  3. Bio text (cycles through multiple messages, types + deletes each one)
+
+PROFILE NAME TYPEWRITER:
+  const name = "JAQLIV"
+  let nameIndex = 0
+  let isNameDeleting = false
+
+  function typeWriterName():
+    If not deleting and index < length: add one char, index++, setTimeout 300ms
+    If deleting and index > 0: remove one char, index--, setTimeout 150ms
+    When fully typed (index === length): set isNameDeleting = true, wait 10000ms
+    When fully deleted (index === 0): set isNameDeleting = false (retype)
+
+  GLITCH EFFECT: 10% random chance on each step to add class 'glitch' (a CSS
+  @keyframes that does tiny translate jitters for 200ms then removes)
+
+  @keyframes glitch:
+    0%   { transform: translate(0) }
+    20%  { transform: translate(-2px, 2px) }
+    40%  { transform: translate(-2px, -2px) }
+    60%  { transform: translate(2px, 2px) }
+    80%  { transform: translate(2px, -2px) }
+    100% { transform: translate(0) }
+
+BIO TYPEWRITER:
+  const bioMessages = [
+    "Fu*k Guns.lol & Fakecrime.bio got banned too often, so I created my own.",
+    '"Hello, World!"'
+  ]
+  Cycles through bioMessages array. Each message is typed, waits 2000ms, then
+  deleted, then next message starts. Typing speed: 150ms/char. Delete: 75ms/char.
+  Same 10% glitch chance per character.
+
+CURSOR BLINK:
+  Both name and bio have separate setInterval(500ms) that toggles '|' vs ' '
+  at the end of the current text. This is independent of the typing speed.
+
+LESSON FOR BRAZY: You already have a Typewriter Description feature. The key
+pattern to copy is the MULTI-MESSAGE cycling bio. Instead of one static
+typewriter text, you cycle through an array. The delete + retype creates
+the illusion that the profile is "thinking" or "updating" in real time.
+
+================================================================================
+  SECTION 13: THE TRANSPARENCY SLIDER
+================================================================================
+
+This is a live slider that changes the card's background opacity in real time.
+
+transparencySlider: range 0 to 1, default 0.7
+
+When slider changes:
+  If opacity === 0:
+    profileBlock.style.background = 'rgba(0, 0, 0, 0)'
+    profileBlock.style.borderColor = 'transparent'
+    profileBlock.style.backdropFilter = 'none'
+    (card becomes completely invisible — you see only text/icons floating)
+  
+  Else:
+    profileBlock.style.background = `rgba(0, 0, 0, ${opacity})`
+    profileBlock.style.backdropFilter = `blur(${10 * opacity}px)`
+    (blur scales with opacity — more transparent = less blur)
+
+IMPORTANT: Even at opacity 0, all interactive elements stay pointer-events: auto
+and opacity: 1. The container is invisible but buttons/links still work.
+
+LESSON FOR BRAZY: You have cardOpacity as a configurable setting. This clone
+proves the UX of a LIVE slider is very satisfying. Consider adding a live
+preview slider in your customization panel that updates the preview in real-time
+as the user drags (without saving until they confirm).
+
+================================================================================
+  SECTION 14: GSAP — HOW IT'S USED
+================================================================================
+
+GSAP (GreenSock Animation Platform) is loaded via CDN:
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js">
+
+All animations in this project use GSAP. Nowhere does the project use plain
+CSS transitions for entrance/exit animations. Here's every GSAP call:
+
+  1. Profile block entrance (after start screen click):
+     gsap.fromTo(profileBlock,
+       { opacity: 0, y: -50 },
+       { opacity: 1, y: 0, duration: 1, ease: 'power2.out' }
+     )
+
+  2. Background video fade-out (theme switch):
+     gsap.to(backgroundVideo, { opacity: 0, duration: 0.5, ease: 'power2.in' })
+
+  3. Background video fade-in (theme switch):
+     gsap.to(backgroundVideo, { opacity: 1, duration: 0.5, ease: 'power2.out' })
+
+  4. Profile block slide left out (going to skills):
+     gsap.to(profileBlock, { x: -100, opacity: 0, duration: 0.5, ease: 'power2.in' })
+
+  5. Skills block slide in from right:
+     gsap.fromTo(skillsBlock, { x: 100, opacity: 0 }, { x: 0, opacity: 1, ... })
+
+  6. Skills block slide right out (going back to profile):
+     gsap.to(skillsBlock, { x: 100, opacity: 0, duration: 0.5, ease: 'power2.in' })
+
+  7. Profile block slide in from left (returning):
+     gsap.fromTo(profileBlock, { x: -100, opacity: 0 }, { x: 0, opacity: 1, ... })
+
+  8. Skill bars animate to width:
+     gsap.to(pythonBar, { width: '87%', duration: 2, ease: 'power2.out' })
+
+  9. 3D tilt on mousemove:
+     gsap.to(element, { rotationX, rotationY, duration: 0.3, transformPerspective: 1000 })
+
+  10. Tilt reset on mouseleave:
+      gsap.to(element, { rotationX: 0, rotationY: 0, duration: 0.5 })
+
+  11. Theme change reset of profile position:
+      gsap.to(profileBlock, { x: 0, opacity: 1, duration: 0.5, ease: 'power2.out' })
+
+EASING CONVENTIONS USED:
+  power2.in  — starts slow, accelerates (exit animations)
+  power2.out — starts fast, decelerates (entrance animations)
+  All durations: 0.3s (fast micro-interactions) to 2s (skill bar fills)
+
+LESSON FOR BRAZY: If brazy uses Framer Motion or CSS transitions instead of
+GSAP, the effect is similar but GSAP gives more precise control, especially for
+chained animations (fade out video THEN change source THEN fade in). The
+onComplete callback pattern is the key — never change video src while visible.
+
+================================================================================
+  SECTION 15: MOBILE RESPONSIVENESS
+================================================================================
+
+Only ONE breakpoint: @media (max-width: 430px)
+
+Changes at mobile:
+  Card: width drops to 90vw, max-width: 350px (from fixed 820px)
+  Profile header: changes from flex row to flex column (stacked layout)
+  Avatar: drops from 150px to 120px
+  Profile info: aligns to center (text-align: center)
+  Name + badges: stacks vertically (flex-direction: column)
+  Name font size: 32px → 24px
+  Bio font size: 18px → 14px
+  Social icons: 36px → 32px
+  Controls moved: bottom: 20px (closer to edge on mobile)
+  Volume slider width: 80px → 60px
+
+NO tablet breakpoint. No intermediate sizes. Just desktop (>430px) and phone.
+
+The card is still position: fixed, centered with translate(-50%, -50%) on mobile,
+which means it's a floating card on every screen size.
+
+LESSON FOR BRAZY: Your responsive system handles multiple breakpoints via Tailwind.
+This clone's single 430px breakpoint is too aggressive — it jumps from 820px wide
+to 350px with nothing in between. On a 768px tablet it's still 820px wide. Your
+layout system with configurable widths is much better.
+
+================================================================================
+  SECTION 16: THE GLITCH OVERLAY
+================================================================================
+
+.glitch-overlay:
+  position: fixed, full screen
+  pointer-events: none
+  z-index: 2
+  opacity: 0
+  transition: opacity 0.5s
+
+When user HOVERS the profile picture:
+  glitchOverlay.style.opacity = '1'
+  setTimeout 500ms → opacity back to '0'
+
+What is the glitch overlay? It's a div with no background or content defined.
+In the original, it likely had a CSS background or pseudo-element for a scanline
+or color-shift effect. In this open-source version it flashes transparent — the
+effect is invisible. This is either a missing asset or placeholder.
+
+LESSON FOR BRAZY: The concept of a full-screen overlay effect triggered by
+hovering the avatar is cool. You could add a glitch effect (CSS @keyframes with
+clip-path or color inversion) that fires when you hover the avatar on certain
+profile layouts.
+
+================================================================================
+  SECTION 17: CSS CUSTOM PROPERTIES (CSS VARIABLES)
+================================================================================
+
+Only ONE CSS variable is used:
+  --primary-color   (default: #00CED1)
+
+Set on :root via JavaScript:
+  document.documentElement.style.setProperty('--primary-color', primaryColor)
+
+Used only in:
+  .profile-container::after background radial-gradient (the orbit dot color)
+
+That's it. The entire color system is driven by one variable.
+
+LESSON FOR BRAZY: You use CSS variables extensively in ProfileRenderer.tsx for
+card backgrounds, text colors, border colors, etc. The pattern is the same.
+This clone is just much simpler. Your system is more powerful.
+
+================================================================================
+  SECTION 18: THE FONT SYSTEM
+================================================================================
+
+Two fonts used:
+
+1. ANGEL WISH (custom):
+   @font-face {
+     font-family: 'Angel Wish'
+     src: url('assets/Angel_wish.ttf') format('truetype')
+   }
+   Used on: #profile-name (the username)
+   Size: 32px, letter-spacing: 3px
+   Has drop-shadow filter: drop-shadow(0 0 8px rgba(255,255,255,0.7))
+
+2. COURIER NEW (system monospace):
+   font-family: 'Courier New', monospace
+   Applied globally via * selector
+   Used everywhere except the name
+
+3. RETRO GAMING (Google Fonts, loaded via link):
+   <link href="https://fonts.googleapis.com/css2?family=Retro+Gaming&display=swap">
+   Loaded but appears unused in the visible code. Possibly for future use.
+
+LESSON FOR BRAZY: You have "Manage Text Font" as a feature (seen in screenshot).
+The custom TTF font loaded via @font-face is the same approach. The glow effect
+on the name (filter: drop-shadow) is a great touch for names. Consider offering
+a "text glow" toggle in your font settings.
+
+================================================================================
+  SECTION 19: WHAT THIS CLONE DOES THAT BRAZY DOESN'T (YET)
+================================================================================
+
+These are features in the clone that brazy could add:
+
+  1. MULTI-THEME switching (video + music + colors all change at once)
+     → In brazy: user sets ONE static background. No theme switcher on the
+       live profile. This clone lets visitors switch themes themselves.
+
+  2. LIVE TRANSPARENCY SLIDER visible to visitors
+     → Visitors can adjust card opacity in real time. Unusual feature.
+
+  3. SKILLS / STATS PANEL as second page
+     → The hidden panel that slides in is a unique content block.
+       Brazy could add "extra panels" — Projects, Stats, Skills, etc.
+
+  4. AUDIO TRACKS per theme
+     → Background music that changes based on visual theme.
+
+  5. AVATAR CLICK EASTER EGG (fast orbit spin)
+     → Small delight. Clicking avatar does a spin burst.
+
+  6. MULTI-MESSAGE BIO CYCLING
+     → Bio types one message, deletes it, types the next.
+       Brazy's typewriter supports one message. Array cycling would be richer.
+
+  7. 3D TILT ON CARD HOVER
+     → The mousemove 3D tilt effect. Pure GSAP, low cost, high impact.
+
+================================================================================
+  SECTION 20: WHAT BRAZY DOES THAT THIS CLONE DOESN'T
+================================================================================
+
+Everything that makes brazy a real platform vs a static page:
+
+  1. USER ACCOUNTS — this clone has no login, no users, no database
+  2. MULTIPLE LAYOUTS — brazy has 5 named layouts with distinct structures
+  3. CARD STYLE VARIANTS — 9 card styles (glass, solid, outline, neon, etc.)
+  4. REAL VISITOR TRACKING — server-side, not localStorage fake counts
+  5. SOCIAL LINK MANAGEMENT — brazy has a UI to add/remove/reorder links
+  6. BADGE SYSTEM — dynamic badges based on account status
+  7. CONFIGURABLE EVERYTHING — colors, fonts, blur, opacity, width all adjustable
+  8. BACKGROUND IMAGE UPLOAD — not just pre-baked video files
+  9. SPOTIFY/MUSIC INTEGRATION — live song display with album art
+  10. PROFILE METADATA / SEO — title, description, og:image customization
+  11. TEMPLATES — community-shared presets
+  12. IMAGE HOSTING — built-in CDN for user assets
+  13. PROJECTS SECTION — portfolio items with images/links
+  14. MOBILE-FIRST RESPONSIVE — multiple breakpoints vs one at 430px
+  15. PREMIUM TIERS — feature gating, monetization
+
+================================================================================
+  SECTION 21: KEY PATTERNS TO STEAL (DIRECT RECOMMENDATIONS)
+================================================================================
+
+These are concrete things to implement in brazy based on what this clone does:
+
+  A. THE void offsetWidth TRICK
+     When you want to restart a CSS animation on an element that's already
+     animating, you MUST force a reflow first:
+       element.classList.remove('animation-class')
+       void element.offsetWidth   ← THIS LINE IS THE SECRET
+       element.classList.add('animation-class')
+     Without this, removing and re-adding the class does nothing.
+
+  B. GSAP onComplete FOR VIDEO SWAPS
+     Never change a video's src while it's visible. Always:
+       gsap.to(video, { opacity: 0, onComplete: () => {
+         video.src = newSrc
+         gsap.to(video, { opacity: 1 })
+       }})
+     This prevents the black flash when changing video sources.
+
+  C. MULTI-MESSAGE TYPEWRITER
+     const messages = ["message one", "message two", "message three"]
+     let msgIndex = 0
+     When fully deleted: msgIndex = (msgIndex + 1) % messages.length
+     Then start typing messages[msgIndex]
+     Add this to brazy's typewriter system.
+
+  D. SOCIAL ICON HOVER WITH rotateY
+     .social-icon:hover {
+       transform: scale(1.4) rotateY(15deg);
+     }
+     This adds a 3D coin-flip feel to icon hover. Very cheap CSS.
+
+  E. BADGE TOOLTIP PATTERN
+     .badge-container { position: relative }
+     .badge-container .tooltip { visibility: hidden; opacity: 0; ... }
+     .badge-container:hover .tooltip { visibility: visible; opacity: 1 }
+     Pure CSS tooltips, no JS needed. Already works for your badge system.
+
+  F. VISITOR COUNT FORMATTING
+     visitorCount.textContent = count.toLocaleString()
+     Always format view counts with locale commas: 921234 → "921,234"
+
+  G. ORBIT DOT VIA PSEUDO-ELEMENT + CSS VARIABLE
+     The rotating accent dot around the avatar is just a ::after pseudo-element
+     with a radial-gradient and a rotate animation. Zero extra DOM elements.
+     Color is driven by --primary-color which changes per theme/accent choice.
+
+================================================================================
+  SECTION 22: BUGS FOUND IN THE OPEN-SOURCE CLONE
+================================================================================
+
+  BUG 1: cursorTrailEffect is called but never defined
+    In script.js ~line 95: new cursorTrailEffect({ length: 10, size: 8, speed: 0.2 })
+    This function does not exist in script.js or index.html.
+    It's wrapped in try/catch so it fails silently. Trail effect never works.
+
+  BUG 2: rain_background.mov won't play on many browsers
+    Android Chrome and Firefox do not support .mov containers.
+    Should be converted to .mp4 or .webm for cross-browser compatibility.
+
+  BUG 3: Visitor count is fake
+    Starts at hardcoded 921,234. Every new visitor in a new browser adds 1 to
+    their OWN localStorage. Not shared across users. Completely misleading.
+
+  BUG 4: No error handling on video src changes
+    backgroundVideo.src = videoSrc sets src directly with no onerror handler.
+    If the file is missing, the video silently fails and the background goes black.
+
+  BUG 5: glitch-overlay has no visual content
+    The div has CSS (opacity transitions) but no background, no animation, no
+    pseudo-element defining what the "glitch" looks like. Effect is invisible.
+
+  BUG 6: Only one font actually renders as intended
+    Retro Gaming is loaded from Google Fonts but never assigned to any element.
+    It's dead weight on every page load.
+
+================================================================================
+  END OF ANALYSIS
+  Source repo: https://github.com/JAQLIV/gunslol-open-source
+  Total files analyzed: 3 (index.html + script.js + CSS structure)
+  Total source lines read: ~1,400
+================================================================================
