@@ -116,26 +116,11 @@ export async function getCurrentUserProfile(userId: string): Promise<ProfileReco
   const supabase = await createClient();
   if (!supabase) return null;
 
-  // Try querying by user_id
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
-    .select("username, config, views, created_at")
+    .select("username, config, views, created_at, user_id, audio_track_id, audio_source, audio_title, audio_artist, audio_thumb")
     .eq("user_id", userId)
     .maybeSingle();
-
-  if (error || !data) {
-    // Try querying by id
-    const { data: dataId, error: errorId } = await supabase
-      .from("profiles")
-      .select("username, config, views, created_at")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (!errorId && dataId) {
-      data = dataId;
-      error = null;
-    }
-  }
 
   if (error || !data) return null;
 
@@ -144,6 +129,12 @@ export async function getCurrentUserProfile(userId: string): Promise<ProfileReco
     config: normalizeConfig(data.config),
     views: data.views ?? 0,
     createdAt: data.created_at ?? new Date().toISOString(),
+    user_id: data.user_id,
+    audio_track_id: data.audio_track_id,
+    audio_source: data.audio_source,
+    audio_title: data.audio_title,
+    audio_artist: data.audio_artist,
+    audio_thumb: data.audio_thumb,
   };
 }
 
@@ -183,32 +174,15 @@ export async function saveProfile(
     ...(audioMeta?.audio_thumb ? { audio_thumb: audioMeta.audio_thumb } : {}),
   };
 
-  // Try upserting with id first
-  const { error: errorId } = await supabase
+  const { error } = await supabase
     .from("profiles")
-    .upsert(
-      {
-        id: userId,
-        ...payload,
-      },
-      { onConflict: "id" }
-    );
+    .upsert(payload, { onConflict: "user_id" });
 
-  if (!errorId) return { error: null };
-
-  // If that fails, try upserting with user_id
-  const { error: errorUserId } = await supabase
-    .from("profiles")
-    .upsert(
-      payload,
-      { onConflict: "user_id" }
-    );
-
-  if (errorUserId) {
-    if (errorUserId.code === "23505" || errorId.code === "23505") {
+  if (error) {
+    if (error.code === "23505") {
       return { error: "that username is already taken" };
     }
-    return { error: errorUserId.message || errorId.message };
+    return { error: error.message };
   }
 
   return { error: null };

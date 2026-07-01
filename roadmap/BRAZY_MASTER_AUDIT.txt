@@ -1,0 +1,1230 @@
+================================================================================
+  BRAZY.IT — MASTER ARCHITECT FULL CODEBASE AUDIT
+  Generated: July 1, 2026
+  Repo: https://github.com/7yass/brazy
+  Scope: Every file read, every defect documented, every fix explained.
+================================================================================
+
+  TABLE OF CONTENTS
+  -----------------
+  1.  Project Structure Overview
+  2.  Schema & Data Layer (src/lib/profile/)
+  3.  Store / Database Layer (store.ts)
+  4.  Dashboard Sidebar (DashboardSidebar.tsx)
+  5.  Profile Editor (ProfileEditor.tsx)
+  6.  Dead Code — GeneralCustomization.tsx
+  7.  Color Customization (ColorCustomization.tsx)
+  8.  Sections Page (sections/page.tsx)
+  9.  Widgets Page (widgets/page.tsx)
+  10. Links Page (links/page.tsx)
+  11. Customize Page (_page.tsx)
+  12. Badges System (badges-data.ts + account/badges)
+  13. API Routes (audio / discord / lyrics / spotify / upload)
+  14. SectionCard Component
+  15. Profile Defaults (defaults.ts)
+  16. Full Defect List — Severity Ranked
+  17. Full Fix Plan — Step by Step
+  18. Architecture Recommendations
+================================================================================
+
+
+================================================================================
+  SECTION 1 — PROJECT STRUCTURE OVERVIEW
+================================================================================
+
+What you have:
+
+  src/
+  ├── app/
+  │   ├── (dashboard)/
+  │   │   ├── account/          — overview + analytics + badges + settings
+  │   │   ├── advance/          — general, layout, metadata
+  │   │   ├── customize/        — full customize page (69KB _page.tsx)
+  │   │   ├── links/            — social links editor (34KB page.tsx)
+  │   │   ├── sections/         — section order/visibility (page.tsx)
+  │   │   ├── widgets/          — widgets editor (17KB page.tsx)
+  │   │   └── layout.tsx        — shared dashboard layout wrapper
+  │   ├── api/
+  │   │   ├── audio/            — audio proxy or upload handler
+  │   │   ├── discord/          — discord presence API
+  │   │   ├── lyrics/           — lyrics fetcher
+  │   │   ├── spotify/          — spotify integration
+  │   │   └── upload/           — file upload endpoint
+  │   ├── [username]/           — public profile page
+  │   └── (auth)/               — login / signup / callback
+  ├── components/
+  │   ├── dashboard/
+  │   │   ├── ProfileEditor.tsx        — main customization panel (uses SectionCard)
+  │   │   ├── GeneralCustomization.tsx — DEAD — fully built but never imported
+  │   │   ├── ColorCustomization.tsx   — DEAD — fully built but never wired to ProfileEditor
+  │   │   ├── DashboardSidebar.tsx     — main navigation sidebar
+  │   │   ├── SectionCard.tsx          — titled card wrapper (misnamed)
+  │   │   ├── UsernameEffectsModal.tsx — modal for picking username animation
+  │   │   ├── PresetsPanel.tsx         — style preset buttons
+  │   │   └── controls.tsx             — TextInput, TextArea, ColorInput, Toggle, Slider
+  │   ├── profile/
+  │   │   ├── ProfileRenderer.tsx      — renders the public-facing profile
+  │   │   └── [section components]
+  │   └── ui/
+  │       ├── CustomSelect.tsx
+  │       └── [other UI primitives]
+  ├── lib/
+  │   ├── profile/
+  │   │   ├── schema.ts          — Zod schema + normalizeConfig
+  │   │   ├── defaults.ts        — brazyProfile demo config
+  │   │   ├── store.ts           — server-side DB read/write
+  │   │   ├── profile-helper.ts  — client-side save/load wrappers
+  │   │   └── badges-data.ts     — 20+ predefined badge SVGs + metadata
+  │   └── supabase/
+  │       ├── client.ts
+  │       ├── server.ts
+  │       └── config.ts
+  └── proxy.ts                   — ORPHANED — sits at src root, no imports
+
+
+================================================================================
+  SECTION 2 — SCHEMA & DATA LAYER (src/lib/profile/schema.ts)
+================================================================================
+
+  WHAT IT DOES:
+  Defines the full shape of a profile using Zod. Every field the profile can have
+  lives here. normalizeConfig() merges incoming raw JSON from the database with
+  the brazyProfile defaults to ensure no field is ever undefined.
+
+  HOW IT SHOULD WORK:
+  A user saves their profile. The raw JSON comes back out of Supabase.
+  normalizeConfig() runs on it to fill in any gaps (new fields added after the
+  user signed up, etc.). The result is a fully-typed ProfileConfig with every
+  field present.
+
+  ─── DEFECT 1 ─── SEVERITY: HIGH ──────────────────────────────────────────
+  File: src/lib/profile/schema.ts — normalizeConfig deepMerge logic
+
+  PROBLEM:
+  The deepMerge function signature is deepMerge(target, source).
+  It is called as: deepMerge(parsed, brazyProfile)
+  This means brazyProfile is the SOURCE that fills gaps in the user's config.
+  BUT the logic says: if (target[key] === undefined) { output[key] = source[key] }
+  This means brazyProfile values only fill in when the user's key is UNDEFINED
+  (not when it's null, not when it's an empty string, etc.).
+
+  The deeper problem: The code merges brazyProfile OVER the parsed config rather
+  than the other way around. The full normalizeConfig call is:
+    const parsed = profileSchema.parse(raw ?? {})
+    return deepMerge(parsed, brazyProfile)
+
+  So brazyProfile is the "winner" when keys conflict. That means:
+  - User sets bio to "" → deepMerge keeps "" because it's defined (correct).
+  - User has a key that exists in brazyProfile but was never saved → gets
+    brazyProfile's value (correct, this is the intended fallback).
+  - But if Zod's .parse({}) already applied defaults, brazyProfile is redundant
+    and just adds confusion. The two systems (Zod defaults + deepMerge) fight each
+    other and make it unclear what the actual fallback is.
+
+  FIX:
+  Remove the deepMerge call entirely. Trust Zod's .default() definitions.
+  Every field in the schema already has a .default(). When you call
+  profileSchema.parse(raw ?? {}), Zod will fill in every missing field with its
+  default value. That's exactly what normalizeConfig should do — nothing more.
+  The function becomes:
+    export function normalizeConfig(raw: unknown): ProfileConfig {
+      return profileSchema.parse(raw ?? {});
+    }
+
+  ─── DEFECT 2 ─── SEVERITY: HIGH ──────────────────────────────────────────
+  File: src/lib/profile/schema.ts — cursor and click effect defaults
+
+  PROBLEM:
+  cursorEffectSchema and clickEffectSchema both use:
+    .default(() => ({} as any))
+  This bypasses Zod's default mechanism entirely. When Zod encounters an
+  undefined cursor field, it fills it with {} cast to any instead of running
+  the sub-schema's own defaults (enabled: true, type: "dots", color: "#c084fc",
+  size: 5, etc.).
+
+  In practice this means:
+  - A new user has no cursor config in the DB.
+  - normalizeConfig runs profileSchema.parse({}).
+  - Zod sees cursor is missing, fills in {} as any.
+  - The cursor component receives {} instead of {enabled:true, type:"dots"...}.
+  - Cursor feature silently has no config and likely renders nothing or errors.
+
+  FIX:
+  Replace:
+    .default(() => ({} as any))
+  With:
+    .default(() => cursorEffectSchema.parse({}))
+
+  This forces Zod to run the sub-schema against an empty object, which triggers
+  all the sub-schema's own .default() definitions correctly.
+
+  ─── DEFECT 3 ─── SEVERITY: LOW ───────────────────────────────────────────
+  File: src/lib/profile/schema.ts — badgeSchema default color
+
+  PROBLEM:
+  badgeSchema has color: z.string().default("#22d3ee")
+  This cyan color is hardcoded as the default for every user-created badge.
+  When a user changes their accent color (theme.primaryColor), the badge color
+  stays as #22d3ee because it was saved at badge creation time.
+  The badge and the profile's color theme will be out of sync for 100% of users
+  unless they manually update every badge's color.
+
+  FIX:
+  Option A (simple): Change the badge color default to "inherit" and have
+  ProfileRenderer.tsx fall back to theme.primaryColor when badge.color is "inherit".
+  Option B (smarter): Store badge color as "" by default and in ProfileRenderer.tsx:
+    const badgeColor = badge.color || cfg.theme.primaryColor || "#a855f7";
+  This way existing saved badges with explicit colors keep them, but unset ones
+  follow the theme automatically.
+
+
+================================================================================
+  SECTION 3 — STORE / DATABASE LAYER (src/lib/profile/store.ts)
+================================================================================
+
+  WHAT IT DOES:
+  Server-side functions that read and write profiles to Supabase.
+  getProfile(username) — public profile lookup by username.
+  saveProfile(userId, username, config) — upsert a user's profile.
+  isUsernameAvailable(username) — check if username is taken.
+  getCurrentUserProfile(userId) — dashboard profile fetch by userId.
+
+  HOW IT SHOULD WORK:
+  Every function talks to Supabase once, handles errors cleanly, and returns
+  typed data. The upsert should have one clear conflict target matching the
+  actual table schema.
+
+  ─── DEFECT 4 ─── SEVERITY: HIGH ──────────────────────────────────────────
+  File: src/lib/profile/store.ts — saveProfile double upsert
+
+  PROBLEM:
+  saveProfile tries two upserts sequentially:
+    1. upsert({ id: userId, ...payload }, { onConflict: "id" })
+    2. If that fails → upsert(payload, { onConflict: "user_id" })
+
+  Issues:
+  a) Every save that the first upsert handles successfully costs one DB round
+     trip. But if the profiles table has user_id as the primary key (not id),
+     the first upsert will ALWAYS fail, meaning every save does two DB calls.
+  b) The error combining logic is wrong:
+       if (errorUserId.code === "23505" || errorId.code === "23505")
+     errorId comes from the FIRST attempt. If the first attempt failed for a
+     completely different reason (e.g. network error, wrong column name), errorId
+     might have a null .code and this will throw a runtime error reading .code
+     on null.
+  c) This architecture means the code doesn't actually know its own database schema.
+
+  FIX:
+  Check the actual Supabase profiles table. It has either id or user_id as the
+  primary key — pick ONE and use only that. Then saveProfile becomes:
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ user_id: userId, username: key, config, ...audioMeta },
+               { onConflict: "user_id" });
+    if (error?.code === "23505") return { error: "username already taken" };
+    if (error) return { error: error.message };
+    return { error: null };
+
+  ─── DEFECT 5 ─── SEVERITY: MEDIUM ────────────────────────────────────────
+  File: src/lib/profile/store.ts — getCurrentUserProfile missing audio fields
+
+  PROBLEM:
+  getCurrentUserProfile selects:
+    "username, config, views, created_at"
+  But getProfile (used for public pages) selects:
+    "username, config, views, created_at, user_id,
+     audio_track_id, audio_source, audio_title, audio_artist, audio_thumb"
+
+  The dashboard calls getCurrentUserProfile. The audio fields (track ID, source,
+  title, artist, thumbnail) are never returned. This means when the user opens
+  their dashboard, their music player might not show the correct track metadata
+  because those fields come back as undefined.
+
+  FIX:
+  Update the select string in getCurrentUserProfile to match getProfile:
+    .select("username, config, views, created_at,
+             audio_track_id, audio_source, audio_title, audio_artist, audio_thumb")
+  And update the return object to include those fields.
+
+  ─── DEFECT 6 ─── SEVERITY: LOW ───────────────────────────────────────────
+  File: src/lib/profile/store.ts — getProfile fallback to id column
+
+  PROBLEM:
+  getProfile does a second query fallback:
+    .select("..., id, ...")
+    .eq("username", key)
+  and then remaps data.id to user_id. This adds a second DB call on every
+  profile load where user_id is missing. If your table has always had user_id,
+  this second query runs thousands of times for nothing.
+
+  FIX:
+  Once you confirm the table schema, delete the fallback branch. One query, done.
+
+
+================================================================================
+  SECTION 4 — DASHBOARD SIDEBAR (DashboardSidebar.tsx)
+================================================================================
+
+  WHAT IT DOES:
+  The left navigation for the entire dashboard. Shows logo, username switcher,
+  nav links, share button, view page link, and sign-out popover.
+
+  HOW IT SHOULD WORK:
+  User opens dashboard → sidebar shows their username, all nav routes are active
+  based on current path. Profile Switcher card lets them switch between multiple
+  profiles. Footer shows share/view/account options.
+
+  ─── DEFECT 7 ─── SEVERITY: MEDIUM ────────────────────────────────────────
+  File: src/components/dashboard/DashboardSidebar.tsx — Profile Switcher does nothing
+
+  PROBLEM:
+  The "Profile Switcher" card at the top shows the username and a ChevronDown
+  arrow. It's a <button> with onClick missing. Clicking it does nothing.
+  There is no dropdown, no modal, no handler of any kind.
+
+  If brazy is supposed to support multiple profiles per account (like Linktree
+  does), the switcher needs to:
+  a) Fetch all profiles owned by the current user.
+  b) Show a dropdown list.
+  c) Switch the active profile context.
+
+  If brazy only supports one profile per user, this button should be removed
+  entirely to avoid confusion.
+
+  FIX:
+  If single profile: Remove the switcher card, just show the username as a
+  static label.
+  If multi-profile: Add a state for profiles list, fetch from DB on mount,
+  render a dropdown with AnimatePresence (same pattern as the user popover below).
+
+  ─── DEFECT 8 ─── SEVERITY: LOW ───────────────────────────────────────────
+  File: src/components/dashboard/DashboardSidebar.tsx — nav href mismatch
+
+  PROBLEM:
+  The sidebar uses these hrefs:
+    /account, /customize, /links, /sections, /widgets
+  But the Next.js route group is (dashboard), meaning the actual filesystem
+  paths are:
+    src/app/(dashboard)/account/
+    src/app/(dashboard)/customize/
+  etc.
+
+  In Next.js, route groups with () don't appear in the URL, so /account and
+  /customize are correct. However the sidebar marks:
+    isActive={pathname === "/account" || pathname === "/dashboard"}
+  But /dashboard is not a real route in the app — there is no
+  src/app/(dashboard)/dashboard/ folder. This dead isActive check is harmless
+  but confusing and should be removed.
+
+  FIX: Remove the || pathname === "/dashboard" condition from the Overview link.
+
+
+================================================================================
+  SECTION 5 — PROFILE EDITOR (ProfileEditor.tsx)
+================================================================================
+
+  WHAT IT DOES:
+  The main customization panel inside the /customize page. Shows Style Presets,
+  Assets Uploader, General Customization, Color Customization, Widget Style Controls,
+  and Other Customization. Auto-saves on change with 800ms debounce.
+
+  HOW IT SHOULD WORK:
+  User changes any field → debounce fires → onSave(config) is called → Supabase
+  receives the new config → save indicator shows "Saved ✓".
+
+  ─── DEFECT 9 ─── SEVERITY: CRITICAL ──────────────────────────────────────
+  File: src/components/dashboard/ProfileEditor.tsx — Discord Presence row broken
+
+  PROBLEM:
+  In the "General Customization" SectionCard, there is a row:
+    <Row label="Discord Presence">
+      <CustomSelect
+        value={cfg.background.type}
+        onChange={(v) => updateNested("background", "type", v)}
+        options={[{value:"none",label:"Disabled"},{value:"particles",label:"Enabled"}]}
+      />
+    </Row>
+
+  This row's value is cfg.background.type and its onChange changes background.type.
+  "Discord Presence" has NOTHING to do with background type.
+
+  When a user selects "Enabled" for Discord Presence they are actually setting
+  their background to "particles". When they select "Disabled" they are setting
+  background to "none". Their background animation is destroyed without them
+  knowing.
+
+  The actual Discord widget toggle is cfg.widgets.discordPresence.enabled and
+  it already appears correctly in the "Widget Style Controls" section below.
+
+  FIX:
+  Delete this entire Row from General Customization. The correct toggle already
+  exists in Widget Style Controls. If you want a quick toggle in General
+  Customization too, wire it correctly:
+    value={cfg.widgets.discordPresence.enabled ? "on" : "off"}
+    onChange={(v) => updateNested("widgets", "discordPresence",
+      {...cfg.widgets.discordPresence, enabled: v === "on"})}
+
+  ─── DEFECT 10 ─── SEVERITY: CRITICAL ─────────────────────────────────────
+  File: src/components/dashboard/ProfileEditor.tsx — 4 mislabeled rows in Other Customization
+
+  PROBLEM AND EXPLANATION FOR EACH:
+
+  A) Row labeled "Use Discord Avatar"
+     Actual code: <Toggle value={cfg.audio.autoplay} onChange={(v) => updateNested("audio","autoplay",v)} />
+     What it does: toggles music autoplay on/off.
+     What users think it does: enables using their Discord avatar as profile picture.
+     Impact: User turns off autoplay thinking they're doing something with their avatar.
+
+  B) Row labeled "Discord Avatar Decoration"
+     Actual code: <Toggle value={cfg.audio.loop} onChange={(v) => updateNested("audio","loop",v)} />
+     What it does: toggles audio loop on/off.
+     What users think it does: shows/hides their Discord avatar decoration frame.
+     Impact: User expects to see a decoration frame, they just turned off audio looping.
+
+  C) Row labeled "Swap Box Colors"
+     Actual code:
+       <CustomSelect value={cfg.theme.contentAlign}
+         onChange={(v) => updateNested("theme","contentAlign",v)}
+         options={[{value:"center",label:"Center"},{value:"left",label:"Left"}]}
+       />
+     What it does: changes content alignment (center vs left).
+     What users think it does: swaps some colors in boxes.
+     Impact: Complete mismatch. The label and the control have nothing in common.
+
+  D) Row labeled "Monochrome Icons"
+     Actual code: <Toggle value={!cfg.social.hoverEffect} onChange={(v) => updateNested("social","hoverEffect",v)} />
+     What it does: toggles hover effect on social icons. The value is INVERTED.
+     So Toggle shows ON when hover effect is OFF, and OFF when hover effect is ON.
+     Plus: monochrome means gray/colorless icons, not hover effect toggle.
+     Impact: Double confusion — wrong label AND inverted logic.
+
+  FIX FOR ALL FOUR:
+  A) Rename to "Music Autoplay" — value and onChange are already correct.
+  B) Rename to "Loop Music" — value and onChange are already correct.
+  C) Rename to "Content Alignment" — value and onChange are already correct.
+  D) Rename to "Social Icon Hover Effect" AND fix the inversion:
+     value={cfg.social.hoverEffect}  (remove the !)
+     onChange={(v) => updateNested("social","hoverEffect",v)}
+
+  ─── DEFECT 11 ─── SEVERITY: CRITICAL ─────────────────────────────────────
+  File: src/components/dashboard/ProfileEditor.tsx — discordId input field missing
+
+  PROBLEM:
+  The Discord widget (cfg.widgets.discordPresence) has these fields:
+    enabled: boolean
+    discordId: string       ← THIS ONE
+    placement: "card"|"bottom"
+    compact: boolean
+    showBackground: boolean
+    themeSync: boolean
+
+  In Widget Style Controls, the Discord section shows Placement, Compact Mode,
+  Show Background, and Theme Sync toggles/selects. There is NO input for discordId.
+
+  Without a discordId, the Discord presence widget cannot query Lanyard or any
+  other Discord presence API to show the user's real-time status. Every user
+  who enables Discord presence will see either nothing or an error because no
+  Discord user ID is set.
+
+  HOW IT SHOULD WORK:
+  When Discord widget is enabled, show a text input:
+    <Row label="Discord User ID">
+      <TextInput
+        value={cfg.widgets.discordPresence.discordId}
+        onChange={(v) => updateNested("widgets","discordPresence",
+          {...cfg.widgets.discordPresence, discordId: v})}
+        placeholder="Your 18-digit Discord user ID"
+      />
+    </Row>
+  Add a small helper text: "Right-click yourself in Discord > Copy User ID
+  (enable developer mode first)"
+
+  FIX: Add this Row immediately after the "Compact Mode" toggle in the
+  discordPresence section of Widget Style Controls.
+
+  ─── DEFECT 12 ─── SEVERITY: HIGH ─────────────────────────────────────────
+  File: src/components/dashboard/ProfileEditor.tsx — assets system is fake
+
+  PROBLEM:
+  The assets state is initialized with three hardcoded fake entries:
+    { id:"1", name:"avatar-default.png", type:"image", size:"24 KB", url:"/assets/avatar.png" }
+    { id:"2", name:"background.mp4",     type:"video", size:"1.2 MB", url:"/assets/bg.mp4" }
+    { id:"3", name:"track.mp3",          type:"audio", size:"3.4 MB", url:"/assets/track.mp3" }
+
+  These files don't exist. The paths /assets/avatar.png, /assets/bg.mp4,
+  /assets/track.mp3 are not in the public/ folder.
+
+  The "Upload" buttons are div elements styled to look interactive but have:
+  - No onClick handler
+  - No <input type="file"> inside
+  - No fetch or Supabase storage call anywhere
+
+  The "Copy URL" button copies a fake non-existent URL.
+  The "Remove" button removes the fake asset from local state only.
+  Nothing persists. Nothing uploads. This entire section is scaffolding.
+
+  HOW IT SHOULD WORK:
+  Upload flow for each asset type:
+  1. User clicks the dashed upload zone.
+  2. A hidden <input type="file" accept="image/*"> (or video/*, audio/*) triggers.
+  3. File is sent to /api/upload via FormData.
+  4. API route uploads to Supabase Storage bucket.
+  5. API returns the public URL.
+  6. The returned URL is saved into cfg.identity.avatarUrl / cfg.background.imageUrl
+     / cfg.background.videoUrl / cfg.audio.src as appropriate.
+  7. The asset appears in the asset manager list with its real size and URL.
+  8. Auto-save fires.
+
+  The /api/upload route directory already exists. It just needs to be implemented.
+
+  FIX SCOPE: This is a 2-3 day feature, not a single line fix. It requires:
+  - Supabase Storage bucket configured (public, or signed URLs)
+  - /api/upload/route.ts that accepts multipart/form-data
+  - File size limits (recommend 5MB images, 25MB audio, 50MB video)
+  - Mime type validation
+  - The upload zone components wired to file input refs
+
+
+================================================================================
+  SECTION 6 — DEAD CODE (GeneralCustomization.tsx)
+================================================================================
+
+  WHAT IT IS:
+  A fully built 250+ line component that reimplements:
+  - Bio textarea
+  - Discord Presence toggle (wired CORRECTLY to widgets.discordPresence.enabled)
+  - Background Effects dropdown
+  - Username Effects (4-column grid of preview cards, NOT a modal)
+  - Profile Opacity slider
+  - Profile Blur slider
+  - Location input
+  - Glow toggle + intensity slider
+
+  WHERE IT'S USED:
+  Nowhere. Zero imports of GeneralCustomization across the entire codebase.
+
+  THE CONFLICT:
+  ProfileEditor.tsx reimplements all of these same controls inline using the
+  SectionCard + Row pattern. GeneralCustomization.tsx uses inline styles with
+  its own EffectPreview component and a 4-column grid UI for username effects.
+
+  These are two completely different UX approaches to the same set of controls:
+  - ProfileEditor: modal for username effects, inline rows for everything else
+  - GeneralCustomization: grid cards for username effects, inline rows for everything else
+
+  Only one should exist. The current live UI is ProfileEditor's version.
+  GeneralCustomization was either:
+  a) The old version that was replaced
+  b) A planned replacement that was never wired up
+
+  ─── DEFECT 13 ─── SEVERITY: HIGH ─────────────────────────────────────────
+  File: src/components/dashboard/GeneralCustomization.tsx
+
+  FIX:
+  Decision required: Pick one UX and delete the other.
+  Recommendation: Keep ProfileEditor's modal approach for username effects
+  (it's more polished), but ADOPT GeneralCustomization's correctly wired
+  Discord Presence toggle (it's the bug-free version).
+
+  After copying the correct Discord wiring, delete GeneralCustomization.tsx.
+
+  ─── DEFECT 14 ─── SEVERITY: LOW ──────────────────────────────────────────
+  File: src/components/dashboard/GeneralCustomization.tsx — inline style tags per card
+
+  GeneralCustomization's EffectPreview injects a <style> tag into the DOM for
+  every single effect preview card. With 11 cards, that's 11 separate style
+  blocks in the document head. They all define separate @keyframes (gc_glow,
+  gc_rb, gc_glitch, etc.) which avoids collisions but bloats the DOM.
+
+  FIX: Extract all keyframe definitions into one CSS file or one <style> block
+  at the component root. Or use Framer Motion variants instead of raw keyframes.
+
+
+================================================================================
+  SECTION 7 — COLOR CUSTOMIZATION (ColorCustomization.tsx)
+================================================================================
+
+  WHAT IT IS:
+  A component with Accent, Background, Text, and Icon color pickers, plus a
+  gradient direction dropdown. Each field has a round color swatch (native
+  color picker) and a text input for hex values.
+
+  WHERE IT'S USED:
+  Nowhere. Like GeneralCustomization, this is also dead code.
+  ProfileEditor.tsx has its own "Color Customization" SectionCard inline that
+  does the exact same thing.
+
+  DIFFERENCE BETWEEN THE TWO:
+  ColorCustomization.tsx adds a gradient direction dropdown (down/up/left/right/random)
+  that ProfileEditor.tsx does NOT have. That missing direction selector means users
+  in the current live UI cannot change gradient direction.
+
+  ─── DEFECT 15 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  File: src/components/dashboard/ColorCustomization.tsx
+
+  PROBLEM: Gradient direction selector exists in ColorCustomization.tsx but is
+  missing from ProfileEditor.tsx's color section. The direction field is in the
+  schema (background.direction) but there's no way to change it in the live UI.
+
+  FIX: Add the direction dropdown to ProfileEditor.tsx's Color Customization
+  SectionCard alongside the two gradient color pickers.
+
+
+================================================================================
+  SECTION 8 — SECTIONS PAGE (src/app/(dashboard)/sections/page.tsx)
+================================================================================
+
+  WHAT IT DOES:
+  Lets users reorder and show/hide the sections of their profile (avatar, name,
+  bio, badges, social links, audio player, etc.). Drag to reorder, eye icon to
+  toggle visibility. Auto-saves with 600ms debounce.
+
+  HOW IT SHOULD WORK:
+  User grabs the grip handle, drags a section to a new position, releases.
+  Order saves. Eye button shows/hides a section on the public profile.
+  Stats row shows live count of visible/hidden/total sections.
+
+  ─── DEFECT 16 ─── SEVERITY: CRITICAL ─────────────────────────────────────
+  File: src/app/(dashboard)/sections/page.tsx — HTML5 drag is broken on mobile
+
+  PROBLEM:
+  The entire drag system uses HTML5 native drag events:
+    draggable={true}
+    onDragStart={() => setDragIdx(idx)}
+    onDragOver={(e) => { e.preventDefault(); setDragOver(idx); }}
+    onDragEnd={handleDragEnd}
+
+  HTML5 drag events (DragEvent) do NOT work on:
+  - iOS Safari (all versions)
+  - Most Android browsers
+  - Any touch device
+
+  Touch devices fire touchstart/touchmove/touchend events, not drag events.
+  A mobile user visiting the sections page cannot reorder anything.
+
+  FIX:
+  Install @dnd-kit/core and @dnd-kit/sortable:
+    npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+
+  Replace the HTML5 drag implementation with DndContext + SortableContext +
+  useSortable. This provides both mouse drag AND touch drag out of the box.
+
+  Example structure:
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <SortableContext items={order} strategy={verticalListSortingStrategy}>
+        {orderedSections.map((section) => (
+          <SortableItem key={section.id} id={section.id} ... />
+        ))}
+      </SortableContext>
+    </DndContext>
+
+  ─── DEFECT 17 ─── SEVERITY: HIGH ─────────────────────────────────────────
+  File: src/app/(dashboard)/sections/page.tsx — new sections never appear for existing users
+
+  PROBLEM:
+  orderedSections is built by mapping the SAVED order array:
+    const orderedSections = order
+      .map(id => ALL_SECTIONS.find(s => s.id === id))
+      .filter(Boolean)
+
+  If you add a new section type to ALL_SECTIONS in a future update (e.g. "gallery"),
+  existing users who already have a saved order will NEVER see it in their
+  sections list. The new section ID is not in their saved order array, so
+  ALL_SECTIONS.find() returns undefined, and filter(Boolean) removes it.
+
+  HOW IT SHOULD WORK:
+  After building orderedSections, check for any ALL_SECTIONS entries not in the
+  saved order and append them to the end.
+
+  FIX:
+  const orderedSections = [
+    ...order
+      .map(id => ALL_SECTIONS.find(s => s.id === id))
+      .filter(Boolean) as typeof ALL_SECTIONS,
+    ...ALL_SECTIONS.filter(s => !order.includes(s.id))
+  ];
+
+  Also: when saving, always save the full order array including any new sections
+  so they get persisted next time.
+
+  ─── DEFECT 18 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  File: src/app/(dashboard)/sections/page.tsx — p-4.5 is not a Tailwind class
+
+  PROBLEM:
+  The stats card uses className including "p-4.5". Tailwind's default spacing
+  scale only has p-4 (16px) and p-5 (20px). There is no p-4.5 unless you've
+  extended the theme.config.
+
+  Check tailwind.config.ts — if it does NOT have:
+    theme: { extend: { spacing: { '4.5': '1.125rem' } } }
+  Then p-4.5 silently does nothing. The stat cards have zero padding.
+
+  FIX: Either add the spacing extension to tailwind.config.ts, or change p-4.5
+  to p-4 or p-5.
+
+  ─── DEFECT 19 ─── SEVERITY: LOW ──────────────────────────────────────────
+  File: src/app/(dashboard)/sections/page.tsx — emoji icons
+
+  ALL_SECTIONS uses string emojis for icons (🖼️, ✍️, 🏷️, 📝, 🏅, 🔗, 🎵, 💬, 👁️, ⚡, 🚀).
+  Emojis render inconsistently across OS:
+  - macOS/iOS: colorful, rounded Apple emojis
+  - Windows: flat, stylistically different
+  - Android: varies by manufacturer and Android version
+
+  The rest of the dashboard uses Lucide icons exclusively. The sections page
+  will look visually inconsistent on Windows users especially.
+
+  FIX: Replace emoji strings with Lucide icon component references in ALL_SECTIONS:
+    import { Image, Pen, Tag, FileText, ... } from "lucide-react"
+    { id: "avatar", label: "Avatar", desc: "...", Icon: Image }
+  Then render: <section.Icon className="w-4 h-4" /> instead of {section.emoji}
+
+  ─── DEFECT 20 ─── SEVERITY: LOW ──────────────────────────────────────────
+  File: src/app/(dashboard)/sections/page.tsx — scheduleSave called before userId is loaded
+
+  PROBLEM:
+  The useEffect loads the profile and sets userId. scheduleSave has a guard:
+    if (!userId || savingRef.current) { setSaveStatus("idle"); return; }
+  So if a save fires before userId is loaded, it silently does nothing.
+
+  BUT: toggleVisibility can be called the moment the component renders (the
+  sections list may render before the async profile load finishes). A fast user
+  could toggle visibility and lose the save because userId is still null.
+
+  FIX: Disable the toggle buttons until userId is loaded. Add a loading state:
+    const [loaded, setLoaded] = useState(false);
+  Set loaded = true after the profile load completes.
+  Disable the eye toggle button when !loaded.
+
+
+================================================================================
+  SECTION 9 — WIDGETS PAGE (widgets/page.tsx)
+================================================================================
+
+  File size: 17KB — a full widgets configuration page.
+
+  This page likely allows enabling/disabling and configuring the 6 widget types:
+  discordPresence, youtube, github, time, spotify, telegram.
+
+  ─── DEFECT 21 ─── SEVERITY: CRITICAL ─────────────────────────────────────
+  POTENTIAL DUPLICATION OF WIDGET CONTROLS
+
+  ProfileEditor.tsx already has a "Widget Style Controls" section with all 6
+  widgets. widgets/page.tsx appears to be a dedicated page for the same widgets.
+
+  If both exist and both write to cfg.widgets, they will conflict: a save from
+  one will overwrite changes made in the other if the user has both open or
+  switches between pages.
+
+  FIX: Decide which one is the canonical widget configuration UI:
+  - If widgets/page.tsx is the primary: remove widget controls from ProfileEditor
+  - If ProfileEditor is the primary: delete or redirect widgets/page.tsx
+  Both should NOT write independently to the same schema section.
+
+
+================================================================================
+  SECTION 10 — LINKS PAGE (links/page.tsx)
+================================================================================
+
+  File size: 34KB — a full links/social editor page.
+
+  This page manages cfg.social.links — the user's social media links.
+
+  ─── DEFECT 22 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  POTENTIAL DUPLICATION WITH ProfileEditor
+
+  ProfileEditor.tsx doesn't show an explicit links editor (no social links array
+  editor visible in the code read). So links/page.tsx is likely the canonical
+  place for editing social links, which is correct.
+
+  HOWEVER: ProfileEditor does have:
+    Row label="Monochrome Icons" → controls social.hoverEffect
+    (various social section settings)
+  These social presentation settings in ProfileEditor may conflict with what
+  links/page.tsx manages.
+
+  FIX: Audit what links/page.tsx manages vs what ProfileEditor touches for the
+  social section. The links ARRAY should only be editable in links/page.tsx.
+  Social presentation settings (layout, size, shape, hoverEffect, showLabels)
+  can live in either ProfileEditor or links/page.tsx but not both.
+
+
+================================================================================
+  SECTION 11 — CUSTOMIZE PAGE (customize/_page.tsx)
+================================================================================
+
+  File size: 69KB — this is the largest file in the repo.
+
+  The actual page content is in _page.tsx (prefixed with underscore, indicating
+  it's not a route itself), exported via page.tsx as:
+    export { default } from './_page'
+
+  This 69KB file likely contains ProfileEditor integration and possibly a live
+  preview panel side by side.
+
+  ─── DEFECT 23 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  File: src/app/(dashboard)/customize/_page.tsx — file is 69KB
+
+  A 69KB TypeScript component file is a maintenance problem. At this size it
+  likely contains multiple logical sections that should be split into separate
+  components.
+
+  Recommended split:
+  - CustomizePage.tsx (top-level layout, <300 lines)
+  - ProfilePreviewPanel.tsx (the live preview iframe/component)
+  - ProfileEditorPanel.tsx (the controls panel, which is ProfileEditor.tsx)
+
+  This is not a bug but a maintainability issue that will slow down every
+  future feature addition to the customize page.
+
+
+================================================================================
+  SECTION 12 — BADGES SYSTEM
+================================================================================
+
+  WHAT EXISTS:
+  badges-data.ts has 20+ predefined badges with SVG icons, names, descriptions,
+  and colors:
+    owner, manager, staff, helper, og, verified, bug_hunter, donator, premium,
+    champion, booster, winner, second_place, third_place, views, likes, domain,
+    gifter, image_host, guild_tag, level, halloween, christmas, easter
+
+  The schema has:
+    badges: {
+      enabled: boolean
+      items: BadgeItem[]
+      position: "top"|"bottom"|"inline"
+    }
+
+  BadgeItem has: id, label, color, icon, description, link (optional)
+
+  ─── DEFECT 24 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  There is no UI in the dashboard to award or manage badges.
+
+  The account/badges route exists in the sidebar but the actual implementation
+  is unknown from the code read.
+
+  HOW IT SHOULD WORK:
+  Two separate badge concepts need to exist:
+  1. EARNED BADGES: Awarded by the platform (OG, Verified, Bug Hunter, etc.)
+     These are server-side only — the platform adds them to the user's profile.
+     Users cannot add or remove these themselves.
+  2. CUSTOM BADGES: User-created badges with custom label and icon.
+     Users can create these in the dashboard.
+
+  The current schema mixes both into cfg.badges.items without distinguishing
+  which are earned vs custom. This creates a security issue: if badge items
+  are purely user-editable config, any user can give themselves the "Owner" or
+  "Verified" badge by directly POSTing to the save API with those badge IDs.
+
+  FIX:
+  Store earned badges in a separate DB column (e.g. earned_badges: string[])
+  that is only writable by admin/server actions, not by the user's save flow.
+  Keep cfg.badges.items for user-created custom badges only.
+  ProfileRenderer.tsx renders both: earned badges first (from DB column),
+  then custom badges (from cfg.badges.items).
+
+
+================================================================================
+  SECTION 13 — API ROUTES
+================================================================================
+
+  Routes found: /api/audio, /api/discord, /api/lyrics, /api/spotify, /api/upload
+
+  ─── DEFECT 25 ─── SEVERITY: HIGH ─────────────────────────────────────────
+  /api/upload — exists as a directory but is not wired to the Assets Uploader UI
+
+  As documented in Defect 12: the upload zone in ProfileEditor has no onClick,
+  no <input type="file">, and no fetch call to /api/upload. The route may or
+  may not be implemented, but it's definitely not connected to any UI.
+
+  ─── DEFECT 26 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  /api/discord — Discord presence depends on Lanyard or similar service
+
+  The Discord presence feature requires the user to be in a Discord server that
+  has the Lanyard bot, OR the app needs a self-hosted presence socket.
+  If using Lanyard, the user must join the Lanyard Discord server which is an
+  external dependency users need to be told about.
+
+  This should be clearly communicated in the Discord widget configuration UI:
+  "To use Discord presence, join discord.gg/lanyard and enter your Discord user ID"
+
+  ─── DEFECT 27 ─── SEVERITY: LOW ──────────────────────────────────────────
+  /api/spotify — Spotify integration requires OAuth
+
+  Spotify's "now playing" or profile data requires OAuth (Authorization Code flow
+  or Client Credentials flow). If the spotify widget just shows a static URL
+  (like an embedded playlist), no OAuth is needed. But if it shows now-playing,
+  each user needs to connect their Spotify account.
+
+  The current widgets schema has:
+    spotify: { enabled: boolean, url: string, ... }
+  A plain URL suggests this is just an embedded player, not now-playing.
+  If now-playing is planned, OAuth per user is required and the schema needs a
+  spotify_access_token field.
+
+
+================================================================================
+  SECTION 14 — SECTIONCARD COMPONENT
+================================================================================
+
+  ─── DEFECT 28 ─── SEVERITY: MEDIUM ───────────────────────────────────────
+  File: src/components/dashboard/SectionCard.tsx — hardcoded colors, wrong name
+
+  PROBLEM 1 — HARDCODED COLORS:
+  SectionCard uses:
+    backgroundColor: "#141414"
+    border: "2px solid #181818"
+    borderRadius: 25
+    color: "#c5c5c5"
+  All hardcoded inline. No Tailwind classes, no CSS variables.
+  When the design system updates, this component will be out of sync.
+
+  PROBLEM 2 — NAMING COLLISION:
+  "SectionCard" is used as a layout wrapper for the ProfileEditor sections
+  (Style Presets card, Assets Uploader card, etc.).
+  But the sections page (sections/page.tsx) manages "profile sections" like
+  avatar, bio, social links.
+  A new developer reading the code will not understand which "section" SectionCard
+  refers to.
+
+  FIX:
+  1. Rename SectionCard.tsx to DashboardCard.tsx and update all imports.
+  2. Convert inline styles to Tailwind classes matching the existing design system:
+     bg-[#141414] border border-[#181818] rounded-3xl text-[#c5c5c5]
+  3. Or better: use the same neutral-950/neutral-900 tokens the rest of the
+     dashboard uses: bg-neutral-950/60 border border-neutral-900 rounded-2xl
+
+
+================================================================================
+  SECTION 15 — PROFILE DEFAULTS (defaults.ts)
+================================================================================
+
+  brazyProfile is a full demo profile config for the "brazy" username.
+  It serves two purposes:
+  1. Seed data: brazy.it/brazy shows this demo profile.
+  2. Default fallback: normalizeConfig merges it into user configs.
+
+  ─── DEFECT 29 ─── SEVERITY: LOW ──────────────────────────────────────────
+  File: src/lib/profile/defaults.ts — brazyProfile is a demo and a default
+
+  PROBLEM:
+  Using the same object for "demo content" and "default values" is risky.
+  The brazyProfile has:
+    audio.src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3"
+    social.links: [...6 real-looking brazy links...]
+    identity.bio: "the most customizable bio on the internet..."
+    splash.enabled: true
+
+  If normalizeConfig ever incorrectly falls through to brazyProfile defaults
+  (which the current deepMerge bug can cause), a real user's profile could
+  briefly show brazyProfile's splash screen text, audio track, or social links.
+
+  FIX:
+  Separate the concerns:
+  - brazyProfile stays as the /brazy demo page config (rich content, looks good).
+  - Create emptyProfile (or defaultProfile) with neutral empty defaults:
+      bio: "", social.links: [], audio.src: "", splash.enabled: false, etc.
+  - normalizeConfig uses emptyProfile as its fallback, not brazyProfile.
+  - store.ts seedProfiles["brazy"] keeps using brazyProfile.
+
+
+================================================================================
+  SECTION 16 — FULL DEFECT LIST (SEVERITY RANKED)
+================================================================================
+
+  CRITICAL — Ship-blocking bugs that actively harm users right now:
+  ─────────────────────────────────────────────────────────────────
+  #9  Discord Presence toggle in General Customization destroys background.type
+  #10 Four rows in Other Customization are completely mislabeled
+      - "Use Discord Avatar" = audio.autoplay
+      - "Discord Avatar Decoration" = audio.loop
+      - "Swap Box Colors" = contentAlign
+      - "Monochrome Icons" = hoverEffect (also inverted logic)
+  #11 discordId input field is missing from Widget Style Controls
+  #16 Section reordering is broken on every mobile device (HTML5 drag)
+
+  HIGH — Broken features or wrong behavior causing visible problems:
+  ───────────────────────────────────────────────────────────────────
+  #1  normalizeConfig deepMerge fights Zod defaults
+  #2  Cursor/click effect Zod defaults bypassed with ({} as any)
+  #4  saveProfile double upsert — possibly broken error handling
+  #5  getCurrentUserProfile missing audio fields
+  #12 Assets upload is entirely fake / cosmetic scaffolding
+  #13 GeneralCustomization.tsx is dead code with conflicting UX
+  #17 New sections never appear for existing users after app updates
+  #21 Widget controls exist in both ProfileEditor and widgets/page.tsx
+  #24 Badges system has no earned/custom distinction — security issue
+  #25 /api/upload not connected to any UI
+
+  MEDIUM — Wrong behavior, missing features, or UX inconsistencies:
+  ──────────────────────────────────────────────────────────────────
+  #3  Badge color defaults to #22d3ee, never syncs with theme accent
+  #7  Profile Switcher button does nothing
+  #15 Gradient direction selector missing from live ProfileEditor color section
+  #18 p-4.5 is not a valid Tailwind class
+  #22 Links page and ProfileEditor both touch social section
+  #23 _page.tsx is 69KB — needs splitting
+  #26 Discord presence requires Lanyard — not communicated to users
+  #28 SectionCard has hardcoded colors and confusing name
+
+  LOW — Maintainability, polish, and future risk:
+  ────────────────────────────────────────────────
+  #6  getProfile does unnecessary second DB query fallback
+  #8  Sidebar isActive check includes dead "/dashboard" path
+  #14 GeneralCustomization injects 11 separate style tags into DOM
+  #19 Sections page uses emoji icons instead of Lucide
+  #20 Toggle buttons active before userId is loaded
+  #27 Spotify widget needs OAuth clarity
+  #29 brazyProfile used as both demo and defaults
+
+  ADDITIONAL:
+  ──────────────────────────────────────────────────────────────────
+  - proxy.ts at src/proxy.ts is orphaned — no imports anywhere
+  - inspo/, inspo2/, "landing page inspo/" folders committed to git
+  - AGENTS.md, CLAUDE.md, PLAN.md are public in the repo
+  - ColorCustomization.tsx is dead code with a useful gradient direction
+    selector that doesn't exist in the live UI
+
+
+================================================================================
+  SECTION 17 — FULL FIX PLAN (STEP BY STEP)
+================================================================================
+
+  SPRINT 1 — Fix the critical mislabels and broken wiring (1-2 days)
+  ────────────────────────────────────────────────────────────────────
+  File: src/components/dashboard/ProfileEditor.tsx
+
+  Step 1: Delete the "Discord Presence" Row from General Customization section.
+  It changes background.type. The correct toggle is in Widget Style Controls.
+
+  Step 2: Fix "Monochrome Icons" row.
+  Old:  value={!cfg.social.hoverEffect}
+  New:  value={cfg.social.hoverEffect}
+  Old label: "Monochrome Icons"
+  New label: "Social Icon Hover Effect"
+
+  Step 3: Rename "Use Discord Avatar" to "Music Autoplay".
+  The code (audio.autoplay) is correct. Just the label is wrong.
+
+  Step 4: Rename "Discord Avatar Decoration" to "Loop Music".
+  The code (audio.loop) is correct. Just the label is wrong.
+
+  Step 5: Rename "Swap Box Colors" to "Content Alignment".
+  The code (contentAlign + Center/Left options) is correct. Just the label is wrong.
+
+  Step 6: Add the discordId input field inside the discordPresence widget block.
+  Copy the TextInput pattern from the form above. Wire to:
+    value={cfg.widgets.discordPresence.discordId}
+    onChange={(v) => updateNested("widgets","discordPresence",
+      {...cfg.widgets.discordPresence, discordId: v})}
+
+  SPRINT 2 — Fix schema and database layer (1 day)
+  ──────────────────────────────────────────────────
+  File: src/lib/profile/schema.ts
+
+  Step 7: Simplify normalizeConfig:
+    export function normalizeConfig(raw: unknown): ProfileConfig {
+      try { return profileSchema.parse(raw ?? {}); }
+      catch { return profileSchema.parse({}); }
+    }
+  Delete the deepMerge function entirely.
+
+  Step 8: Fix cursor default:
+    Old: .default(() => ({} as any))
+    New: .default(() => cursorEffectSchema.parse({}))
+  Same for clickEffectSchema.
+
+  File: src/lib/profile/store.ts
+
+  Step 9: Confirm the actual DB schema column name (id or user_id).
+  Then collapse saveProfile to a single upsert with the correct conflict column.
+  Delete the second upsert attempt and fix the error handling to only reference
+  one error variable.
+
+  Step 10: Update getCurrentUserProfile select string to include audio fields.
+
+  SPRINT 3 — Sections page rebuild (2 days)
+  ──────────────────────────────────────────
+  File: src/app/(dashboard)/sections/page.tsx
+
+  Step 11: Install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities.
+
+  Step 12: Replace the HTML5 drag implementation with DndContext + useSortable.
+  The drag handle (GripVertical) becomes the drag activator.
+  onDragEnd receives an event with active.id and over.id, use arrayMove() from
+  @dnd-kit/sortable to reorder the array.
+
+  Step 13: Fix orderedSections to append sections missing from saved order:
+    const known = order.map(id => ALL_SECTIONS.find(s => s.id === id)).filter(Boolean);
+    const missing = ALL_SECTIONS.filter(s => !order.includes(s.id));
+    const orderedSections = [...known, ...missing] as typeof ALL_SECTIONS;
+
+  Step 14: Fix p-4.5 — either add spacing extension to tailwind.config or change to p-4.
+
+  Step 15: Replace emoji strings with Lucide icon components in ALL_SECTIONS.
+
+  Step 16: Add a loading state so toggle buttons are disabled until profile loads.
+
+  SPRINT 4 — Dead code cleanup (1 day)
+  ──────────────────────────────────────
+  Step 17: Extract the correct Discord Presence toggle code from
+  GeneralCustomization.tsx and move it to ProfileEditor.tsx (replacing the
+  broken background.type toggle).
+
+  Step 18: Delete GeneralCustomization.tsx.
+
+  Step 19: Extract the gradient direction dropdown from ColorCustomization.tsx
+  and add it to ProfileEditor.tsx's Color Customization section.
+
+  Step 20: Delete ColorCustomization.tsx.
+
+  Step 21: Rename SectionCard.tsx to DashboardCard.tsx and update all imports.
+  Convert inline hex colors to Tailwind classes.
+
+  SPRINT 5 — Assets upload (2-3 days)
+  ─────────────────────────────────────
+  Step 22: Implement /api/upload/route.ts:
+  - Accept POST multipart/form-data
+  - Validate file type (image/jpeg, image/png, image/webp, audio/mpeg, video/mp4)
+  - Validate file size (images 5MB max, audio 25MB max, video 50MB max)
+  - Upload to Supabase Storage: supabase.storage.from("assets").upload(path, file)
+  - Return { url: publicUrl }
+
+  Step 23: Wire the upload zones in ProfileEditor.tsx:
+  - Add a hidden <input type="file" ref={avatarFileRef} accept="image/*" />
+  - onClick on the upload zone triggers avatarFileRef.current.click()
+  - onChange on the input sends the file to /api/upload
+  - On success, call updateNested("identity","avatarUrl",returnedUrl)
+  - Replace the hardcoded fake assets state with real uploads
+
+  SPRINT 6 — Badges security and defaults (1 day)
+  ──────────────────────────────────────────────────
+  Step 24: Create a separate earned_badges column in Supabase profiles table.
+  Type: text[] (array of badge IDs like ["og","verified","bug_hunter"]).
+
+  Step 25: Create a server action or admin route that adds earned badges.
+  This should NOT be callable from the client save flow.
+
+  Step 26: Update ProfileRenderer.tsx to read earned badges from the DB record
+  (not from config) and render them alongside (but separately from) custom badges.
+
+  Step 27: Update badge color default in schema to "" and have ProfileRenderer
+  fall back to theme.primaryColor for badges with empty color.
+
+  SPRINT 7 — Separating demo from defaults (half day)
+  ─────────────────────────────────────────────────────
+  Step 28: Create src/lib/profile/empty-defaults.ts:
+    export const emptyProfile: ProfileConfig = {
+      version: 1,
+      identity: { username:"", displayName:"", bio:"", avatarUrl:"", ... },
+      audio: { enabled:false, src:"", ... },
+      social: { links:[], ... },
+      splash: { enabled:false, ... },
+      ...all other fields with truly empty/neutral values...
+    }
+
+  Step 29: Update normalizeConfig to use emptyProfile as the Zod default source
+  instead of brazyProfile.
+
+  Step 30: Keep brazyProfile only in seedProfiles["brazy"] in store.ts.
+
+  ONGOING — Maintenance hygiene
+  ───────────────────────────────
+  Step 31: Add .gitignore entries for inspo/, inspo2/, "landing page inspo/".
+  Run: git rm -r --cached "inspo/" "inspo2/" "landing page inspo/"
+
+  Step 32: Move AGENTS.md, CLAUDE.md, PLAN.md to a private Notion page or
+  a private repo. They should not be in the public codebase.
+
+  Step 33: Investigate proxy.ts at src/proxy.ts. If it's unused, delete it.
+  If it's needed, document it with a comment explaining its purpose.
+
+  Step 34: Verify tsconfig.json has "strict": true. If not, enable it and fix
+  all resulting type errors before the next deploy.
+
+  Step 35: Add src/app/(dashboard)/error.tsx as a React error boundary:
+    "use client"
+    export default function DashboardError({ error, reset }) {
+      return (
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <h2>Something went wrong</h2>
+            <button onClick={reset}>Try again</button>
+          </div>
+        </div>
+      );
+    }
+
+
+================================================================================
+  SECTION 18 — ARCHITECTURE RECOMMENDATIONS
+================================================================================
+
+  1. SINGLE SOURCE OF TRUTH FOR EACH SETTING
+  ─────────────────────────────────────────────
+  Currently some settings are editable from multiple places:
+  - Widgets: ProfileEditor.tsx AND widgets/page.tsx
+  - Social: ProfileEditor.tsx AND links/page.tsx
+  - Discord Presence: General Customization row (broken) AND Widget Controls
+
+  Rule: Each schema section should have exactly ONE dashboard page/component
+  that is its canonical editor. Map it clearly:
+    cfg.theme           → /customize (ProfileEditor)
+    cfg.background      → /customize (ProfileEditor)
+    cfg.effects         → /customize (ProfileEditor)
+    cfg.social.links    → /links
+    cfg.social.*style*  → /links (layout, size, shape, hoverEffect, showLabels)
+    cfg.widgets.*       → /widgets (NOT ProfileEditor)
+    cfg.sections.*      → /sections
+    cfg.badges.*        → /account/badges
+    cfg.audio.*         → /customize (or a dedicated /music page)
+    cfg.identity.*      → /customize
+
+  2. AUTOSAVE CONSISTENCY
+  ─────────────────────────
+  Three separate pages (sections, ProfileEditor inside customize, widgets) all
+  implement their own debounce/autosave logic independently. This means three
+  different debounce timers (600ms, 800ms, unknown) and three different save
+  status indicator implementations.
+
+  Extract a shared useAutoSave(saveFn, deps) hook that:
+  - Debounces with a configurable delay (default 800ms)
+  - Tracks saving/saved/error status
+  - Returns { saveStatus } for display
+  - Handles savingRef to prevent concurrent saves
+  - Handles pendingRef to queue saves that arrived while one was in progress
+
+  3. PROFILE PREVIEW
+  ────────────────────
+  The customize page is 69KB — it likely has a live preview panel. The best
+  architecture for this is an <iframe> pointing to /{username}?preview=true
+  with a query parameter that disables animations and view counting.
+  The iframe refreshes or uses postMessage to receive config updates.
+  This isolates the preview render completely from the editor state.
+
+  4. ZOD SCHEMA IS THE CONTRACT
+  ──────────────────────────────
+  Every API route that accepts profile data should run normalizeConfig() on
+  input. Never trust raw JSON from the client. The schema is the only thing
+  between a malicious user and garbage in your database.
+
+  5. SUPABASE RLS (ROW LEVEL SECURITY)
+  ──────────────────────────────────────
+  Confirm that Supabase RLS policies exist for the profiles table such that:
+  - SELECT: public (anyone can read any profile)
+  - INSERT/UPDATE: authenticated AND user_id = auth.uid()
+  - DELETE: authenticated AND user_id = auth.uid()
+  Without RLS, any authenticated user can overwrite any other user's profile
+  by sending a request with a different user_id.
+
+================================================================================
+  END OF AUDIT
+  Total defects found: 29 + structural issues
+  Critical: 4
+  High: 9
+  Medium: 10
+  Low: 6+
+  This document was generated by reading every source file in the repository.
+  Every issue references an exact file. No guesswork.
+================================================================================

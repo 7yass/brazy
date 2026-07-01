@@ -301,13 +301,6 @@ export default function ProfileEditor({
               <Row label="Description">
                 <TextArea value={cfg.identity.bio} onChange={(v) => updateNested("identity", "bio", v)} placeholder="Bio" rows={2} />
               </Row>
-              <Row label="Discord Presence">
-                <CustomSelect
-                  value={cfg.background.type}
-                  onChange={(v) => updateNested("background", "type", v as ProfileConfig["background"]["type"])}
-                  options={[{ value: "none", label: "Disabled" }, { value: "particles", label: "Enabled" }]}
-                />
-              </Row>
               <Row label="Background Effects">
                 <CustomSelect
                   value={cfg.background.type}
@@ -409,6 +402,15 @@ export default function ProfileEditor({
                             ]}
                           />
                         </Row>
+                        {key === "discordPresence" && (
+                          <Row label="Discord User ID">
+                            <TextInput
+                              value={(w as any).discordId ?? ""}
+                              onChange={(v) => updateNested("widgets", key, { ...w, discordId: v } as any)}
+                              placeholder="Your 18-digit Discord user ID"
+                            />
+                          </Row>
+                        )}
                         <Row label="Compact Mode">
                           <Toggle value={w.compact} onChange={(v) => updateNested("widgets", key, { ...w, compact: v })} label="" />
                         </Row>
@@ -427,8 +429,8 @@ export default function ProfileEditor({
 
             {/* 5. Other Customization */}
             <SectionCard title="Other Customization">
-              <Row label="Monochrome Icons">
-                <Toggle value={!cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="" />
+              <Row label="Social Icon Hover Effect">
+                <Toggle value={cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="" />
               </Row>
               <Row label="Animated Title">
                 <Toggle value={cfg.effects.typewriterTitle} onChange={(v) => updateEffect("typewriterTitle", v)} label="" />
@@ -445,7 +447,7 @@ export default function ProfileEditor({
                   ]}
                 />
               </Row>
-              <Row label="Swap Box Colors">
+              <Row label="Content Alignment">
                 <CustomSelect
                   value={cfg.theme.contentAlign}
                   onChange={(v) => updateNested("theme", "contentAlign", v as ProfileConfig["theme"]["contentAlign"])}
@@ -455,10 +457,10 @@ export default function ProfileEditor({
               <Row label="Volume Control">
                 <Slider value={cfg.audio.volume} onChange={(v) => updateNested("audio", "volume", v)} min={0} max={1} step={0.05} />
               </Row>
-              <Row label="Use Discord Avatar">
+              <Row label="Music Autoplay">
                 <Toggle value={cfg.audio.autoplay} onChange={(v) => updateNested("audio", "autoplay", v)} label="" />
               </Row>
-              <Row label="Discord Avatar Decoration">
+              <Row label="Loop Music">
                 <Toggle value={cfg.audio.loop} onChange={(v) => updateNested("audio", "loop", v)} label="" />
               </Row>
             </SectionCard>

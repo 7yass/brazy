@@ -105,8 +105,8 @@ export const usernameEffectSchema = z.enum([
 export type UsernameEffect = z.infer<typeof usernameEffectSchema>;
 
 export const effectsSchema = z.object({
-  cursor: cursorEffectSchema.default(() => ({} as any)),
-  click: clickEffectSchema.default(() => ({} as any)),
+  cursor: cursorEffectSchema.default(() => cursorEffectSchema.parse({})),
+  click: clickEffectSchema.default(() => clickEffectSchema.parse({})),
   tilt3d: z.boolean().default(true),
   tiltIntensity: z.number().min(0).max(30).default(12),
   typewriterTitle: z.boolean().default(false),
@@ -329,35 +329,11 @@ export const profileConfigSchema = z.object({
 });
 export type ProfileConfig = z.infer<typeof profileConfigSchema>;
 
-import { brazyProfile } from "./defaults";
-
-function deepMerge(target: any, source: any): any {
-  if (target === null || target === undefined) return source;
-  if (typeof target !== "object" || Array.isArray(target)) return target;
-  
-  const output = { ...target };
-  for (const key of Object.keys(source)) {
-    if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
-      output[key] = deepMerge(target[key], source[key]);
-    } else if (target[key] === undefined) {
-      output[key] = source[key];
-    }
-  }
-  return output;
-}
-
 export function normalizeConfig(input: unknown): ProfileConfig {
-  let parsed: any;
   try {
-    parsed = profileConfigSchema.parse(input ?? {});
+    return profileConfigSchema.parse(input ?? {});
   } catch (err) {
     console.error("normalizeConfig error, falling back to defaults:", err);
-    try {
-      parsed = profileConfigSchema.parse({});
-    } catch (fallbackErr) {
-      console.error("Critical: default schema parsing failed:", fallbackErr);
-      parsed = {};
-    }
+    return profileConfigSchema.parse({});
   }
-  return deepMerge(parsed, brazyProfile);
 }
