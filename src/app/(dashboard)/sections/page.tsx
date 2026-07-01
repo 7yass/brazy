@@ -91,9 +91,9 @@ export default function SectionsPage() {
     setDragOver(null);
   };
 
-  const orderedSections = order
-    .map(id => ALL_SECTIONS.find(s => s.id === id))
-    .filter(Boolean) as typeof ALL_SECTIONS;
+  const known = order.map(id => ALL_SECTIONS.find(s => s.id === id)).filter(Boolean);
+  const missing = ALL_SECTIONS.filter(s => !order.includes(s.id));
+  const orderedSections = [...known, ...missing] as typeof ALL_SECTIONS;
 
   const visibleCount = Object.values(visibility).filter(Boolean).length;
 
@@ -127,7 +127,7 @@ export default function SectionsPage() {
           { label: "Hidden sections", value: ALL_SECTIONS.length - visibleCount, colorClass: "text-neutral-500" },
           { label: "Total sections", value: ALL_SECTIONS.length, colorClass: "text-red-500" },
         ].map(s => (
-          <div key={s.label} className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-4.5">
+          <div key={s.label} className="bg-neutral-950/40 border border-neutral-900/80 rounded-2xl p-4">
             <p className={`text-2xl font-black ${s.colorClass}`}>{s.value}</p>
             <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider mt-1">{s.label}</p>
           </div>

@@ -7,7 +7,7 @@ import { normalizeConfig } from "@/lib/profile/schema";
 import type { UsernameEffect } from "@/lib/profile/schema";
 import { brazyProfile } from "@/lib/profile/defaults";
 import { TextInput, TextArea, ColorInput, Slider, Toggle } from "./controls";
-import { SectionCard } from "./SectionCard";
+import { DashboardCard } from "./DashboardCard";
 import CustomSelect from "@/components/ui/CustomSelect";
 import UsernameEffectsModal from "./UsernameEffectsModal";
 import PresetsPanel from "./PresetsPanel";
@@ -216,12 +216,12 @@ export default function ProfileEditor({
 
           <div className="flex flex-col gap-5">
             {/* 0. Style Presets */}
-            <SectionCard title="Style Presets">
+            <DashboardCard title="Style Presets">
               <PresetsPanel config={cfg} onApply={applyPreset} />
-            </SectionCard>
+            </DashboardCard>
 
             {/* 1. Assets Uploader */}
-            <SectionCard title="Assets Uploader">
+            <DashboardCard title="Assets Uploader">
               <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
                 <p className="mb-3 text-sm font-medium text-white/80">Background Image & Video</p>
                 <div className="mb-3 flex items-center gap-2">
@@ -294,10 +294,10 @@ export default function ProfileEditor({
                   ))}
                 </div>
               )}
-            </SectionCard>
+            </DashboardCard>
 
             {/* 2. General Customization */}
-            <SectionCard title="General Customization">
+            <DashboardCard title="General Customization">
               <Row label="Description">
                 <TextArea value={cfg.identity.bio} onChange={(v) => updateNested("identity", "bio", v)} placeholder="Bio" rows={2} />
               </Row>
@@ -348,10 +348,10 @@ export default function ProfileEditor({
                   <Slider value={cfg.theme.glowIntensity} onChange={(v) => updateNested("theme", "glowIntensity", v)} min={0} max={100} step={5} />
                 </div>
               </Row>
-            </SectionCard>
+            </DashboardCard>
 
             {/* 3. Color Customization */}
-            <SectionCard title="Color Customization">
+            <DashboardCard title="Color Customization">
               <Row label="Accent Color">
                 <ColorInput value={cfg.theme.primaryColor} onChange={(v) => updateNested("theme", "primaryColor", v)} />
               </Row>
@@ -370,10 +370,10 @@ export default function ProfileEditor({
                   <ColorInput value={cfg.background.color2} onChange={(v) => updateNested("background", "color2", v)} />
                 </div>
               </Row>
-            </SectionCard>
+            </DashboardCard>
 
             {/* 4. Widget Style Controls */}
-            <SectionCard title="Widget Style Controls">
+            <DashboardCard title="Widget Style Controls">
               {(["discordPresence", "youtube", "github", "time", "spotify", "telegram"] as const).map((key) => {
                 const w = cfg.widgets[key];
                 const labels: Record<string, string> = {
@@ -425,10 +425,10 @@ export default function ProfileEditor({
                   </div>
                 );
               })}
-            </SectionCard>
+            </DashboardCard>
 
             {/* 5. Other Customization */}
-            <SectionCard title="Other Customization">
+            <DashboardCard title="Other Customization">
               <Row label="Social Icon Hover Effect">
                 <Toggle value={cfg.social.hoverEffect} onChange={(v) => updateNested("social", "hoverEffect", v)} label="" />
               </Row>
@@ -463,7 +463,7 @@ export default function ProfileEditor({
               <Row label="Loop Music">
                 <Toggle value={cfg.audio.loop} onChange={(v) => updateNested("audio", "loop", v)} label="" />
               </Row>
-            </SectionCard>
+            </DashboardCard>
           </div>
         </div>
       </div>
